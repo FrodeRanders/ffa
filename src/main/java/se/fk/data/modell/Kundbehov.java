@@ -22,6 +22,10 @@ public class Kundbehov {
     @JsonProperty("ersattningar")
     List<Ersattning> ersattningar;
 
+    @JsonProperty("beslut")
+    Beslut beslut;
+
+
     public Kundbehov() {} // Required for deserialization
 
     public Kundbehov(String description, List<Ersattning> ersattningar) {
@@ -29,6 +33,10 @@ public class Kundbehov {
         this.id = uuid.toString();
         this.description = description;
         this.ersattningar = ersattningar;
+    }
+
+    public void setBeslut(Beslut beslut) {
+        this.beslut = beslut;
     }
 
     public String toString() {

@@ -2,10 +2,13 @@ package se.fk.data;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import se.fk.data.modell.Beslut;
 import se.fk.data.modell.Ersattning;
 import se.fk.data.modell.Kundbehov;
 
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 
 /**
  * Hello world!
@@ -20,6 +23,9 @@ public class App
         Ersattning ers2 = new Ersattning("Travel", 500);
 
         Kundbehov kundbehov = new Kundbehov("Insurance needs", Arrays.asList(ers1, ers2));
+
+        Beslut beslut = new Beslut(Date.from(Instant.now()));
+        kundbehov.setBeslut(beslut);
 
         // Creating ObjectMapper
         ObjectMapper mapper = new ObjectMapper();
