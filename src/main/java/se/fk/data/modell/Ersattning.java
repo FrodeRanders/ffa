@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class Ersattning {
     @JsonProperty("@context")
-    private final String context = "https://example.org/contexts/ersattning";
+    private final String context = "https://data.fk.se/kontext/ersattning/1.0";
 
     @JsonProperty("id")
     String id;
@@ -31,6 +31,7 @@ public class Ersattning {
         this.amount = amount;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Ersattning{");
         sb.append("context='").append(context).append('\'');

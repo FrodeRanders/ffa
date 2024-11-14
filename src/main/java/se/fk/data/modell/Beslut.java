@@ -8,9 +8,9 @@ import java.util.UUID;
 
 public class Beslut {
     public enum Typ {
-        INTERRIMISTISK(1),
-        STALLNINGSTAGANDE(2),
-        SLUTLIGT(3);
+        INTERRIMISTISK (1),
+        STALLNINGSTAGANDE (2),
+        SLUTLIGT (3);
 
         Typ(int typ) {
             this.typ = typ;
@@ -20,11 +20,11 @@ public class Beslut {
     }
 
     public enum Utfall {
-        BEVILJAT(1),
-        AVSLAG(2),
-        DELVIS_BEVILJANDE(3),
-        AVVISNING(4),
-        AVSKRIVNING(5);
+        BEVILJAT (1),
+        AVSLAG (2),
+        DELVIS_BEVILJANDE (3),
+        AVVISNING (4),
+        AVSKRIVNING (5);
 
         Utfall(int utfall) {
             this.utfall = utfall;
@@ -34,15 +34,15 @@ public class Beslut {
     }
 
     public enum Lagrum {
-        SFB_K112_P2a("SFB Kap. 112 § 2a"),
-        SFB_K112_P3("SFB Kap. 112 § 3"),
-        SFB_K112_P4("SFB Kap. 112 § 4"),
-        SFB_K113_P3_S1("SFB Kap. 113 § 3 p. 1"),
-        SFB_K113_P3_S2("SFB Kap. 113 § 3 p. 2"),
-        SFB_K113_P3_S3("SFB Kap. 113 § 3 p. 3"),
-        FL_P36("FL § 36"),
-        FL_P37("FL § 37"),
-        FL_P38("FL § 38");
+        SFB_K112_P2a ("SFB Kap. 112 § 2a"),
+        SFB_K112_P3 ("SFB Kap. 112 § 3"),
+        SFB_K112_P4 ("SFB Kap. 112 § 4"),
+        SFB_K113_P3_S1 ("SFB Kap. 113 § 3 p. 1"),
+        SFB_K113_P3_S2 ("SFB Kap. 113 § 3 p. 2"),
+        SFB_K113_P3_S3 ("SFB Kap. 113 § 3 p. 3"),
+        FL_P36 ("FL § 36"),
+        FL_P37 ("FL § 37"),
+        FL_P38 ("FL § 38");
 
         Lagrum(String lagrum) {
             this.lagrum = lagrum;
@@ -52,7 +52,7 @@ public class Beslut {
     }
 
     @JsonProperty("@context")
-    private final String context = "https://example.org/contexts/beslut";
+    private final String context = "https://data.fk.se/kontext/beslut/1.0";
 
     @JsonProperty("id")
     String id;
@@ -87,6 +87,7 @@ public class Beslut {
         this.datum = datum;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Beslut{");
         sb.append("context='").append(context).append('\'');

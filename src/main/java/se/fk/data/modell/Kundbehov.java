@@ -3,12 +3,12 @@ package se.fk.data.modell;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.uuid.Generators;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.UUID;
 
 public class Kundbehov {
     @JsonProperty("@context")
-    private final String context = "https://example.org/contexts/kundbehov";
+    private final String context = "https://data.fk.se/kontext/kundbehov/1.0";
 
     @JsonProperty("id")
     String id;
@@ -20,7 +20,7 @@ public class Kundbehov {
     String description;
 
     @JsonProperty("ersattningar")
-    List<Ersattning> ersattningar;
+    Collection<Ersattning> ersattningar;
 
     @JsonProperty("beslut")
     Beslut beslut;
@@ -28,7 +28,7 @@ public class Kundbehov {
 
     public Kundbehov() {} // Required for deserialization
 
-    public Kundbehov(String description, List<Ersattning> ersattningar) {
+    public Kundbehov(String description, Collection<Ersattning> ersattningar) {
         UUID uuid = Generators.timeBasedEpochGenerator().generate(); // Version 7
         this.id = uuid.toString();
         this.description = description;
@@ -39,6 +39,7 @@ public class Kundbehov {
         this.beslut = beslut;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Kundbehov{");
         sb.append("context='").append(context).append('\'');
