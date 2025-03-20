@@ -1,14 +1,14 @@
-package se.fk.data.modell;
+package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.uuid.Generators;
+import se.fk.data.modell.ffa.Context;
+import se.fk.data.modell.ffa.Valuta;
 
 import java.util.UUID;
 
+@Context(value = "https://data.fk.se/kontext/ersattning/1.0")
 public class Ersattning {
-    @JsonProperty("@context")
-    private final String context = "https://data.fk.se/kontext/ersattning/1.0";
-
     @JsonProperty("id")
     String id;
 
@@ -18,6 +18,7 @@ public class Ersattning {
     @JsonProperty("type")
     String type;
 
+    @Valuta
     @JsonProperty("amount")
     double amount;
 
@@ -34,8 +35,7 @@ public class Ersattning {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Ersattning{");
-        sb.append("context='").append(context).append('\'');
-        sb.append(", id='").append(id).append('\'');
+        sb.append("id='").append(id).append('\'');
         sb.append(", version=").append(version);
         sb.append(", type='").append(type).append('\'');
         sb.append(", amount=").append(amount);

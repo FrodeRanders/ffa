@@ -1,11 +1,13 @@
 package se.fk.hundbidrag.modell;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import se.fk.data.modell.Ersattning;
+import se.fk.data.modell.ffa.Context;
+import se.fk.data.modell.v1.Ersattning;
 import java.util.Collection;
 
 
-public class Kundbehov extends se.fk.data.modell.Kundbehov {
+@Context(value = "https://data.fk.se/kontext/hundbidrag/1.0")
+public class Kundbehov extends se.fk.data.modell.v1.Kundbehov {
 
     @JsonProperty("ras")
     String ras;

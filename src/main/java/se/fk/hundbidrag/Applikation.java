@@ -2,17 +2,17 @@ package se.fk.hundbidrag;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import se.fk.data.modell.Beslut;
-import se.fk.data.modell.Ersattning;
+import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Kundbehov;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 
+import static se.fk.data.modell.json.Modifiers.getModules;
+
+
 /**
- * Hello world!
- *
  */
 public class Applikation
 {
@@ -29,9 +29,10 @@ public class Applikation
 
         try {
             ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModules(getModules());
 
             // Serialize to JSON
-            String jsonLD = mapper.writeValueAsString(kundbehov);
+            String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
             System.out.println("Object -> JSON:\n" + jsonLD);
 
             // Deserialize from JSON
