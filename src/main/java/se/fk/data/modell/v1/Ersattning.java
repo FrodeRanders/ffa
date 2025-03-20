@@ -7,7 +7,7 @@ import se.fk.data.modell.ffa.Valuta;
 
 import java.util.UUID;
 
-@Context(value = "https://data.fk.se/kontext/ersattning/1.0")
+@Context("https://data.fk.se/kontext/ersattning/1.0")
 public class Ersattning {
     @JsonProperty("id")
     String id;

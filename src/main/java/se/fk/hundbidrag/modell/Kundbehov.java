@@ -6,7 +6,7 @@ import se.fk.data.modell.v1.Ersattning;
 import java.util.Collection;
 
 
-@Context(value = "https://data.fk.se/kontext/hundbidrag/1.0")
+@Context("https://data.fk.se/kontext/hundbidrag/1.0")
 public class Kundbehov extends se.fk.data.modell.v1.Kundbehov {
 
     @JsonProperty("ras")

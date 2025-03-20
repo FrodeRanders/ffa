@@ -31,8 +31,8 @@ public class PropertySerializerModifier extends BeanSerializerModifier {
                 }
                 else {
                     // The field not annotated with @Valuta, so revert to default
-                    bpw.assignSerializer(null);
-                    bpw.assignNullSerializer(null);
+                    //bpw.assignSerializer(null);
+                    //bpw.assignNullSerializer(null);
                 }
             }
         }

@@ -14,7 +14,6 @@ public class Modifiers {
                     .setSerializerModifier(new ContextSerializerModifier())
                     .setDeserializerModifier(new ContextDeserializerModifier());
 
-
     public static final SimpleModule MULTIDIMENSIONAL_PROPERTY_MODULE =
             new SimpleModule()
                     .setSerializerModifier(new PropertySerializerModifier())

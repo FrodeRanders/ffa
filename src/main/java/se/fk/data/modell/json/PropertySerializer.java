@@ -26,16 +26,12 @@ public class PropertySerializer
     // Constructor for when we have annotation values
     protected PropertySerializer(
             String valuta,
-           String skattestatus,
-           String period
+            String skattestatus,
+            String period
     ) {
         this.valuta = valuta;
         this.skattestatus = skattestatus;
         this.period = period;
-    }
-
-    interface PropertyWriter {
-        void writeValue() throws IOException;
     }
 
     public void serialize(Object value,
@@ -47,7 +43,7 @@ public class PropertySerializer
         // "belopp": {
         //   "value": 223,
         //   "valuta": "sfa:SEK",
-        //   "skattestatus": "sfa:skattefri",
+        //   "skattestatus": "sfa:Skattefri",
         //   "period": "sfa:År"
         // }
 
@@ -72,6 +68,8 @@ public class PropertySerializer
             SerializerProvider prov,
             BeanProperty property
     ) throws JsonMappingException {
+
+        System.out.println("property: " + property);
 
         if (property != null) {
             Valuta annotation = property.getAnnotation(Valuta.class);

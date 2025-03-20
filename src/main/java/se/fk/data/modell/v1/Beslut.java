@@ -7,7 +7,7 @@ import se.fk.data.modell.ffa.Context;
 import java.util.Date;
 import java.util.UUID;
 
-@Context(value = "https://data.fk.se/kontext/beslut/1.0")
+@Context("https://data.fk.se/kontext/beslut/1.0")
 public class Beslut {
     public enum Typ {
         INTERRIMISTISK (1),

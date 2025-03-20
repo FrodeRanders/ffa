@@ -35,7 +35,6 @@ public class PropertyDeserializerModifier extends BeanDeserializerModifier {
                     builder.addOrReplaceProperty(prop, true);
                 }
                 else {
-                    System.out.println("annotated member: " + member);
                     // The field not annotated with @Valuta, so revert to default
                     //prop = prop.withValueDeserializer(null);
                     //prop = prop.withNullProvider(null);

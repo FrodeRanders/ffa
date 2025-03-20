@@ -23,8 +23,6 @@ public class ContextSerializerModifier extends BeanSerializerModifier {
             BeanDescription beanDesc,
             List<BeanPropertyWriter> beanProperties) {
 
-        System.out.println("ContextSerializerModifier.changeProperties()");
-
         // Check we have a @Context annotation
         Context annotation = beanDesc.getClassAnnotations().get(Context.class);
         if (null == annotation) {
@@ -54,7 +52,6 @@ public class ContextSerializerModifier extends BeanSerializerModifier {
                 config.getTypeFactory().constructType(String.class)
         );
 
-        System.out.println("Adding ContextPropertyWriter " + writer);
         newProps.add(0, writer); // place "@context" first
         return newProps;
     }

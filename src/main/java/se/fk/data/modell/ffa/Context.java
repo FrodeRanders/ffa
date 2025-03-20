@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * A type-level annotation that indicates we want a
- * "@context" property in the top-level JSON.
+ * "@context" property for this object.
  */
 @Retention(RUNTIME)
 @Target(TYPE)

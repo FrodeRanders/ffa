@@ -8,7 +8,7 @@ import se.fk.data.modell.ffa.Context;
 import java.util.Collection;
 import java.util.UUID;
 
-@Context(value = "https://data.fk.se/kontext/kundbehov/1.0")
+@Context("https://data.fk.se/kontext/kundbehov/1.0")
 public class Kundbehov {
     @JsonProperty("id")
     String id;
