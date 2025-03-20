@@ -3,24 +3,33 @@ package se.fk.data.modell.json;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
-import com.fasterxml.jackson.databind.deser.NullValueProvider;
 
 import java.io.IOException;
 
 public class PropertyDeserializer
         extends JsonDeserializer<Object>
-        implements ContextualDeserializer, NullValueProvider {
+        implements ContextualDeserializer {
 
     private static final String MAGIC_WRAPPED_PROPERTY_NAME = "value";
 
+    private transient String canonicalTypeName = null;
+
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        // Only invoked for properties having a @Valuta annotation
         JsonNode node = p.getCodec().readTree(p);
         JsonNode valNode = node.get(MAGIC_WRAPPED_PROPERTY_NAME);
-        if (null != valNode) {
-            if (valNode.isNumber()) {
-                return valNode.doubleValue();
-            }
+        if (null != valNode && null != canonicalTypeName) {
+            return switch (canonicalTypeName) {
+                case "double" -> valNode.doubleValue();
+                case "int" -> valNode.intValue();
+                case "long" -> valNode.longValue();
+                case "string" -> valNode.textValue();
+                case "short" -> valNode.shortValue();
+                case "boolean" -> valNode.asBoolean();
+                case "float" -> valNode.floatValue();
+                default -> throw new IllegalStateException("Unexpected value: " + canonicalTypeName);
+            };
         }
         return null;
     }
@@ -30,6 +39,16 @@ public class PropertyDeserializer
             DeserializationContext ctxt,
             BeanProperty property
     ) throws JsonMappingException {
+        JavaType type = property.getType();
+        canonicalTypeName = type.toCanonical(); // say "double"
+
         return this;
+    }
+
+    @Override
+    public Object getNullValue(DeserializationContext ctxt) {
+        // This is called if the JSON property is `null`.
+        // Return whatever your domain logic requires.
+        return null;
     }
 }

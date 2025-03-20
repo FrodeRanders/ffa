@@ -23,10 +23,10 @@ public class ContextSerializerModifier extends BeanSerializerModifier {
             BeanDescription beanDesc,
             List<BeanPropertyWriter> beanProperties) {
 
-        // Check we have a @Context annotation
+        // Check if we have a @Context annotation
         Context annotation = beanDesc.getClassAnnotations().get(Context.class);
         if (null == annotation) {
-            return beanProperties; // ignore
+            return beanProperties;
         }
 
         // Add a new VirtualBeanPropertyWriter for "@context"

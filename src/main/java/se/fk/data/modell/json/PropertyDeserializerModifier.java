@@ -2,17 +2,13 @@ package se.fk.data.modell.json;
 
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationConfig;
-import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerBuilder;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
-import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import se.fk.data.modell.ffa.Valuta;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 public class PropertyDeserializerModifier extends BeanDeserializerModifier {
 
@@ -31,15 +27,19 @@ public class PropertyDeserializerModifier extends BeanDeserializerModifier {
                 if (null != annotation) {
                     PropertyDeserializer des = new PropertyDeserializer();
                     prop = prop.withValueDeserializer(des);
-                    prop = prop.withNullProvider(des);
+                    //prop = prop.withNullProvider(des);
                     builder.addOrReplaceProperty(prop, true);
                 }
+                /*
                 else {
-                    // The field not annotated with @Valuta, so revert to default
-                    //prop = prop.withValueDeserializer(null);
-                    //prop = prop.withNullProvider(null);
-                    //builder.addOrReplaceProperty(prop, true);
+                    SettableBeanProperty originalProp = builder.findProperty(prop.getFullName());
+                    if (originalProp != null) {
+                        prop = prop.withValueDeserializer(originalProp.getValueDeserializer());
+                        prop = prop.withNullProvider(originalProp.getNullValueProvider());
+                        builder.addOrReplaceProperty(prop, true);
+                    }
                 }
+                */
             }
         }
         return builder;

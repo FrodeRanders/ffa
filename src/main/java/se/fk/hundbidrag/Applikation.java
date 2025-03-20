@@ -2,8 +2,11 @@ package se.fk.hundbidrag;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import se.fk.data.modell.json.DeserializationSnooper;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Kundbehov;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -16,6 +19,8 @@ import static se.fk.data.modell.json.Modifiers.getModules;
  */
 public class Applikation
 {
+    private final static Logger log = LogManager.getLogger(Applikation.class);
+
     public static void main( String[] args )
     {
         // Creating the object graph
@@ -30,17 +35,18 @@ public class Applikation
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModules(getModules());
+            mapper.addHandler(new DeserializationSnooper());
 
             // Serialize to JSON
             String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
-            System.out.println("Object -> JSON:\n" + jsonLD);
+            log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Deserialize from JSON
             Kundbehov deserializedKundbehov = mapper.readValue(jsonLD, Kundbehov.class);
-            System.out.println("\n\nJSON -> Object:\n" + deserializedKundbehov);
+            log.debug("JSON -> Object:\n{}", deserializedKundbehov);
 
       } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.error("Failed to run demo: {}", e.getMessage(), e);
         }
     }
 }

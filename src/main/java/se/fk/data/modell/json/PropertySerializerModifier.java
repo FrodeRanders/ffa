@@ -1,7 +1,6 @@
 package se.fk.data.modell.json;
 
 import com.fasterxml.jackson.databind.BeanDescription;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
@@ -19,23 +18,18 @@ public class PropertySerializerModifier extends BeanSerializerModifier {
             BeanDescription beanDesc,
             List<BeanPropertyWriter> beanProperties
     ) {
-        List<BeanPropertyWriter> newProps = new ArrayList<>(beanProperties);
+        List<BeanPropertyWriter> writers = new ArrayList<>(beanProperties);
 
-        for (BeanPropertyWriter bpw : newProps) {
-            AnnotatedMember member = bpw.getMember();
+        for (BeanPropertyWriter writer : writers) {
+            AnnotatedMember member = writer.getMember();
 
             if (member != null) {
                 Valuta annotation = member.getAnnotation(Valuta.class);
                 if (null != annotation) {
-                    bpw.assignSerializer(new PropertySerializer());
-                }
-                else {
-                    // The field not annotated with @Valuta, so revert to default
-                    //bpw.assignSerializer(null);
-                    //bpw.assignNullSerializer(null);
+                    writer.assignSerializer(new PropertySerializer());
                 }
             }
         }
-        return newProps;
+        return writers;
     }
 }

@@ -53,6 +53,21 @@ public class PropertySerializer
         if (value instanceof Double d) {
             gen.writeNumberField("value", d);
         }
+        else if (value instanceof Long l) {
+            gen.writeNumberField("value", l);
+        }
+        else if (value instanceof Integer i) {
+            gen.writeNumberField("value", i);
+        }
+        else if (value instanceof Boolean b) {
+            gen.writeBooleanField("value", b);
+        }
+        else if (value instanceof String s) {
+            gen.writeStringField("value", s);
+        }
+        else if (value instanceof Float f) {
+            gen.writeNumberField("value", f);
+        }
 
         gen.writeStringField("valuta", !valuta.isEmpty() ? valuta : null);
         gen.writeStringField("skattestatus", !skattestatus.isEmpty() ? skattestatus : null);
