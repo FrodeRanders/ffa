@@ -10,6 +10,8 @@ import se.fk.data.modell.ffa.Valuta;
 
 import java.io.IOException;
 
+import static se.fk.data.modell.json.PropertyDeserializer.MAGIC_WRAPPED_PROPERTY_NAME;
+
 public class PropertySerializer
         extends JsonSerializer<Object>
         implements ContextualSerializer {
@@ -41,7 +43,7 @@ public class PropertySerializer
 
         // We want to produce JSON like:
         // "belopp": {
-        //   "value": 223,
+        //   "varde": 223,
         //   "valuta": "sfa:SEK",
         //   "skattestatus": "sfa:Skattefri",
         //   "period": "sfa:År"
@@ -51,22 +53,22 @@ public class PropertySerializer
 
         // TODO
         if (value instanceof Double d) {
-            gen.writeNumberField("value", d);
+            gen.writeNumberField(MAGIC_WRAPPED_PROPERTY_NAME, d);
         }
         else if (value instanceof Long l) {
-            gen.writeNumberField("value", l);
+            gen.writeNumberField(MAGIC_WRAPPED_PROPERTY_NAME, l);
         }
         else if (value instanceof Integer i) {
-            gen.writeNumberField("value", i);
+            gen.writeNumberField(MAGIC_WRAPPED_PROPERTY_NAME, i);
         }
         else if (value instanceof Boolean b) {
-            gen.writeBooleanField("value", b);
+            gen.writeBooleanField(MAGIC_WRAPPED_PROPERTY_NAME, b);
         }
         else if (value instanceof String s) {
-            gen.writeStringField("value", s);
+            gen.writeStringField(MAGIC_WRAPPED_PROPERTY_NAME, s);
         }
         else if (value instanceof Float f) {
-            gen.writeNumberField("value", f);
+            gen.writeNumberField(MAGIC_WRAPPED_PROPERTY_NAME, f);
         }
 
         gen.writeStringField("valuta", !valuta.isEmpty() ? valuta : null);

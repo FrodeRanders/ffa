@@ -10,13 +10,13 @@ public class PropertyDeserializer
         extends JsonDeserializer<Object>
         implements ContextualDeserializer {
 
-    private static final String MAGIC_WRAPPED_PROPERTY_NAME = "value";
+    public static final String MAGIC_WRAPPED_PROPERTY_NAME = "varde";
 
     private transient String canonicalTypeName = null;
 
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        // Only invoked for properties having a @Valuta annotation
+        // Only invoked for properties having a @Belopp annotation
         JsonNode node = p.getCodec().readTree(p);
         JsonNode valNode = node.get(MAGIC_WRAPPED_PROPERTY_NAME);
         if (null != valNode && null != canonicalTypeName) {

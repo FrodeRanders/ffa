@@ -23,15 +23,23 @@ public class Applikation
 
     public static void main( String[] args )
     {
-        // Creating the object graph
-        Ersattning ers1 = new Ersattning("Vård", 1000);
-        Ersattning ers2 = new Ersattning("Utställning", 500);
+        // -------------------------------------------------------------------
+        // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
+        // -------------------------------------------------------------------
+        Ersattning ers1 = new Ersattning("Avgift", 1000);
+        Ersattning ers2 = new Ersattning("Bad", 500);
 
-        Kundbehov kundbehov = new Kundbehov("Behov", Arrays.asList(ers1, ers2), "Collie");
+        Kundbehov kundbehov = new Kundbehov("Hundutställning", Arrays.asList(ers1, ers2), "Collie");
 
         Beslut beslut = new Beslut(Date.from(Instant.now()));
         kundbehov.setBeslut(beslut);
 
+        // -------------------------------------------------------------------
+        // Medskickade utility-funktioner hanterar:
+        //  - serialisering
+        //  - lagring
+        //  - återläsning
+        // -------------------------------------------------------------------
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModules(getModules());

@@ -7,7 +7,7 @@ import se.fk.data.modell.ffa.Valuta;
 
 import java.util.UUID;
 
-@Context("https://data.fk.se/kontext/ersattning/1.0")
+@Context("https://data.fk.se/kontext/std/ersattning/1.0")
 public class Ersattning {
     @JsonProperty("id")
     String id;
@@ -15,8 +15,8 @@ public class Ersattning {
     @JsonProperty("version")
     int version = 1;
 
-    @JsonProperty("type")
-    String type;
+    @JsonProperty("typ")
+    String typ;
 
     @Valuta
     @JsonProperty("amount")
@@ -24,11 +24,11 @@ public class Ersattning {
 
     public Ersattning() {} // Required for deserialization
 
-    public Ersattning(String type, double amount) {
+    public Ersattning(String typ, double amount) {
         UUID uuid = Generators.timeBasedEpochGenerator().generate(); // Version 7
         this.id = uuid.toString();
 
-        this.type = type;
+        this.typ = typ;
         this.amount = amount;
     }
 
@@ -37,7 +37,7 @@ public class Ersattning {
         StringBuilder sb = new StringBuilder("Ersattning{");
         sb.append("id='").append(id).append('\'');
         sb.append(", version=").append(version);
-        sb.append(", type='").append(type).append('\'');
+        sb.append(", typ='").append(typ).append('\'');
         sb.append(", amount=").append(amount);
         sb.append('}');
         return sb.toString();

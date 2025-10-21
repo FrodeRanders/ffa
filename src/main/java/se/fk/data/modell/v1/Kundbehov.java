@@ -8,7 +8,7 @@ import se.fk.data.modell.ffa.Context;
 import java.util.Collection;
 import java.util.UUID;
 
-@Context("https://data.fk.se/kontext/kundbehov/1.0")
+@Context("https://data.fk.se/kontext/std/kundbehov/1.0")
 public class Kundbehov {
     @JsonProperty("id")
     String id;
@@ -16,8 +16,8 @@ public class Kundbehov {
     @JsonProperty("version")
     int version = 1;
 
-    @JsonProperty("description")
-    String description;
+    @JsonProperty("beskrivning")
+    String beskrivning;
 
     @JsonProperty("ersattningar")
     Collection<Ersattning> ersattningar;
@@ -28,10 +28,10 @@ public class Kundbehov {
 
     public Kundbehov() {} // Required for deserialization
 
-    public Kundbehov(String description, Collection<Ersattning> ersattningar) {
+    public Kundbehov(String beskrivning, Collection<Ersattning> ersattningar) {
         UUID uuid = Generators.timeBasedEpochGenerator().generate(); // Version 7
         this.id = uuid.toString();
-        this.description = description;
+        this.beskrivning = beskrivning;
         this.ersattningar = ersattningar;
     }
 
@@ -45,7 +45,7 @@ public class Kundbehov {
         StringBuilder sb = new StringBuilder("Kundbehov{");
         sb.append("id='").append(id).append('\'');
         sb.append(", version=").append(version);
-        sb.append(", description='").append(description).append('\'');
+        sb.append(", beskrivning='").append(beskrivning).append('\'');
         sb.append(", ersattningar=").append(ersattningar);
         sb.append('}');
         return sb.toString();
