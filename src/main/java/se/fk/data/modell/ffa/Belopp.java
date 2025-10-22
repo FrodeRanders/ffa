@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RUNTIME)
 @Target(FIELD)
-public @interface Valuta {
+public @interface Belopp {
     String valuta() default "";
     String skattestatus() default "";
     String period() default "";

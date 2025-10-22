@@ -6,16 +6,18 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.ContextualSerializer;
-import se.fk.data.modell.ffa.Valuta;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.fk.data.modell.ffa.Belopp;
 
 import java.io.IOException;
 
 import static se.fk.data.modell.json.PropertyDeserializer.MAGIC_WRAPPED_PROPERTY_NAME;
 
-public class PropertySerializer
-        extends JsonSerializer<Object>
-        implements ContextualSerializer {
+public class PropertySerializer extends JsonSerializer<Object> implements ContextualSerializer {
+    private static final Logger log = LoggerFactory.getLogger(PropertySerializer.class);
 
+    // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
     private final String valuta;
     private final String skattestatus;
     private final String period;
@@ -44,14 +46,13 @@ public class PropertySerializer
         // We want to produce JSON like:
         // "belopp": {
         //   "varde": 223,
-        //   "valuta": "sfa:SEK",
-        //   "skattestatus": "sfa:Skattefri",
-        //   "period": "sfa:År"
+        //   "valuta": "valuta:SEK",
+        //   "skattestatus": "sfa:skattefri",
+        //   "period": "sfa:perdag"
         // }
 
         gen.writeStartObject();
 
-        // TODO
         if (value instanceof Double d) {
             gen.writeNumberField(MAGIC_WRAPPED_PROPERTY_NAME, d);
         }
@@ -71,6 +72,7 @@ public class PropertySerializer
             gen.writeNumberField(MAGIC_WRAPPED_PROPERTY_NAME, f);
         }
 
+        // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
         gen.writeStringField("valuta", !valuta.isEmpty() ? valuta : null);
         gen.writeStringField("skattestatus", !skattestatus.isEmpty() ? skattestatus : null);
         gen.writeStringField("period", !period.isEmpty() ? period : null);
@@ -86,12 +88,13 @@ public class PropertySerializer
             BeanProperty property
     ) throws JsonMappingException {
 
-        System.out.println("property: " + property);
+        log.trace("Creating contextual serialiser for property: {}", property);
 
         if (property != null) {
-            Valuta annotation = property.getAnnotation(Valuta.class);
+            // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
+            Belopp annotation = property.getAnnotation(Belopp.class);
             if (null == annotation) {
-                annotation = property.getContextAnnotation(Valuta.class);
+                annotation = property.getContextAnnotation(Belopp.class);
             }
             if (null != annotation) {
                 // Build a serializer instance configured with the annotation params

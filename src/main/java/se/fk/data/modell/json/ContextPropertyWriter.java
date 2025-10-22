@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.introspect.AnnotatedClass;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.databind.ser.VirtualBeanPropertyWriter;
 import com.fasterxml.jackson.databind.util.Annotations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.fk.data.modell.ffa.Context;
 
 /**
@@ -15,6 +17,8 @@ import se.fk.data.modell.ffa.Context;
  * found in the bean's `@TypeContext` annotation.
  */
 public class ContextPropertyWriter extends VirtualBeanPropertyWriter {
+    private static final Logger log = LoggerFactory.getLogger(ContextPropertyWriter.class);
+
     private static final long serialVersionUID = 1L;
 
     public ContextPropertyWriter() { // Needed for Jackson

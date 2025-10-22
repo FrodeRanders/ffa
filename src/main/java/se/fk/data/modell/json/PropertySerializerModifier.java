@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
-import se.fk.data.modell.ffa.Valuta;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.fk.data.modell.ffa.Belopp;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PropertySerializerModifier extends BeanSerializerModifier {
+    private static final Logger log = LoggerFactory.getLogger(PropertySerializerModifier.class);
 
     @Override
     public List<BeanPropertyWriter> changeProperties(
@@ -24,9 +27,15 @@ public class PropertySerializerModifier extends BeanSerializerModifier {
             AnnotatedMember member = writer.getMember();
 
             if (member != null) {
-                Valuta annotation = member.getAnnotation(Valuta.class);
+                // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
+                Belopp annotation = member.getAnnotation(Belopp.class);
                 if (null != annotation) {
-                    writer.assignSerializer(new PropertySerializer());
+                    log.trace("Annotating property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    writer.assignSerializer(
+                        new PropertySerializer(
+                                annotation.valuta(), annotation.skattestatus(), annotation.period()
+                        )
+                    );
                 }
             }
         }

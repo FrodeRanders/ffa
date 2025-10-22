@@ -9,22 +9,15 @@ import java.util.Collection;
 import java.util.UUID;
 
 @Context("https://data.fk.se/kontext/std/kundbehov/1.0")
-public class Kundbehov {
-    @JsonProperty("id")
-    String id;
-
-    @JsonProperty("version")
-    int version = 1;
-
+public class Kundbehov extends LivscykelHanterad {
     @JsonProperty("beskrivning")
-    String beskrivning;
+    public String beskrivning;
 
     @JsonProperty("ersattningar")
-    Collection<Ersattning> ersattningar;
+    public Collection<Ersattning> ersattningar;
 
     @JsonProperty("beslut")
-    Beslut beslut;
-
+    public Beslut beslut;
 
     public Kundbehov() {} // Required for deserialization
 
@@ -43,8 +36,7 @@ public class Kundbehov {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Kundbehov{");
-        sb.append("id='").append(id).append('\'');
-        sb.append(", version=").append(version);
+        sb.append(super.toString());
         sb.append(", beskrivning='").append(beskrivning).append('\'');
         sb.append(", ersattningar=").append(ersattningar);
         sb.append('}');

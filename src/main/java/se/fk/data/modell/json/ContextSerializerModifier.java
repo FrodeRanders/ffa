@@ -7,12 +7,15 @@ import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.ser.*;
 import com.fasterxml.jackson.databind.introspect.*;
 import com.fasterxml.jackson.databind.util.SimpleBeanPropertyDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.fk.data.modell.ffa.Context;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ContextSerializerModifier extends BeanSerializerModifier {
+    private static final Logger log = LoggerFactory.getLogger(ContextSerializerModifier.class);
 
     private final String CONTEXT_NAME = "@context";
     private final PropertyName contextPropertyName = PropertyName.construct(CONTEXT_NAME);

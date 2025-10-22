@@ -3,12 +3,13 @@ package se.fk.data.modell.json;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public class PropertyDeserializer
-        extends JsonDeserializer<Object>
-        implements ContextualDeserializer {
+public class PropertyDeserializer extends JsonDeserializer<Object> implements ContextualDeserializer {
+    private static final Logger log = LoggerFactory.getLogger(PropertyDeserializer.class);
 
     public static final String MAGIC_WRAPPED_PROPERTY_NAME = "varde";
 
@@ -16,7 +17,7 @@ public class PropertyDeserializer
 
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        // Only invoked for properties having a @Belopp annotation
+        // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
         JsonNode node = p.getCodec().readTree(p);
         JsonNode valNode = node.get(MAGIC_WRAPPED_PROPERTY_NAME);
         if (null != valNode && null != canonicalTypeName) {
@@ -48,7 +49,7 @@ public class PropertyDeserializer
     @Override
     public Object getNullValue(DeserializationContext ctxt) {
         // This is called if the JSON property is `null`.
-        // Return whatever your domain logic requires.
+        // Return whatever the domain logic requires.
         return null;
     }
 }

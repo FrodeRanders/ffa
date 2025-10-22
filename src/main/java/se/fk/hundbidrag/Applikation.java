@@ -1,8 +1,12 @@
 package se.fk.hundbidrag;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
 import se.fk.data.modell.json.DeserializationSnooper;
+import se.fk.data.modell.json.MutationSemantics;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Kundbehov;
 import org.apache.logging.log4j.LogManager;
@@ -12,13 +16,13 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 
+import static java.time.temporal.ChronoUnit.DAYS;
 import static se.fk.data.modell.json.Modifiers.getModules;
 
 
 /**
  */
-public class Applikation
-{
+public class Applikation {
     private final static Logger log = LogManager.getLogger(Applikation.class);
 
     public static void main( String[] args )
@@ -31,7 +35,7 @@ public class Applikation
 
         Kundbehov kundbehov = new Kundbehov("Hundutställning", Arrays.asList(ers1, ers2), "Collie");
 
-        Beslut beslut = new Beslut(Date.from(Instant.now()));
+        Beslut beslut = new Beslut(Date.from(Instant.now().truncatedTo(DAYS)));
         kundbehov.setBeslut(beslut);
 
         // -------------------------------------------------------------------
@@ -41,17 +45,42 @@ public class Applikation
         //  - återläsning
         // -------------------------------------------------------------------
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModules(getModules());
-            mapper.addHandler(new DeserializationSnooper());
+            ObjectMapper mapper = new ObjectMapper()
+                // Date-relaterat
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .setDateFormat(new StdDateFormat().withColonInTimeZone(true))
+                .setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+                //
+                .registerModules(getModules())
+                .addHandler(new DeserializationSnooper());
 
-            // Serialize to JSON
+            // Initial serialize to JSON
             String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
             log.debug("Object -> JSON:\n{}", jsonLD);
+            MutationSemantics.dump();
 
-            // Deserialize from JSON
+            // Subsequent deserialize from JSON
             Kundbehov deserializedKundbehov = mapper.readValue(jsonLD, Kundbehov.class);
             log.debug("JSON -> Object:\n{}", deserializedKundbehov);
+            MutationSemantics.dump();
+
+            // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
+            deserializedKundbehov.beskrivning = "Modifierad beskrivning";
+            deserializedKundbehov.ersattningar.add(new Ersattning("Tork", 100));
+
+            // Re-serialize to JSON
+            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
+            log.debug("Object -> JSON:\n{}", jsonLD);
+            MutationSemantics.dump();
+
+            // Re-modify, operating on same objects (no serializing+deserializing involved)
+            deserializedKundbehov.beskrivning = "Modfierad igen...";
+            deserializedKundbehov.ersattningar.add(new Ersattning("Fön", 200));
+
+            // Re-re-serialize to JSON
+            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
+            log.debug("Object -> JSON:\n{}", jsonLD);
+            MutationSemantics.dump();
 
       } catch (JsonProcessingException e) {
             log.error("Failed to run demo: {}", e.getMessage(), e);

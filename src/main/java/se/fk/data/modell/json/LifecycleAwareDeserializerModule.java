@@ -1,0 +1,35 @@
+package se.fk.data.modell.json;
+
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class LifecycleAwareDeserializerModule extends SimpleModule {
+    private static final Logger log = LoggerFactory.getLogger(LifecycleAwareDeserializerModule.class);
+
+    private final ObjectMapper canonicalMapper;
+
+    public LifecycleAwareDeserializerModule(ObjectMapper canonicalMapper) {
+        this.canonicalMapper = canonicalMapper;
+    }
+
+    @Override
+    public void setupModule(SetupContext context) {
+        context.addBeanDeserializerModifier(new BeanDeserializerModifier() {
+            @Override
+            public JsonDeserializer<?> modifyDeserializer(
+                    DeserializationConfig config,
+                    BeanDescription beanDesc,
+                    JsonDeserializer<?> deserializer
+            ) {
+                if (MutationPredicates.isTrackedClass(beanDesc.getBeanClass())) {
+                    return new LifecycleAwareDeserializer<>(deserializer, beanDesc.getBeanClass(), canonicalMapper);
+                }
+                return deserializer;
+            }
+        });
+        super.setupModule(context);
+    }
+}

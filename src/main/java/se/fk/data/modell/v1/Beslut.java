@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.uuid.Generators;
 import se.fk.data.modell.ffa.Context;
 
+import java.text.DateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 
 @Context("https://data.fk.se/kontext/std/beslut/1.0")
-public class Beslut {
+public class Beslut extends LivscykelHanterad {
     public enum Typ {
         INTERRIMISTISK (1),
         STALLNINGSTAGANDE (2),
@@ -53,29 +55,23 @@ public class Beslut {
         String lagrum;
     }
 
-    @JsonProperty("id")
-    String id;
-
-    @JsonProperty("version")
-    int version = 1;
-
     @JsonProperty("datum")
-    Date datum;
+    public Date datum;
 
     @JsonProperty("beslutsfattare")
-    String beslutsfattare;
+    public String beslutsfattare;
 
     @JsonProperty("typ")
-    Typ typ;
+    public Typ typ;
 
     @JsonProperty("utfall")
-    Utfall utfall;
+    public Utfall utfall;
 
     @JsonProperty("organisation")
-    String organisation;
+    public String organisation;
 
     @JsonProperty("lagrum")
-    Lagrum lagrum;
+    public Lagrum lagrum;
 
     public Beslut() {} // Required for deserialization
 
@@ -88,16 +84,33 @@ public class Beslut {
 
     @Override
     public String toString() {
+        Locale locale = Locale.forLanguageTag("sv");
+        DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, locale);
+
         StringBuilder sb = new StringBuilder("Beslut{");
-        sb.append("id='").append(id).append('\'');
-        sb.append(", version=").append(version);
-        sb.append(", typ='").append(typ).append('\'');
-        sb.append(", datum='").append(datum.toString()).append('\'');
-        sb.append(", beslutsfattare='").append(beslutsfattare).append('\'');
-        sb.append(", typ='").append(typ.name()).append('\'');
-        sb.append(", utfall='").append(utfall.name()).append('\'');
-        sb.append(", organisation='").append(organisation).append('\'');
-        sb.append(", lagrum='").append(lagrum.name()).append('\'');
+        sb.append(super.toString());
+        sb.append(", datum='").append(df.format(datum)).append('\'');
+        sb.append(", beslutsfattare=");
+        if (null != beslutsfattare) {
+            sb.append('\'').append(beslutsfattare).append('\'');
+        }
+        sb.append(", typ=");
+        if (null != typ)
+        {
+            sb.append('\'').append(typ.name()).append('\'');
+        }
+        sb.append(", utfall=");
+        if (null != utfall) {
+            sb.append('\'').append(utfall.name()).append('\'');
+        }
+        sb.append(", organisation=");
+        if (null != organisation) {
+            sb.append('\'').append(organisation).append('\'');
+        }
+        sb.append(", lagrum=");
+        if (null != lagrum) {
+            sb.append('\'').append(lagrum.name()).append('\'');
+        }
         sb.append('}');
         return sb.toString();
     }
