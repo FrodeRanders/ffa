@@ -36,8 +36,8 @@ public final class LifecycleAwareSerializer<T> extends StdSerializer<T> {
         byte[] stored  = beanState.digest;
 
         boolean isNew = null == stored;
-
         boolean isModified = !beanState.compareWith(current);
+
         if (isNew) {
             log.trace("** New bean: {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
         } else if (isModified) {
@@ -49,6 +49,9 @@ public final class LifecycleAwareSerializer<T> extends StdSerializer<T> {
             if (bean instanceof LivscykelHanterad lifeCycledBean) {
                 log.trace("Stepping version of bean: {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
                 lifeCycledBean.stepVersion();
+
+                // Recalculate digest (after having modified version)
+                current = DigestUtils.computeDigest(bean, canonicalMapper);
             }
         }
 
