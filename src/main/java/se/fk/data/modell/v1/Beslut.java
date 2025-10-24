@@ -76,9 +76,7 @@ public class Beslut extends LivscykelHanterad {
     public Beslut() {} // Required for deserialization
 
     public Beslut(Date datum) {
-        UUID uuid = Generators.timeBasedEpochGenerator().generate(); // Version 7
-        this.id = uuid.toString();
-
+        super(null);
         this.datum = datum;
     }
 

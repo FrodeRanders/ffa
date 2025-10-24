@@ -20,8 +20,7 @@ public class Ersattning extends LivscykelHanterad {
     public Ersattning() {} // Required for deserialization
 
     public Ersattning(String typ, double belopp) {
-        UUID uuid = Generators.timeBasedEpochGenerator().generate(); // Version 7
-        this.id = uuid.toString();
+        super(null);
 
         this.typ = typ;
         this.belopp = belopp;

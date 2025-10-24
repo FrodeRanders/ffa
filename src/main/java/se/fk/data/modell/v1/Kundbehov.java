@@ -22,8 +22,8 @@ public class Kundbehov extends LivscykelHanterad {
     public Kundbehov() {} // Required for deserialization
 
     public Kundbehov(String beskrivning, Collection<Ersattning> ersattningar) {
-        UUID uuid = Generators.timeBasedEpochGenerator().generate(); // Version 7
-        this.id = uuid.toString();
+        super(null);
+
         this.beskrivning = beskrivning;
         this.ersattningar = ersattningar;
     }
