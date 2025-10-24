@@ -1,12 +1,10 @@
 package se.fk.hundbidrag;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import se.fk.data.modell.json.DeserializationSnooper;
-import se.fk.data.modell.json.MutationSemantics;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Kundbehov;
 import org.apache.logging.log4j.LogManager;
@@ -57,12 +55,10 @@ public class Applikation {
             // Initial serialize to JSON
             String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
             log.debug("Object -> JSON:\n{}", jsonLD);
-            MutationSemantics.dump();
 
             // Subsequent deserialize from JSON
             Kundbehov deserializedKundbehov = mapper.readValue(jsonLD, Kundbehov.class);
             log.debug("JSON -> Object:\n{}", deserializedKundbehov);
-            MutationSemantics.dump();
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
             deserializedKundbehov.beskrivning = "Modifierad beskrivning";
@@ -71,7 +67,6 @@ public class Applikation {
             // Re-serialize to JSON
             jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
             log.debug("Object -> JSON:\n{}", jsonLD);
-            MutationSemantics.dump();
 
             // Re-modify, operating on same objects (no serializing+deserializing involved)
             deserializedKundbehov.beskrivning = "Modfierad igen...";
@@ -80,7 +75,6 @@ public class Applikation {
             // Re-re-serialize to JSON
             jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
             log.debug("Object -> JSON:\n{}", jsonLD);
-            MutationSemantics.dump();
 
       } catch (JsonProcessingException e) {
             log.error("Failed to run demo: {}", e.getMessage(), e);

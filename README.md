@@ -306,28 +306,38 @@ se.fk.data.modell.json.MutationSemantics             Initiating state for bean: 
 
 se.fk.hundbidrag.Applikation JSON -> Object:
 Kundbehov{
- id='019a1076-2403-7cc8-be2b-53e1256af498',
- version=1,
- beskrivning='Hundutställning',
- ersattningar=[
-   Ersattning{
-     id='019a1076-2401-76b3-a145-74d25ffdd489',
-     version=1,
-     typ='Avgift',
-     belopp=1000.0
-   },
-   Ersattning{
-     id='019a1076-2403-7520-b9b7-9d344c7f3d4d',
-     version=1,
-     typ='Bad',
-     belopp=500.0
-   }
- ]
+  id='019a15dd-9823-7332-90df-6d5fc9e9c9c7', 
+  version=1, 
+  beskrivning='Hundutställning', 
+  ersattningar=[
+    Ersattning{
+      id='019a15dd-9821-7b60-96ae-aeb2121fbba5', 
+      version=1, 
+      typ='Avgift', 
+      belopp=1000.0
+    }, 
+    Ersattning{
+      id='019a15dd-9822-76e5-b180-1208168739c7', 
+      version=1, 
+      typ='Bad', 
+      belopp=500.0
+    }
+  ], 
+  beslut=Beslut{
+    id='019a15dd-9823-7756-8969-b433d72e58e4', 
+    version=1, 
+    datum='2025-10-24', 
+    beslutsfattare=, 
+    typ=, 
+    utfall=, 
+    organisation=, 
+    lagrum=
+  }
+} + {
+  ras='Collie'
 }
-+{ras='Collie'}
 ```
 Notera hur det expanderade beloppet i JSON-serialiseringen nu återuppstår som ```belopp``` i ```Ersattning```.
-Tydligen ligger det en hund begraven här, för beslutet har inte deserialiserats korrekt -- får fixa det vid tillfälle.
 
 Nästa steg är att simulera en ändring i processens tillstånd -- i detta fall så har beskrivningen av
 Kundbehovet modifierats och vi har lagt till en ny ersättning (för torkning efter bad -- mycket viktigt):

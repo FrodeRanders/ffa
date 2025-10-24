@@ -1,11 +1,16 @@
 package se.fk.data.modell.v1;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.uuid.Generators;
 
+import java.security.MessageDigest;
 import java.util.UUID;
 
 public class LivscykelHanterad {
+    @JsonIgnore
+    public transient byte[] digest;
+
     @JsonProperty("id")
     public String id;
 
@@ -26,6 +31,18 @@ public class LivscykelHanterad {
             this.id = id;
         }
         this.version = 0;
+    }
+
+    public boolean compareDigest(byte[] current) {
+        return MessageDigest.isEqual(current, digest);
+    }
+
+    public void resetDigest(byte[] current) {
+        digest = current;
+    }
+
+    public byte[] getDigest() {
+        return digest;
     }
 
     @Override

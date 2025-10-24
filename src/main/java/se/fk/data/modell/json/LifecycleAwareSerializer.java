@@ -11,7 +11,7 @@ import se.fk.data.modell.v1.LivscykelHanterad;
 
 import java.io.IOException;
 
-public final class LifecycleAwareSerializer<T> extends StdSerializer<T> {
+public final class LifecycleAwareSerializer<T extends LivscykelHanterad> extends StdSerializer<T> {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareSerializer.class);
 
     private final JsonSerializer<Object> defaultSerializer;
@@ -31,12 +31,11 @@ public final class LifecycleAwareSerializer<T> extends StdSerializer<T> {
 
     @Override
     public void serialize(T bean, JsonGenerator gen, SerializerProvider provider) throws IOException {
-        MutationSemantics.BeanState beanState = MutationSemantics.of(bean);
         byte[] current = DigestUtils.computeDigest(bean, canonicalMapper);
-        byte[] stored  = beanState.digest;
+        byte[] stored  = bean.getDigest();
 
         boolean isNew = null == stored;
-        boolean isModified = !beanState.compareWith(current);
+        boolean isModified = !bean.compareDigest(current);
 
         if (isNew) {
             log.trace("** New bean: {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
@@ -55,7 +54,7 @@ public final class LifecycleAwareSerializer<T> extends StdSerializer<T> {
             }
         }
 
-        beanState.resetTo(current);
+        bean.resetDigest(current);
 
         // Delegate the actual JSON structure
         defaultSerializer.serialize(bean, gen, provider);

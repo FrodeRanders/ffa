@@ -23,7 +23,6 @@ public class Kundbehov extends LivscykelHanterad {
 
     public Kundbehov(String beskrivning, Collection<Ersattning> ersattningar) {
         super(null);
-
         this.beskrivning = beskrivning;
         this.ersattningar = ersattningar;
     }
@@ -39,6 +38,10 @@ public class Kundbehov extends LivscykelHanterad {
         sb.append(super.toString());
         sb.append(", beskrivning='").append(beskrivning).append('\'');
         sb.append(", ersattningar=").append(ersattningar);
+        sb.append(", beslut=");
+        if (null != beslut) {
+            sb.append(beslut);
+        }
         sb.append('}');
         return sb.toString();
     }

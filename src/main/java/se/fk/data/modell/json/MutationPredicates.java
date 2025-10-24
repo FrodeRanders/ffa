@@ -3,12 +3,12 @@ package se.fk.data.modell.json;
 public final class MutationPredicates {
 
     /** Is this a class, for which we will track modifications? */
-    public static boolean isTrackedClass(Class<?> raw) {
+    public static boolean isLifeCycleHandled(Class<?> raw) {
         return raw != null && se.fk.data.modell.v1.LivscykelHanterad.class.isAssignableFrom(raw);
     }
 
     /*
-    public static boolean isTrackedType(com.fasterxml.jackson.databind.JavaType t) {
+    public static boolean isLifeCycleHandled(com.fasterxml.jackson.databind.JavaType t) {
         return t != null && isTrackedClass(t.getRawClass());
     }
     */

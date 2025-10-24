@@ -6,10 +6,11 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.fk.data.modell.v1.LivscykelHanterad;
 
 import java.io.IOException;
 
-public final class LifecycleAwareDeserializer<T> extends com.fasterxml.jackson.databind.deser.std.DelegatingDeserializer {
+public final class LifecycleAwareDeserializer<T extends LivscykelHanterad> extends com.fasterxml.jackson.databind.deser.std.DelegatingDeserializer {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareDeserializer.class);
 
     private final Class<T> type;
@@ -33,11 +34,11 @@ public final class LifecycleAwareDeserializer<T> extends com.fasterxml.jackson.d
 
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        Object bean = super.deserialize(p, ctxt);
+        T bean = (T) super.deserialize(p, ctxt);
         log.debug("Deserialized bean {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
 
         byte[] pristine = DigestUtils.computeDigest(bean, canonicalMapper);
-        MutationSemantics.of(bean).resetTo(pristine);
+        bean.resetDigest(pristine);
         return bean;
     }
 }
