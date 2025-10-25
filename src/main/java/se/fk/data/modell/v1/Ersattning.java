@@ -1,11 +1,8 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.uuid.Generators;
 import se.fk.data.modell.ffa.Context;
 import se.fk.data.modell.ffa.Belopp;
-
-import java.util.UUID;
 
 @Context("https://data.fk.se/kontext/std/ersattning/1.0")
 public class Ersattning extends LivscykelHanterad {

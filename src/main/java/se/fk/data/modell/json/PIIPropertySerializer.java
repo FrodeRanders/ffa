@@ -8,34 +8,27 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.ContextualSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.ffa.Belopp;
+import se.fk.data.modell.ffa.PII;
 
 import java.io.IOException;
 
-import static se.fk.data.modell.json.PropertyDeserializer.MAGIC_WRAPPED_PROPERTY_NAME;
+public class PIIPropertySerializer extends JsonSerializer<Object> implements ContextualSerializer {
+    private static final Logger log = LoggerFactory.getLogger(PIIPropertySerializer.class);
 
-public class PropertySerializer extends JsonSerializer<Object> implements ContextualSerializer {
-    private static final Logger log = LoggerFactory.getLogger(PropertySerializer.class);
+    public static final String MAGIC_WRAPPED_PROPERTY_NAME = "varde";
 
-    // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
-    private final String valuta;
-    private final String skattestatus;
-    private final String period;
+    private final String typ;
 
     // No-arg constructor for Jackson
-    public PropertySerializer() {
-        this("", "", "");
+    public PIIPropertySerializer() {
+        this("");
     }
 
     // Constructor for when we have annotation values
-    protected PropertySerializer(
-            String valuta,
-            String skattestatus,
-            String period
+    protected PIIPropertySerializer(
+            String typ
     ) {
-        this.valuta = valuta;
-        this.skattestatus = skattestatus;
-        this.period = period;
+        this.typ = typ;
     }
 
     public void serialize(Object value,
@@ -44,11 +37,9 @@ public class PropertySerializer extends JsonSerializer<Object> implements Contex
     ) throws IOException {
 
         // We want to produce JSON like:
-        // "belopp": {
-        //   "varde": 223,
-        //   "valuta": "valuta:SEK",
-        //   "skattestatus": "sfa:skattefri",
-        //   "period": "sfa:perdag"
+        // "personId": {
+        //   "varde": "19121212-1212",
+        //   "typ": "pii:personnummer"
         // }
 
         gen.writeStartObject();
@@ -72,10 +63,7 @@ public class PropertySerializer extends JsonSerializer<Object> implements Contex
             gen.writeNumberField(MAGIC_WRAPPED_PROPERTY_NAME, f);
         }
 
-        // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
-        gen.writeStringField("valuta", !valuta.isEmpty() ? valuta : null);
-        gen.writeStringField("skattestatus", !skattestatus.isEmpty() ? skattestatus : null);
-        gen.writeStringField("period", !period.isEmpty() ? period : null);
+        gen.writeStringField("typ", !typ.isEmpty() ? typ : null);
 
         gen.writeEndObject();
     }
@@ -91,17 +79,14 @@ public class PropertySerializer extends JsonSerializer<Object> implements Contex
         log.trace("Creating contextual serialiser for property: {}", property);
 
         if (property != null) {
-            // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
-            Belopp annotation = property.getAnnotation(Belopp.class);
+            PII annotation = property.getAnnotation(PII.class);
             if (null == annotation) {
-                annotation = property.getContextAnnotation(Belopp.class);
+                annotation = property.getContextAnnotation(PII.class);
             }
             if (null != annotation) {
                 // Build a serializer instance configured with the annotation params
-                return new PropertySerializer(
-                        annotation.valuta(),
-                        annotation.skattestatus(),
-                        annotation.period()
+                return new PIIPropertySerializer(
+                        annotation.typ()
                 );
             }
         }

@@ -50,6 +50,23 @@ public class Kundbehov extends LivscykelHanterad {
    ...
 }
 ```
+
+### Fysisk person
+```java
+package se.fk.data.modell.v1;
+
+import ...
+
+@Context("https://data.fk.se/kontext/std/fysiskperson/1.0")
+public class FysiskPerson {
+    @PII(typ="pii:personnummer")
+    @JsonProperty("personnummer")
+    public String personnummer;
+
+    ...
+}
+```
+
 ### Beslut
 ```java
 package se.fk.data.modell.v1;
@@ -171,6 +188,9 @@ Ersattning ers2 = new Ersattning("Bad", 500);
 
 Kundbehov kundbehov = new Kundbehov("Hundutställning", Arrays.asList(ers1, ers2), "Collie");
 
+FysiskPerson person = new FysiskPerson("19121212-1212");
+kundbehov.setPerson(person);
+
 Beslut beslut = new Beslut(Date.from(Instant.now().truncatedTo(DAYS)));
 kundbehov.setBeslut(beslut);
 ```
@@ -199,7 +219,8 @@ se.fk.data.modell.json.LifecycleAwareSerializer   Created for se.fk.hundbidrag.m
 se.fk.data.modell.json.MutationSemantics          Initiating state for bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
 se.fk.data.modell.json.LifecycleAwareSerializer   ** New bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
 se.fk.data.modell.json.LifecycleAwareSerializer   Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
-se.fk.data.modell.json.PropertySerializerModifier Annotating property se.fk.data.modell.v1.Ersattning#belopp
+se.fk.data.modell.json.PropertySerializerModifier @PII property se.fk.data.modell.v1.FysiskPerson#personnummer)
+se.fk.data.modell.json.PropertySerializerModifier @Belopp property se.fk.data.modell.v1.Ersattning#belopp
 se.fk.data.modell.json.LifecycleAwareSerializer   Created for se.fk.data.modell.v1.Ersattning
 se.fk.data.modell.json.MutationSemantics          Initiating state for bean: se.fk.data.modell.v1.Ersattning@4426bff1
 se.fk.data.modell.json.LifecycleAwareSerializer   ** New bean: se.fk.data.modell.v1.Ersattning@4426bff1
@@ -220,43 +241,51 @@ Låt oss återkomma till vad som händer med ```se.fk.data.modell.v1.Ersattning#
 att vi tittat på producerad JSON.
 ```json
 {
-   "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
-   "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
-   "version" : 1,
-   "beskrivning" : "Hundutställning",
+    "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+    "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
+    "version" : 1,
+    "beskrivning" : "Hundutställning",
 
-   "ersattningar" : [ {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
-       "version" : 1,
-       "typ" : "Avgift",
-       "belopp" : {
-           "varde" : 1000.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   }, {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-2403-7520-b9b7-9d344c7f3d4d",
-       "version" : 1,
-       "typ" : "Bad",
-       "belopp" : {
-           "varde" : 500.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   } ],
+    "person" : {
+        "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+        "personnummer" : {
+            "varde" : "19121212-1212",
+            "typ" : "pii:personnummer"
+        }
+    },
+  
+    "ersattningar" : [ {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
+        "version" : 1,
+        "typ" : "Avgift",
+        "belopp" : {
+            "varde" : 1000.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    }, {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-2403-7520-b9b7-9d344c7f3d4d",
+        "version" : 1,
+        "typ" : "Bad",
+        "belopp" : {
+            "varde" : 500.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    } ],
 
-   "beslut" : {
-       "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-       "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
-       "version" : 1,
-       "datum" : "2025-10-23T00:00:00.000+00:00"
-   },
+    "beslut" : {
+        "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
+        "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
+        "version" : 1,
+        "datum" : "2025-10-23T00:00:00.000+00:00"
+    },
 
- "ras" : "Collie"
+    "ras" : "Collie"
 }
 ```
 
@@ -267,10 +296,10 @@ expanderats till:
 
 ```json
 "belopp" : {
-   "varde" : 1000.0,
-   "valuta" : null,
-   "skattestatus" : null,
-   "period" : null
+    "varde" : 1000.0,
+    "valuta" : null,
+    "skattestatus" : null,
+    "period" : null
 }
 ```
 
@@ -292,7 +321,9 @@ Låt oss titta på loggen:
 
 ```terminaloutput
 se.fk.data.modell.json.LifecycleAwareDeserializer    Created for se.fk.hundbidrag.modell.Kundbehov
+se.fk.data.modell.json.PropertyDeserializerModifier  @PII property se.fk.data.modell.v1.FysiskPerson#personnummer
 se.fk.data.modell.json.LifecycleAwareDeserializer    Created for se.fk.data.modell.v1.Beslut
+se.fk.data.modell.json.PropertyDeserializerModifier  @Belopp property se.fk.data.modell.v1.Ersattning#belopp
 se.fk.data.modell.json.PropertyDeserializerModifier  Handling annotated property se.fk.data.modell.v1.Ersattning#belopp
 se.fk.data.modell.json.LifecycleAwareDeserializer    Created for se.fk.data.modell.v1.Ersattning
 se.fk.data.modell.json.LifecycleAwareDeserializer    Deserialized bean se.fk.data.modell.v1.Ersattning@12c7a01b
@@ -309,6 +340,9 @@ Kundbehov{
   id='019a15dd-9823-7332-90df-6d5fc9e9c9c7', 
   version=1, 
   beskrivning='Hundutställning', 
+  person=FysiskPerson{
+    personnummer='19121212-1212'
+  },
   ersattningar=[
     Ersattning{
       id='019a15dd-9821-7b60-96ae-aeb2121fbba5', 
@@ -386,54 +420,62 @@ serialiserad JSON som i objektet.
 
 ```json
 {
-   "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
-   "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
-   "version" : 2,
-   "beskrivning" : "Modifierad beskrivning",
+    "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+    "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
+    "version" : 2,
+    "beskrivning" : "Modifierad beskrivning",
 
-   "ersattningar" : [ {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
-       "version" : 1,
-       "typ" : "Avgift",
-       "belopp" : {
-           "varde" : 1000.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   }, {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-2403-7520-b9b7-9d344c7f3d4d",
-       "version" : 1,
-       "typ" : "Bad",
-       "belopp" : {
-           "varde" : 500.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   }, {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-24a1-7a49-91a5-7c5986586039",
-       "version" : 1,
-       "typ" : "Tork",
-       "belopp" : {
-       "varde" : 100.0,
-       "valuta" : null,
-       "skattestatus" : null,
-       "period" : null
-       }
-   } ],
+    "person" : {
+        "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+        "personnummer" : {
+            "varde" : "19121212-1212",
+            "typ" : "pii:personnummer"
+        }
+    },
 
-   "beslut" : {
-       "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-       "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
-       "version" : 1,
-       "datum" : "2025-10-23T00:00:00.000+00:00"
-   },
+    "ersattningar" : [ {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
+        "version" : 1,
+        "typ" : "Avgift",
+        "belopp" : {
+            "varde" : 1000.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    }, {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-2403-7520-b9b7-9d344c7f3d4d",
+        "version" : 1,
+        "typ" : "Bad",
+        "belopp" : {
+            "varde" : 500.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    }, {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-24a1-7a49-91a5-7c5986586039",
+        "version" : 1,
+        "typ" : "Tork",
+        "belopp" : {
+            "varde" : 100.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    } ],
 
-   "ras" : "Collie"
+    "beslut" : {
+        "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
+        "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
+        "version" : 1,
+        "datum" : "2025-10-23T00:00:00.000+00:00"
+    },
+
+    "ras" : "Collie"
 }
 ```
 
@@ -463,65 +505,73 @@ Och så tittar vi på producerad JSON:
 
 ```json
 {
-   "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
-   "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
-   "version" : 3,
-   "beskrivning" : "Modfierad igen...",
+    "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+    "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
+    "version" : 3,
+    "beskrivning" : "Modfierad igen...",
 
-   "ersattningar" : [ {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
-       "version" : 1,
-       "typ" : "Avgift",
-       "belopp" : {
-           "varde" : 1000.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   }, {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-2403-7520-b9b7-9d344c7f3d4d",
-       "version" : 1,
-       "typ" : "Bad",
-       "belopp" : {
-           "varde" : 500.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   }, {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-24a1-7a49-91a5-7c5986586039",
-       "version" : 1,
-       "typ" : "Tork",
-       "belopp" : {
-           "varde" : 100.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   }, {
-       "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
-       "id" : "019a1076-24a4-7bd9-a25e-6c9f14177fd4",
-       "version" : 1,
-       "typ" : "Fön",
-       "belopp" : {
-           "varde" : 200.0,
-           "valuta" : null,
-           "skattestatus" : null,
-           "period" : null
-       }
-   } ],
+    "person" : {
+        "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+        "personnummer" : {
+            "varde" : "19121212-1212",
+            "typ" : "pii:personnummer"
+        }
+    },
 
-   "beslut" : {
-       "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-       "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
-       "version" : 1,
-       "datum" : "2025-10-23T00:00:00.000+00:00"
-   },
+    "ersattningar" : [ {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
+        "version" : 1,
+        "typ" : "Avgift",
+        "belopp" : {
+            "varde" : 1000.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    }, {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-2403-7520-b9b7-9d344c7f3d4d",
+        "version" : 1,
+        "typ" : "Bad",
+        "belopp" : {
+            "varde" : 500.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    }, {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-24a1-7a49-91a5-7c5986586039",
+        "version" : 1,
+        "typ" : "Tork",
+        "belopp" : {
+            "varde" : 100.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    }, {
+        "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+        "id" : "019a1076-24a4-7bd9-a25e-6c9f14177fd4",
+        "version" : 1,
+        "typ" : "Fön",
+        "belopp" : {
+            "varde" : 200.0,
+            "valuta" : null,
+            "skattestatus" : null,
+            "period" : null
+        }
+    } ],
 
-   "ras" : "Collie"
+    "beslut" : {
+        "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
+        "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
+        "version" : 1,
+        "datum" : "2025-10-23T00:00:00.000+00:00"
+    },
+
+    "ras" : "Collie"
 }
 ```
 

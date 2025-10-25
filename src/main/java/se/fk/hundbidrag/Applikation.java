@@ -33,6 +33,9 @@ public class Applikation {
 
         Kundbehov kundbehov = new Kundbehov("Hundutställning", Arrays.asList(ers1, ers2), "Collie");
 
+        FysiskPerson person = new FysiskPerson("19121212-1212");
+        kundbehov.setPerson(person);
+
         Beslut beslut = new Beslut(Date.from(Instant.now().truncatedTo(DAYS)));
         kundbehov.setBeslut(beslut);
 

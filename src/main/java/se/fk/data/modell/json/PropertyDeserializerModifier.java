@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.deser.BeanDeserializerBuilder;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
+import com.fasterxml.jackson.databind.introspect.AnnotationMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.ffa.Belopp;
+import se.fk.data.modell.ffa.PII;
 
 import java.util.Iterator;
 
@@ -26,25 +28,30 @@ public class PropertyDeserializerModifier extends BeanDeserializerModifier {
             SettableBeanProperty prop = it.next();
             AnnotatedMember member = prop.getMember();
             if (member != null) {
-                // TODO Currently hardcoded for @Belopp, should ofcourse be handled dynamically
-                Belopp annotation = member.getAnnotation(Belopp.class);
-                if (null != annotation) {
-                    log.trace("Handling annotated property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
-                    PropertyDeserializer des = new PropertyDeserializer();
-                    prop = prop.withValueDeserializer(des);
-                    //prop = prop.withNullProvider(des);
-                    builder.addOrReplaceProperty(prop, true);
-                }
-                /*
-                else {
-                    SettableBeanProperty originalProp = builder.findProperty(prop.getFullName());
-                    if (originalProp != null) {
-                        prop = prop.withValueDeserializer(originalProp.getValueDeserializer());
-                        prop = prop.withNullProvider(originalProp.getNullValueProvider());
+                AnnotationMap annotations = member.getAllAnnotations();
+                if (annotations != null) {
+                    //------------------------------------------------
+                    // These are all the known property annotations,
+                    // known at design-time (i.e. right now)
+                    //------------------------------------------------
+                    PII pii = annotations.get(PII.class);
+                    if (null != pii) {
+                        log.trace("@PII property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                        PIIPropertyDeserializer des = new PIIPropertyDeserializer();
+                        prop = prop.withValueDeserializer(des);
+                        //prop = prop.withNullProvider(des);
                         builder.addOrReplaceProperty(prop, true);
+                    } else {
+                        Belopp belopp = annotations.get(Belopp.class);
+                        if (null != belopp) {
+                            log.trace("@Belopp property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                            BeloppPropertyDeserializer des = new BeloppPropertyDeserializer();
+                            prop = prop.withValueDeserializer(des);
+                            //prop = prop.withNullProvider(des);
+                            builder.addOrReplaceProperty(prop, true);
+                        }
                     }
                 }
-                */
             }
         }
         return builder;
