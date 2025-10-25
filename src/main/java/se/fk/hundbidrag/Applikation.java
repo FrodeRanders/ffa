@@ -28,10 +28,10 @@ public class Applikation {
         // -------------------------------------------------------------------
         // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
         // -------------------------------------------------------------------
-        Ersattning ers1 = new Ersattning("Avgift", 1000);
-        Ersattning ers2 = new Ersattning("Bad", 500);
+        Ersattning ers1 = new Ersattning(Ersattning.Typ.HUNDBIDRAG, 1000);
+        Ersattning ers2 = new Ersattning(Ersattning.Typ.HUNDBIDRAG, 500);
 
-        Kundbehov kundbehov = new Kundbehov("Hundutställning", Arrays.asList(ers1, ers2), "Collie");
+        Kundbehov kundbehov = new Kundbehov("Hundutställning (inkl. bad)", Arrays.asList(ers1, ers2), "Collie");
 
         FysiskPerson person = new FysiskPerson("19121212-1212");
         kundbehov.setPerson(person);
@@ -64,16 +64,16 @@ public class Applikation {
             log.debug("JSON -> Object:\n{}", deserializedKundbehov);
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
-            deserializedKundbehov.beskrivning = "Modifierad beskrivning";
-            deserializedKundbehov.ersattningar.add(new Ersattning("Tork", 100));
+            deserializedKundbehov.beskrivning = "Hundutställning (inkl. bad och tork)";
+            deserializedKundbehov.ersattningar.add(new Ersattning(Ersattning.Typ.HUNDBIDRAG, 100));
 
             // Re-serialize to JSON
             jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Re-modify, operating on same objects (no serializing+deserializing involved)
-            deserializedKundbehov.beskrivning = "Modfierad igen...";
-            deserializedKundbehov.ersattningar.add(new Ersattning("Fön", 200));
+            deserializedKundbehov.beskrivning = "Hundutställning (inkl. bad, tork och fön)";
+            deserializedKundbehov.ersattningar.add(new Ersattning(Ersattning.Typ.HUNDBIDRAG, 200));
 
             // Re-re-serialize to JSON
             jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);

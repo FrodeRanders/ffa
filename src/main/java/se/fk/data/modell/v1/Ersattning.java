@@ -5,9 +5,22 @@ import se.fk.data.modell.ffa.Context;
 import se.fk.data.modell.ffa.Belopp;
 
 @Context("https://data.fk.se/kontext/std/ersattning/1.0")
-public class Ersattning extends LivscykelHanterad {
+public class Ersattning extends ProduceratResultat {
+    public enum Typ {
+        SJUKPENNING ("ersattningstyp:SJUKPENNING"),
+        FORALDRAPENNING ("ersattningstyp:FORALDRAPENNING"),
+        HUNDBIDRAG ("ersattningstyp:HUNDBIDRAG");
+
+        Typ(String typ) {
+            this.typ = typ;
+        }
+
+        String typ;
+    }
+
+
     @JsonProperty("typ")
-    public String typ;
+    public Typ typ;
 
     @Belopp
     // or @Belopp(valuta="valuta:SEK", skattestatus="sfa:skattepliktig", period="sfa:perdag")
@@ -16,7 +29,7 @@ public class Ersattning extends LivscykelHanterad {
 
     public Ersattning() {} // Required for deserialization
 
-    public Ersattning(String typ, double belopp) {
+    public Ersattning(Typ typ, double belopp) {
         super(null);
 
         this.typ = typ;
@@ -27,7 +40,10 @@ public class Ersattning extends LivscykelHanterad {
     public String toString() {
         StringBuilder sb = new StringBuilder("Ersattning{");
         sb.append(super.toString());
-        sb.append(", typ='").append(typ).append('\'');
+        sb.append(", typ=");
+        if (null != typ) {
+            sb.append('\'').append(typ.typ).append('\'');
+        }
         sb.append(", belopp=").append(belopp);
         sb.append('}');
         return sb.toString();

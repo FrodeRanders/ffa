@@ -37,7 +37,7 @@ public class PropertySerializerModifier extends BeanSerializerModifier {
                     //------------------------------------------------
                     PII pii = annotations.get(PII.class);
                     if (null != pii) {
-                        log.trace("@PII property {}#{})", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                        log.trace("@PII property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
                         writer.assignSerializer(
                                 new PIIPropertySerializer(
                                         pii.typ()
