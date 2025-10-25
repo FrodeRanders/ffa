@@ -237,8 +237,9 @@ se.fk.data.modell.json.LifecycleAwareSerializer   Stepping version of bean: se.f
 se.fk.data.modell.json.LifecycleAwareSerializer   Serialized bean se.fk.data.modell.v1.Beslut@34158c08
 se.fk.data.modell.json.LifecycleAwareSerializer   Serialized bean se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
 ```
-Låt oss återkomma till vad som händer med ```se.fk.data.modell.v1.Ersattning#belopp``` vid serialisering efter
-att vi tittat på producerad JSON.
+Låt oss titta på vad som händer med ```se.fk.data.modell.v1.FysiskPerson#personnummer``` och 
+```se.fk.data.modell.v1.Ersattning#belopp``` vid serialisering efter att vi tittat på producerad JSON.
+
 ```json
 {
     "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
@@ -302,12 +303,29 @@ expanderats till:
     "period" : null
 }
 ```
+Samma sak gäller ```personnummer``` i ```FysiskPerson```, som annoterats med ```@PII(typ="pii:personnummer")``` 
+och som därför expanderats till:
 
-Detta möjliggör att vi (senare) kan tillföra kontext vid överföring av beloppsuppgift, från Hundbidragets
-förmånskontext (förmånsspråk) till FFAs utbyteskontext (organisationsspråk). Det finns en variant
-av ```@Belopp```-annotering där man kan tillföra kontext direkt i realiseringen, men det vore inte lämpligt
-i detta fall, där annoteringen sitter på standard-realiseringen av ```Ersättning``` -- här bör
-kontext tillföras i ett eftersteg via ```@Context```-annoteringen.
+```json
+"personnummer" : {
+    "varde" : "19121212-1212",
+    "typ" : "pii:personnummer"
+}
+```
+
+Detta möjliggör att vi (senare) kan tillföra kontext vid överföring från Hundbidragets
+förmånskontext (förmånsspråk) till FFAs utbyteskontext (organisationsspråk). 
+
+Det finns i allmänhet två varianter av dessa annoteringar:
+ * en som expanderas i producerad JSON men med 'null'-värden och som möjliggör att dessa värden tillförs i ett eftersteg, samt
+ * en som expanderas men med hårdkodade värden från källkoden, där man tillför kontext direkt i realiseringen.
+
+I fallet med ```@Belopp```-annoteringen så vore det inte lämpligt att göra detta i en basklass
+(där annoteringen sitter på standard-realiseringen av ```Ersättning```) eftersom vi har både
+dagförmåner och periodbaserade förmåner, samt både skattade och oskattade ersättningar.
+
+Här bör kontext kring överföring av 'belopp' tillföras i ett eftersteg via context-hanteringen,
+som beror på ```@Context```-annoteringen.
 
 Nåväl; vi föreställer oss att vi vid ett senare tillfälle återhämtar processes tillstånd, varvid
 vi erhåller en JSON (samma JSON som vi tidigare producerade) och deserialiserar denna:
