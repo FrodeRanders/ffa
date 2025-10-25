@@ -21,13 +21,14 @@ package se.fk.data.modell.v1;
 import ...
 
 public class LivscykelHanterad {
-   @JsonProperty("id")
-   public String id;
 
-   @JsonProperty("version")
-   public int version = 0;
+    @JsonProperty("id")
+    public String id;
 
-   ...
+    @JsonProperty("version")
+    public int version = 0;
+
+    ...
 }
 ```
 ### Kundbehov
@@ -38,16 +39,20 @@ import ...
 
 @Context("https://data.fk.se/kontext/std/kundbehov/1.0")
 public class Kundbehov extends LivscykelHanterad {
-   @JsonProperty("beskrivning")
-   public String beskrivning;
 
-   @JsonProperty("ersattningar")
-   public Collection<Ersattning> ersattningar;
+    @JsonProperty("person")
+    public FysiskPerson person;
 
-   @JsonProperty("beslut")
-   public Beslut beslut;
+    @JsonProperty("beskrivning")
+    public String beskrivning;
 
-   ...
+    @JsonProperty("ersattningar")
+    public Collection<Ersattning> ersattningar;
+
+    @JsonProperty("beslut")
+    public Beslut beslut;
+
+    ...
 }
 ```
 
@@ -59,6 +64,7 @@ import ...
 
 @Context("https://data.fk.se/kontext/std/fysiskperson/1.0")
 public class FysiskPerson {
+
     @PII(typ="pii:personnummer")
     @JsonProperty("personnummer")
     public String personnummer;
@@ -75,57 +81,58 @@ import ...
 
 @Context("https://data.fk.se/kontext/std/beslut/1.0")
 public class Beslut extends LivscykelHanterad {
-   public enum Typ {
-       INTERRIMISTISK (1),
-       STALLNINGSTAGANDE (2),
-       SLUTLIGT (3);
 
-       ...
-   }
+    public enum Typ {
+        INTERRIMISTISK (1),
+        STALLNINGSTAGANDE (2),
+        SLUTLIGT (3);
 
-   public enum Utfall {
-       BEVILJAT (1),
-       AVSLAG (2),
-       DELVIS_BEVILJANDE (3),
-       AVVISNING (4),
-       AVSKRIVNING (5);
+        ...
+    }
 
-       ...
-   }
+    public enum Utfall {
+        BEVILJAT (1),
+        AVSLAG (2),
+        DELVIS_BEVILJANDE (3),
+        AVVISNING (4),
+        AVSKRIVNING (5);
 
-   public enum Lagrum {
-       SFB_K112_P2a ("SFB Kap. 112 § 2a"),
-       SFB_K112_P3 ("SFB Kap. 112 § 3"),
-       SFB_K112_P4 ("SFB Kap. 112 § 4"),
-       SFB_K113_P3_S1 ("SFB Kap. 113 § 3 p. 1"),
-       SFB_K113_P3_S2 ("SFB Kap. 113 § 3 p. 2"),
-       SFB_K113_P3_S3 ("SFB Kap. 113 § 3 p. 3"),
-       FL_P36 ("FL § 36"),
-       FL_P37 ("FL § 37"),
-       FL_P38 ("FL § 38");
+        ...
+    }
 
-       ...
-   }
+    public enum Lagrum {
+        SFB_K112_P2a ("SFB Kap. 112 § 2a"),
+        SFB_K112_P3 ("SFB Kap. 112 § 3"),
+        SFB_K112_P4 ("SFB Kap. 112 § 4"),
+        SFB_K113_P3_S1 ("SFB Kap. 113 § 3 p. 1"),
+        SFB_K113_P3_S2 ("SFB Kap. 113 § 3 p. 2"),
+        SFB_K113_P3_S3 ("SFB Kap. 113 § 3 p. 3"),
+        FL_P36 ("FL § 36"),
+        FL_P37 ("FL § 37"),
+        FL_P38 ("FL § 38");
 
-   @JsonProperty("datum")
-   public Date datum;
+        ...
+    }
 
-   @JsonProperty("beslutsfattare")
-   public String beslutsfattare;
+    @JsonProperty("datum")
+    public Date datum;
 
-   @JsonProperty("typ")
-   public Typ typ;
+    @JsonProperty("beslutsfattare")
+    public String beslutsfattare;
 
-   @JsonProperty("utfall")
-   public Utfall utfall;
+    @JsonProperty("typ")
+    public Typ typ;
 
-   @JsonProperty("organisation")
-   public String organisation;
+    @JsonProperty("utfall")
+    public Utfall utfall;
 
-   @JsonProperty("lagrum")
-   public Lagrum lagrum;
+    @JsonProperty("organisation")
+    public String organisation;
 
-   ...
+    @JsonProperty("lagrum")
+    public Lagrum lagrum;
+
+    ...
 }
 ```
 
@@ -137,17 +144,19 @@ import ...
 
 @Context("https://data.fk.se/kontext/std/ersattning/1.0")
 public class Ersattning extends LivscykelHanterad {
-   @JsonProperty("typ")
-   public String typ;
 
-   @Belopp
-   // or @Belopp(valuta="valuta:SEK", skattestatus="sfa:skattepliktig", period="sfa:perdag")
-   @JsonProperty("belopp")
-   public double belopp;
+    @JsonProperty("typ")
+    public String typ;
 
-   ...
+    @Belopp
+    // or @Belopp(valuta="valuta:SEK", skattestatus="sfa:skattepliktig", period="sfa:perdag")
+    @JsonProperty("belopp")
+    public double belopp;
+
+    ...
 }
 ```
+
 ### Utvidgning av Kundbehov för Hundbidraget (löjligt exempel)
 I detta exempel, så har FFA-standard Kundbehov utvidgats med uppgift om hundens ras. För
 utvidgning används Javas arvsmekanism.
@@ -159,10 +168,10 @@ import ...
 @Context("https://data.fk.se/kontext/hundbidrag/kundbehov/1.0")
 public class Kundbehov extends se.fk.data.modell.v1.Kundbehov {
 
-   @JsonProperty("ras")
-   String ras;
+    @JsonProperty("ras")
+    String ras;
 
-   ...
+    ...
 }
 ```
 
@@ -174,6 +183,7 @@ package se.fk.hundbidrag;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Kundbehov;
 import ...
+...
 ```
 Instansiera objekt efter behov, huvudsakligen från FFAs standardmodell, men också egna utvidgningar.
 I detta exempel används Hundbidragets Kundbehov (istället för FFA-standard Kundbehov), som är
@@ -201,13 +211,13 @@ så görs en serialisering av processens hela nuvarande tillstånd till JSON. Ta
 att paketera denna funktionalitet i en Mimer-proxy:
 ```java
 ObjectMapper mapper = new ObjectMapper()
-   // Date-relaterat
-   .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-   .setDateFormat(new StdDateFormat().withColonInTimeZone(true))
-   .setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
-   //
-   .registerModules(getModules())
-   .addHandler(new DeserializationSnooper());
+    // Date-relaterat
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    .setDateFormat(new StdDateFormat().withColonInTimeZone(true))
+    .setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+    //
+    .registerModules(getModules())
+    .addHandler(new DeserializationSnooper());
 
 // Initial serialize to JSON
 String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
@@ -355,38 +365,34 @@ se.fk.data.modell.json.MutationSemantics             Initiating state for bean: 
 
 se.fk.hundbidrag.Applikation JSON -> Object:
 Kundbehov{
-  id='019a15dd-9823-7332-90df-6d5fc9e9c9c7', 
-  version=1, 
-  beskrivning='Hundutställning', 
-  person=FysiskPerson{
-    personnummer='19121212-1212'
-  },
-  ersattningar=[
-    Ersattning{
-      id='019a15dd-9821-7b60-96ae-aeb2121fbba5', 
-      version=1, 
-      typ='Avgift', 
-      belopp=1000.0
-    }, 
-    Ersattning{
-      id='019a15dd-9822-76e5-b180-1208168739c7', 
-      version=1, 
-      typ='Bad', 
-      belopp=500.0
-    }
-  ], 
-  beslut=Beslut{
-    id='019a15dd-9823-7756-8969-b433d72e58e4', 
+    id='019a15dd-9823-7332-90df-6d5fc9e9c9c7', 
     version=1, 
-    datum='2025-10-24', 
-    beslutsfattare=, 
-    typ=, 
-    utfall=, 
-    organisation=, 
-    lagrum=
+    beskrivning='Hundutställning', 
+    person=FysiskPerson{
+        personnummer='19121212-1212'
+    },
+    ersattningar=[
+        Ersattning{
+            id='019a15dd-9821-7b60-96ae-aeb2121fbba5', 
+            version=1, 
+            typ='Avgift', 
+            belopp=1000.0
+        }, 
+        Ersattning{
+            id='019a15dd-9822-76e5-b180-1208168739c7', 
+            version=1, 
+            typ='Bad', 
+            belopp=500.0
+        }
+    ], 
+    beslut=Beslut{
+        id='019a15dd-9823-7756-8969-b433d72e58e4', 
+        version=1, 
+        datum='2025-10-24', 
+        ...
   }
 } + {
-  ras='Collie'
+    ras='Collie'
 }
 ```
 Notera hur det expanderade beloppet i JSON-serialiseringen nu återuppstår som ```belopp``` i ```Ersattning```.
