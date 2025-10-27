@@ -1,8 +1,8 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.*;
+import tools.jackson.databind.deser.ValueDeserializerModifier;
+import tools.jackson.databind.module.SimpleModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.v1.LivscykelHanterad;
@@ -18,12 +18,12 @@ public class LifecycleAwareDeserializerModule extends SimpleModule {
 
     @Override
     public void setupModule(SetupContext context) {
-        context.addBeanDeserializerModifier(new BeanDeserializerModifier() {
+        context.addDeserializerModifier(new ValueDeserializerModifier() {
             @Override
-            public JsonDeserializer<?> modifyDeserializer(
+            public ValueDeserializer<?> modifyDeserializer(
                     DeserializationConfig config,
-                    BeanDescription beanDesc,
-                    JsonDeserializer<?> deserializer
+                    BeanDescription.Supplier beanDesc,
+                    ValueDeserializer<?> deserializer
             ) {
                 Class<?> beanClass = beanDesc.getBeanClass();
                 if (MutationPredicates.isLifeCycleHandled(beanClass)) {

@@ -1,23 +1,24 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.v1.LivscykelHanterad;
 
 import java.io.IOException;
 
-public final class LifecycleAwareDeserializer<T extends LivscykelHanterad> extends com.fasterxml.jackson.databind.deser.std.DelegatingDeserializer {
+public final class LifecycleAwareDeserializer<T extends LivscykelHanterad> extends tools.jackson.databind.deser.std.DelegatingDeserializer {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareDeserializer.class);
 
     private final Class<T> type;
     private final ObjectMapper canonicalMapper;
 
     public LifecycleAwareDeserializer(
-            JsonDeserializer<?> delegate,
+            ValueDeserializer<?> delegate,
             Class<T> type,
             ObjectMapper canonicalMapper
     ) {
@@ -28,12 +29,16 @@ public final class LifecycleAwareDeserializer<T extends LivscykelHanterad> exten
         log.debug("Created for {}", type.getCanonicalName());
     }
 
-    @Override protected JsonDeserializer<?> newDelegatingInstance(JsonDeserializer<?> newDelegate) {
+    @Override protected ValueDeserializer<?> newDelegatingInstance(ValueDeserializer<?> newDelegate) {
         return new LifecycleAwareDeserializer<>(newDelegate, type, canonicalMapper);
     }
 
     @Override
-    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public Object deserialize(
+            JsonParser p,
+            DeserializationContext ctxt
+    ) throws JacksonException {
+
         T bean = (T) super.deserialize(p, ctxt);
         log.debug("Deserialized bean {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
 

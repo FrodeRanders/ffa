@@ -1,13 +1,13 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.cfg.MapperConfig;
-import com.fasterxml.jackson.databind.introspect.AnnotatedClass;
-import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
-import com.fasterxml.jackson.databind.ser.VirtualBeanPropertyWriter;
-import com.fasterxml.jackson.databind.util.Annotations;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.cfg.MapperConfig;
+import tools.jackson.databind.introspect.AnnotatedClass;
+import tools.jackson.databind.introspect.BeanPropertyDefinition;
+import tools.jackson.databind.ser.VirtualBeanPropertyWriter;
+import tools.jackson.databind.util.Annotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.ffa.Context;
@@ -51,7 +51,7 @@ public class ContextPropertyWriter extends VirtualBeanPropertyWriter {
     protected Object value(
             Object bean,
             JsonGenerator gen,
-            SerializerProvider prov
+            SerializationContext prov
     ) throws Exception {
         // Look for @Context annotation
         Context annotation = bean.getClass().getAnnotation(Context.class);

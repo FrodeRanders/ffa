@@ -1,8 +1,8 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
+import tools.jackson.databind.*;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.ValueSerializerModifier;
 import se.fk.data.modell.v1.LivscykelHanterad;
 
 public class LifecycleAwareSerializerModule extends SimpleModule {
@@ -14,17 +14,17 @@ public class LifecycleAwareSerializerModule extends SimpleModule {
 
     @Override
     public void setupModule(SetupContext context) {
-        context.addBeanSerializerModifier(new BeanSerializerModifier() {
+        context.addSerializerModifier(new ValueSerializerModifier() {
             @Override
-            public JsonSerializer<?> modifySerializer(
+            public ValueSerializer<?> modifySerializer(
                     SerializationConfig config,
-                    BeanDescription beanDesc,
-                    JsonSerializer<?> serializer
+                    BeanDescription.Supplier beanDesc,
+                    ValueSerializer<?> serializer
             ) {
                 Class<?> beanClass = beanDesc.getBeanClass();
                 if (MutationPredicates.isLifeCycleHandled(beanClass)) {
                     return new LifecycleAwareSerializer<>(
-                            (JsonSerializer<Object>) serializer,
+                            (ValueSerializer<Object>) serializer,
                             (Class<LivscykelHanterad>) beanClass,
                             canonicalMapper
                     );

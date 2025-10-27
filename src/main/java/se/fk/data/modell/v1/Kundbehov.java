@@ -3,12 +3,14 @@ package se.fk.data.modell.v1;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import se.fk.data.modell.ffa.Context;
+import se.fk.data.modell.ffa.Som;
 
 import java.util.Collection;
 
 
 @Context("https://data.fk.se/kontext/std/kundbehov/1.0")
 public class Kundbehov extends LivscykelHanterad {
+    @Som(typ = "ffa:yrkande")
     @JsonProperty("person")
     public FysiskPerson person;
 

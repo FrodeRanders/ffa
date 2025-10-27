@@ -1,9 +1,8 @@
 package se.fk.hundbidrag;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.util.StdDateFormat;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import se.fk.data.modell.json.DeserializationSnooper;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Kundbehov;
@@ -46,14 +45,11 @@ public class Applikation {
         //  - återläsning
         // -------------------------------------------------------------------
         try {
-            ObjectMapper mapper = new ObjectMapper()
-                // Date-relaterat
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .setDateFormat(new StdDateFormat().withColonInTimeZone(true))
-                .setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
-                //
-                .registerModules(getModules())
-                .addHandler(new DeserializationSnooper());
+            JsonMapper mapper = JsonMapper.builder()
+                    .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+                    .addModules(getModules())
+                    .addHandler(new DeserializationSnooper())
+                    .build();
 
             // Initial serialize to JSON
             String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
@@ -79,7 +75,7 @@ public class Applikation {
             jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
-      } catch (JsonProcessingException e) {
+      } catch (JacksonException e) {
             log.error("Failed to run demo: {}", e.getMessage(), e);
         }
     }

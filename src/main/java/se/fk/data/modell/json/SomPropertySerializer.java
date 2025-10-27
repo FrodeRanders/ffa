@@ -1,28 +1,29 @@
 package se.fk.data.modell.json;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.BeanProperty;
-import tools.jackson.databind.ValueSerializer;
-import tools.jackson.databind.SerializationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.ffa.PII;
+import se.fk.data.modell.ffa.Som;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-public class PiiPropertySerializer extends ValueSerializer<Object> {
-    private static final Logger log = LoggerFactory.getLogger(PiiPropertySerializer.class);
+public class SomPropertySerializer extends ValueSerializer<Object> {
+    private static final Logger log = LoggerFactory.getLogger(SomPropertySerializer.class);
 
     public static final String MAGIC_WRAPPED_PROPERTY_NAME = "varde";
 
     private final String typ;
 
     // No-arg constructor for Jackson
-    public PiiPropertySerializer() {
+    public SomPropertySerializer() {
         this("");
     }
 
     // Constructor for when we have annotation values
-    protected PiiPropertySerializer(
+    protected SomPropertySerializer(
             String typ
     ) {
         this.typ = typ;
@@ -37,38 +38,22 @@ public class PiiPropertySerializer extends ValueSerializer<Object> {
         //--------------------------------------
         // For annotated properties like:
         //
-        //    @PII(typ="pii:personnummer")
-        //    @JsonProperty("personnummer")
-        //    public String personnummer;
+        //    @Som(typ="ffa:yrkande")
+        //    @JsonProperty("person")
+        //    public FysiskPerson person;
         //
         // we want to produce JSON like:
         //
-        //    "personnummer": {
-        //       "varde": "19121212-1212",
-        //       "typ": "pii:personnummer"
+        //    "person": {
+        //       TODO
+        //       "varde": "...",
+        //       "typ": "ffa:yrkande"
         //    }
         //--------------------------------------
 
         gen.writeStartObject();
 
-        if (value instanceof Double d) {
-            gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, d);
-        }
-        else if (value instanceof Long l) {
-            gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, l);
-        }
-        else if (value instanceof Integer i) {
-            gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, i);
-        }
-        else if (value instanceof Boolean b) {
-            gen.writeBooleanProperty(MAGIC_WRAPPED_PROPERTY_NAME, b);
-        }
-        else if (value instanceof String s) {
-            gen.writeStringProperty(MAGIC_WRAPPED_PROPERTY_NAME, s);
-        }
-        else if (value instanceof Float f) {
-            gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, f);
-        }
+        gen.writePOJOProperty(MAGIC_WRAPPED_PROPERTY_NAME, value);
 
         gen.writeStringProperty("typ", !typ.isEmpty() ? typ : null);
 
@@ -86,13 +71,13 @@ public class PiiPropertySerializer extends ValueSerializer<Object> {
         log.trace("Creating contextual serialiser for property: {}", property);
 
         if (property != null) {
-            PII annotation = property.getAnnotation(PII.class);
+            Som annotation = property.getAnnotation(Som.class);
             if (null == annotation) {
-                annotation = property.getContextAnnotation(PII.class);
+                annotation = property.getContextAnnotation(Som.class);
             }
             if (null != annotation) {
                 // Build a serializer instance configured with the annotation params
-                return new PiiPropertySerializer(
+                return new SomPropertySerializer(
                         annotation.typ()
                 );
             }

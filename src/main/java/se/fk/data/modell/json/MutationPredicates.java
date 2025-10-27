@@ -1,5 +1,7 @@
 package se.fk.data.modell.json;
 
+import tools.jackson.databind.JavaType;
+
 public final class MutationPredicates {
 
     /** Is this a class, for which we will track modifications? */
@@ -8,7 +10,7 @@ public final class MutationPredicates {
     }
 
     /*
-    public static boolean isLifeCycleHandled(com.fasterxml.jackson.databind.JavaType t) {
+    public static boolean isLifeCycleHandled(JavaType t) {
         return t != null && isTrackedClass(t.getRawClass());
     }
     */
