@@ -22,6 +22,9 @@ import ...
 
 public class LivscykelHanterad {
 
+    @JsonIgnore
+    public transient byte[] digest;
+
     @JsonProperty("id")
     public String id;
 
