@@ -1,22 +1,22 @@
 package se.fk.data.modell.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tools.jackson.databind.jsontype.TypeDeserializer;
 
-public class BeloppPropertyDeserializer extends ValueDeserializer<Object> {
-    private static final Logger log = LoggerFactory.getLogger(BeloppPropertyDeserializer.class);
+public class SomPropertyDeserializer extends ValueDeserializer<Object> {
+    private static final Logger log = LoggerFactory.getLogger(SomPropertyDeserializer.class);
 
     private final JavaType valueType; // target type of the property, e.g. String, long, Double
 
-    public BeloppPropertyDeserializer() {
+    public SomPropertyDeserializer() {
         this(null);
     }
 
-    private BeloppPropertyDeserializer(JavaType valueType) {
+    private SomPropertyDeserializer(JavaType valueType) {
         this.valueType = valueType;
     }
 
@@ -70,13 +70,11 @@ public class BeloppPropertyDeserializer extends ValueDeserializer<Object> {
     ) throws JacksonException {
         JsonNode node = p.readValueAsTree();
 
-        JsonNode valNode = node.get(BeloppPropertySerializer.MAGIC_WRAPPED_PROPERTY_NAME); // "varde"
+        JsonNode valNode = node.get(PIIPropertySerializer.MAGIC_WRAPPED_PROPERTY_NAME); // "varde"
         if (valNode == null || valNode.isNull()) {
             return null;
         }
 
-        // Let Jackson convert the tree node to the property's declared type
-        // using the proper deserializer (dates, numbers, custom types, etc.)
         return ctxt.readTreeAsValue(valNode, valueType);
     }
 
@@ -86,6 +84,11 @@ public class BeloppPropertyDeserializer extends ValueDeserializer<Object> {
             BeanProperty property
     ) {
         // Capture the property's declared JavaType for use above
-        return new BeloppPropertyDeserializer(property.getType());
+        return new SomPropertyDeserializer(property.getType());
+    }
+
+    @Override
+    public Object getNullValue(DeserializationContext ctxt) {
+        return null;
     }
 }

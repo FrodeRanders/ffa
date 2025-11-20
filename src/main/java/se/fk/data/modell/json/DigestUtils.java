@@ -1,6 +1,6 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,10 @@ public class DigestUtils {
         }
     }
 
-    public static byte[] computeDigest(Object bean, ObjectMapper mapper) throws IOException {
+    public static byte[] computeDigest(
+            Object bean,
+            ObjectMapper mapper
+    ) {
         byte[] json = mapper.writeValueAsBytes(bean);
         return sha256.digest(json);
     }

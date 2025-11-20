@@ -3,6 +3,7 @@ package se.fk.data.modell.v1;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import se.fk.data.modell.annotations.Context;
+import se.fk.data.modell.annotations.Som;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +30,7 @@ import java.util.Collections;
 
 @Context("https://data.fk.se/kontext/std/kundbehov/1.0")
 public class Kundbehov extends LivscykelHanterad {
+    @Som(typ = "ffa:yrkande")
     @JsonProperty("person")
     public Person person;
 
@@ -73,7 +75,7 @@ public class Kundbehov extends LivscykelHanterad {
         if (null != beslut) {
             sb.append(beslut);
         }
-        sb.append(", producerade-resultat=");
+        sb.append(", producerade-resultat=[");
         for (ProduceratResultat pr : produceradeResultat) {
             sb.append(pr);
             sb.append(", ");

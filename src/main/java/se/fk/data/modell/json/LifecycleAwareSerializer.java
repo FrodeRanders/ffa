@@ -1,10 +1,11 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.std.StdSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.v1.LivscykelHanterad;
@@ -14,11 +15,11 @@ import java.io.IOException;
 public final class LifecycleAwareSerializer<T extends LivscykelHanterad> extends StdSerializer<T> {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareSerializer.class);
 
-    private final JsonSerializer<Object> defaultSerializer;
+    private final ValueSerializer<Object> defaultSerializer;
     private final ObjectMapper canonicalMapper;
 
     LifecycleAwareSerializer(
-            JsonSerializer<Object> defaultSerializer,
+            ValueSerializer<Object> defaultSerializer,
             Class<T> type,
             ObjectMapper canonicalMapper
     ) {
@@ -30,7 +31,11 @@ public final class LifecycleAwareSerializer<T extends LivscykelHanterad> extends
     }
 
     @Override
-    public void serialize(T bean, JsonGenerator gen, SerializerProvider provider) throws IOException {
+    public void serialize(
+            T bean,
+            JsonGenerator gen,
+            SerializationContext provider
+    ) throws JacksonException {
         byte[] current = DigestUtils.computeDigest(bean, canonicalMapper);
         byte[] stored  = bean.getDigest();
 

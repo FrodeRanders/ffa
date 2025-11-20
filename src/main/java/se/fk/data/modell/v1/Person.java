@@ -1,7 +1,7 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import tools.jackson.databind.annotation.JsonTypeIdResolver;
 import se.fk.data.modell.adapters.PersonTypeIdResolver;
 
 @JsonTypeInfo(
@@ -12,5 +12,5 @@ import se.fk.data.modell.adapters.PersonTypeIdResolver;
 )
 @JsonTypeIdResolver(PersonTypeIdResolver.class)
 public abstract class Person {
-    public Person() {} // Required for deserialization
+    //public Person() {} // Required for deserialization
 }

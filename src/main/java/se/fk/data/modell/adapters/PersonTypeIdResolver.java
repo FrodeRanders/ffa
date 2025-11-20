@@ -1,15 +1,20 @@
 package se.fk.data.modell.adapters;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.DatabindContext;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.fk.data.modell.json.PropertyDeserializerModifier;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindContext;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import se.fk.data.modell.v1.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PersonTypeIdResolver extends TypeIdResolverBase {
+    private static final Logger log = LoggerFactory.getLogger(PersonTypeIdResolver.class);
 
     private static final Map<String, Class<?>> ID_TO_CLASS = new ConcurrentHashMap<>();
     private static final Map<Class<?>, String> CLASS_TO_ID = new ConcurrentHashMap<>();
@@ -24,6 +29,25 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
         // Register all known subtypes of Person
         register(FysiskPerson.class);
         register(JuridiskPerson.class);
+    }
+
+    @Override
+    public String idFromValue(DatabindContext ctxt, Object value) throws JacksonException {
+        log.debug("idFromValue: {}", value);
+        return idFromValueAndType(ctxt, value, value.getClass());
+    }
+
+    @Override
+    public String idFromValueAndType(DatabindContext ctxt, Object value, Class<?> suggestedType) throws JacksonException {
+        log.debug("idFromValueAndType: {}, {}", value, suggestedType);
+
+        String id = CLASS_TO_ID.get(suggestedType);
+        if (id == null) {
+            throw new IllegalStateException(
+                    "No @Context registered for subtype " + suggestedType.getName()
+            );
+        }
+        return id;
     }
 
     private static void register(Class<?> subtype) {
@@ -47,24 +71,12 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
         CLASS_TO_ID.putIfAbsent(subtype, id);
     }
 
-    @Override
-    public String idFromValue(Object value) {
-        return idFromValueAndType(value, value.getClass());
-    }
 
-    @Override
-    public String idFromValueAndType(Object value, Class<?> suggestedType) {
-        String id = CLASS_TO_ID.get(suggestedType);
-        if (id == null) {
-            throw new IllegalStateException(
-                    "No @Context registered for subtype " + suggestedType.getName()
-            );
-        }
-        return id;
-    }
 
     @Override
     public JavaType typeFromId(DatabindContext context, String id) {
+        log.debug("typeFromId: {}", id);
+
         Class<?> subtype = ID_TO_CLASS.get(id);
         if (subtype == null) {
             throw new IllegalArgumentException(

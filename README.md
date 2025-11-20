@@ -43,6 +43,7 @@ import ...
 @Context("https://data.fk.se/kontext/std/kundbehov/1.0")
 public class Kundbehov extends LivscykelHanterad {
 
+    @Som(typ = "ffa:yrkande")
     @JsonProperty("person")
     public Person person;
 
@@ -195,6 +196,8 @@ utvidgat med uppgift om hundens ras.
 // -------------------------------------------------------------------
 // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
 // -------------------------------------------------------------------
+Ersattning ers1 = new Ersattning("Avgift", 1000);
+Ersattning ers2 = new Ersattning("Bad", 500);
 
 // Efter etablering av kundbehov och i samband med initiering av kundbehovsflöde
 /* Yrkan */ Kundbehov kundbehov = new Kundbehov("Hundutställning (inkl. bad)","Collie");
@@ -267,6 +270,7 @@ log.debug("Object -> JSON:\n{}", jsonLD);
 ```
 Låt oss titta på loggen som svarar mot serialiseringen:
 ```terminaloutput
+se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.Kundbehov#person
 se.fk.data.modell.json.LifecycleAwareSerializer   Created for se.fk.hundbidrag.modell.Kundbehov
 se.fk.data.modell.json.MutationSemantics          Initiating state for bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
 se.fk.data.modell.json.LifecycleAwareSerializer   ** New bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
@@ -299,15 +303,7 @@ Låt oss titta på vad som händer med ```se.fk.data.modell.v1.FysiskPerson#pers
     "version" : 1,
     "beskrivning" : "Hundutställning",
 
-    "person" : {
-        "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
-        "personnummer" : {
-            "varde" : "19121212-1212",
-            "typ" : "pii:personnummer"
-        }
-    },
-  
-    "ersattningar" : [ {
+    "producerade-resultat" : [ {
         "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
         "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
         "version" : 1,
@@ -338,6 +334,17 @@ Låt oss titta på vad som händer med ```se.fk.data.modell.v1.FysiskPerson#pers
         "datum" : "2025-10-23T00:00:00.000+00:00"
     },
 
+    "person" : {
+        "varde" : {
+            "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+            "personnummer" : {
+                "varde" : "19121212-1212",
+                "typ" : "pii:personnummer"
+            }
+        },
+        "typ" : "ffa:yrkande"
+    },
+
     "ras" : "Collie"
 }
 ```
@@ -359,10 +366,17 @@ Samma sak gäller ```personnummer``` i ```FysiskPerson```, som annoterats med ``
 och som därför expanderats till:
 
 ```json
-"personnummer" : {
-    "varde" : "19121212-1212",
-    "typ" : "pii:personnummer"
-}
+"person" : {
+    "varde" : {
+        "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+        "personnummer" : {
+            "varde" : "19121212-1212",
+            "typ" : "pii:personnummer"
+        }
+    },
+    "typ" : "ffa:yrkande"
+},
+
 ```
 
 Detta möjliggör att vi (senare) kan tillföra kontext vid överföring från Hundbidragets
@@ -413,7 +427,7 @@ Kundbehov{
     person=FysiskPerson{
         personnummer='19121212-1212'
     },
-    ersattningar=[
+    produceradeResultat[
         Ersattning{
             id='019a15dd-9821-7b60-96ae-aeb2121fbba5', 
             version=1, 
@@ -491,12 +505,11 @@ serialiserad JSON som i objektet.
     "version" : 2,
     "beskrivning" : "Modifierad beskrivning",
 
-    "person" : {
-        "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
-        "personnummer" : {
-            "varde" : "19121212-1212",
-            "typ" : "pii:personnummer"
-        }
+    "beslut" : {
+        "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
+        "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
+        "version" : 1,
+        "datum" : "2025-10-23T00:00:00.000+00:00"
     },
 
     "ersattningar" : [ {
@@ -534,11 +547,15 @@ serialiserad JSON som i objektet.
         }
     } ],
 
-    "beslut" : {
-        "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-        "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
-        "version" : 1,
-        "datum" : "2025-10-23T00:00:00.000+00:00"
+    "person" : {
+        "varde" : {
+            "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+            "personnummer" : {
+                "varde" : "19121212-1212",
+                "typ" : "pii:personnummer"
+            }
+        },
+        "typ" : "ffa:yrkande"
     },
 
     "ras" : "Collie"
@@ -576,15 +593,14 @@ Och så tittar vi på producerad JSON:
     "version" : 3,
     "beskrivning" : "Modfierad igen...",
 
-    "person" : {
-        "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
-        "personnummer" : {
-            "varde" : "19121212-1212",
-            "typ" : "pii:personnummer"
-        }
+    "beslut" : {
+        "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
+        "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
+        "version" : 1,
+        "datum" : "2025-10-23T00:00:00.000+00:00"
     },
 
-    "ersattningar" : [ {
+    "producerade-resultat" : [ {
         "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
         "id" : "019a1076-2401-76b3-a145-74d25ffdd489",
         "version" : 1,
@@ -630,11 +646,15 @@ Och så tittar vi på producerad JSON:
         }
     } ],
 
-    "beslut" : {
-        "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-        "id" : "019a1076-2404-7791-a7d2-7d669e66fcff",
-        "version" : 1,
-        "datum" : "2025-10-23T00:00:00.000+00:00"
+    "person" : {
+        "varde" : {
+            "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+            "personnummer" : {
+                "varde" : "19121212-1212",
+                "typ" : "pii:personnummer"
+            }
+        },
+        "typ" : "ffa:yrkande"
     },
 
     "ras" : "Collie"

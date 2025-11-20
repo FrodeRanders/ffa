@@ -1,12 +1,12 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.databind.BeanDescription;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.PropertyName;
-import com.fasterxml.jackson.databind.SerializationConfig;
-import com.fasterxml.jackson.databind.ser.*;
-import com.fasterxml.jackson.databind.introspect.*;
-import com.fasterxml.jackson.databind.util.SimpleBeanPropertyDefinition;
+import tools.jackson.databind.BeanDescription;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.PropertyName;
+import tools.jackson.databind.SerializationConfig;
+import tools.jackson.databind.ser.*;
+import tools.jackson.databind.introspect.*;
+import tools.jackson.databind.util.SimpleBeanPropertyDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.annotations.Context;
@@ -14,8 +14,8 @@ import se.fk.data.modell.annotations.Context;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ContextSerializerModifier extends BeanSerializerModifier {
-    private static final Logger log = LoggerFactory.getLogger(ContextSerializerModifier.class);
+public class ClassSerializerModifier extends ValueSerializerModifier {
+    private static final Logger log = LoggerFactory.getLogger(ClassSerializerModifier.class);
 
     private final String CONTEXT_NAME = "@context";
     private final PropertyName contextPropertyName = PropertyName.construct(CONTEXT_NAME);
@@ -23,8 +23,9 @@ public class ContextSerializerModifier extends BeanSerializerModifier {
     @Override
     public List<BeanPropertyWriter> changeProperties(
             SerializationConfig config,
-            BeanDescription beanDesc,
-            List<BeanPropertyWriter> beanProperties) {
+            BeanDescription.Supplier beanDesc,
+            List<BeanPropertyWriter> beanProperties
+    ) {
 
         // Check if we have a @Context annotation
         Context annotation = beanDesc.getClassAnnotations().get(Context.class);

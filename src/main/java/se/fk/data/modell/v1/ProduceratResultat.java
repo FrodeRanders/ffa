@@ -1,7 +1,7 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import tools.jackson.databind.annotation.JsonTypeIdResolver;
 import se.fk.data.modell.adapters.ProduceratResultatTypeIdResolver;
 
 @JsonTypeInfo(
