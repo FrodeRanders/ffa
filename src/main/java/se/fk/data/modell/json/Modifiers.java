@@ -40,7 +40,7 @@ public class Modifiers {
         List<SimpleModule> modules = new ArrayList<>();
 
         // post-deserialization hashing
-        ObjectMapper canonicalMapper = setupCanonicalMapper();
+        JsonMapper canonicalMapper = setupCanonicalMapper();
         modules.add(new LifecycleAwareDeserializerModule(canonicalMapper));
 
         // pre-serialization compare/skip

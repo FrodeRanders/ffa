@@ -5,3 +5,5 @@ target/
 
 ### Mac OS ###
 .DS_Store
+*.log
+*._java

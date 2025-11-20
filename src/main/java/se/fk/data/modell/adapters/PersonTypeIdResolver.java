@@ -33,14 +33,11 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
 
     @Override
     public String idFromValue(DatabindContext ctxt, Object value) throws JacksonException {
-        log.debug("idFromValue: {}", value);
         return idFromValueAndType(ctxt, value, value.getClass());
     }
 
     @Override
     public String idFromValueAndType(DatabindContext ctxt, Object value, Class<?> suggestedType) throws JacksonException {
-        log.debug("idFromValueAndType: {}, {}", value, suggestedType);
-
         String id = CLASS_TO_ID.get(suggestedType);
         if (id == null) {
             throw new IllegalStateException(
@@ -75,8 +72,6 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
 
     @Override
     public JavaType typeFromId(DatabindContext context, String id) {
-        log.debug("typeFromId: {}", id);
-
         Class<?> subtype = ID_TO_CLASS.get(id);
         if (subtype == null) {
             throw new IllegalArgumentException(
