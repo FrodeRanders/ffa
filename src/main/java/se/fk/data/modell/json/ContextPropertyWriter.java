@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ser.VirtualBeanPropertyWriter;
 import com.fasterxml.jackson.databind.util.Annotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.ffa.Context;
+import se.fk.data.modell.annotations.Context;
 
 /**
  * A virtual property that writes "@context" using the URI

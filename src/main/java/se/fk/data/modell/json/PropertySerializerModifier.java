@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.ffa.Belopp;
-import se.fk.data.modell.ffa.PII;
+import se.fk.data.modell.annotations.Belopp;
+import se.fk.data.modell.annotations.PII;
 
 import java.util.ArrayList;
 import java.util.List;

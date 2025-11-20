@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.introspect.*;
 import com.fasterxml.jackson.databind.util.SimpleBeanPropertyDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.ffa.Context;
+import se.fk.data.modell.annotations.Context;
 
 import java.util.ArrayList;
 import java.util.List;

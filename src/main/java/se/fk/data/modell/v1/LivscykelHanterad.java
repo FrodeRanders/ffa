@@ -9,13 +9,13 @@ import java.util.UUID;
 
 public class LivscykelHanterad {
     @JsonIgnore
-    public transient byte[] digest;
+    private transient byte[] digest;
 
     @JsonProperty("id")
-    public String id;
+    public String id = Generators.timeBasedEpochGenerator().generate().toString(); // Always set, but may be reset
 
     @JsonProperty("version")
-    public int version;
+    public int version = 0;
 
     public void stepVersion() {
         this.version++;
@@ -24,13 +24,9 @@ public class LivscykelHanterad {
     protected LivscykelHanterad() {} // Required for deserialization
 
     protected LivscykelHanterad(String id) {
-        if (null == id || id.isEmpty()) {
-            UUID uuid = Generators.timeBasedEpochGenerator().generate(); // Version 7
-            this.id = uuid.toString();
-        } else {
+        if (null != id && !id.isEmpty()) {
             this.id = id;
         }
-        this.version = 0;
     }
 
     public boolean compareDigest(byte[] current) {

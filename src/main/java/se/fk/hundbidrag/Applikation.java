@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.fasterxml.uuid.Generators;
 import se.fk.data.modell.json.DeserializationSnooper;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Kundbehov;
@@ -23,21 +24,65 @@ import static se.fk.data.modell.json.Modifiers.getModules;
 public class Applikation {
     private final static Logger log = LogManager.getLogger(Applikation.class);
 
+    private static String id() {
+        return Generators.timeBasedEpochGenerator().generate().toString();
+    }
+
     public static void main( String[] args )
     {
         // -------------------------------------------------------------------
         // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
         // -------------------------------------------------------------------
-        Ersattning ers1 = new Ersattning(Ersattning.Typ.HUNDBIDRAG, 1000);
-        Ersattning ers2 = new Ersattning(Ersattning.Typ.HUNDBIDRAG, 500);
 
-        Kundbehov kundbehov = new Kundbehov("Hundutställning (inkl. bad)", Arrays.asList(ers1, ers2), "Collie");
+        // Efter etablering av kundbehov och i samband med initiering av kundbehovsflöde
+        /* Yrkan */ Kundbehov kundbehov = new Kundbehov("Hundutställning (inkl. bad)","Collie");
+        {
+            FysiskPerson person = new FysiskPerson("19121212-1212");
 
-        FysiskPerson person = new FysiskPerson("19121212-1212");
-        kundbehov.setPerson(person);
+            kundbehov.setPerson(person);
+        }
 
-        Beslut beslut = new Beslut(Date.from(Instant.now().truncatedTo(DAYS)));
-        kundbehov.setBeslut(beslut);
+        // Efter bedömning av rätten till...
+        {
+            RattenTillPeriod rattenTillPeriod = new RattenTillPeriod();
+            rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
+            rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
+
+            kundbehov.addProduceradeResultat(rattenTillPeriod);
+        }
+
+        // Efter beräkning...
+        {
+            Ersattning ersattning = new Ersattning();
+            ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
+            ersattning.belopp = 1000.0;
+            ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+
+            kundbehov.addProduceradeResultat(ersattning);
+        }
+        {
+            Ersattning ersattning = new Ersattning();
+            ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
+            ersattning.belopp = 500.0;
+            ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+
+            kundbehov.addProduceradeResultat(ersattning);
+        }
+
+        // I samband med beslut, så utfärdar vi ett "Hittepå"-intyg
+        {
+            Intyg intyg = new Intyg();
+            intyg.beskrivning = "Hittepå";
+            intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+
+            kundbehov.addProduceradeResultat(intyg);
+        }
+        {
+            Beslut beslut = new Beslut();
+            beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
+
+            kundbehov.setBeslut(beslut);
+        }
 
         // -------------------------------------------------------------------
         // Medskickade utility-funktioner hanterar:
@@ -65,7 +110,13 @@ public class Applikation {
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
             deserializedKundbehov.beskrivning = "Hundutställning (inkl. bad och tork)";
-            deserializedKundbehov.ersattningar.add(new Ersattning(Ersattning.Typ.HUNDBIDRAG, 100));
+            {
+                Ersattning ersattning = new Ersattning();
+                ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
+                ersattning.belopp = 100.0;
+
+                deserializedKundbehov.addProduceradeResultat(ersattning);
+            }
 
             // Re-serialize to JSON
             jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
@@ -73,7 +124,13 @@ public class Applikation {
 
             // Re-modify, operating on same objects (no serializing+deserializing involved)
             deserializedKundbehov.beskrivning = "Hundutställning (inkl. bad, tork och fön)";
-            deserializedKundbehov.ersattningar.add(new Ersattning(Ersattning.Typ.HUNDBIDRAG, 200));
+            {
+                Ersattning ersattning = new Ersattning();
+                ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
+                ersattning.belopp = 200.0;
+
+                deserializedKundbehov.addProduceradeResultat(ersattning);
+            }
 
             // Re-re-serialize to JSON
             jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);

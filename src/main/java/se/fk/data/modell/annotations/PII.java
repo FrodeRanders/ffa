@@ -1,4 +1,4 @@
-package se.fk.data.modell.ffa;
+package se.fk.data.modell.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

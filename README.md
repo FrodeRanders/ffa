@@ -22,6 +22,9 @@ import ...
 
 public class LivscykelHanterad {
 
+    @JsonIgnore
+    private transient byte[] digest; // modification detection
+
     @JsonProperty("id")
     public String id;
 
@@ -41,13 +44,13 @@ import ...
 public class Kundbehov extends LivscykelHanterad {
 
     @JsonProperty("person")
-    public FysiskPerson person;
+    public Person person;
 
     @JsonProperty("beskrivning")
     public String beskrivning;
 
-    @JsonProperty("ersattningar")
-    public Collection<Ersattning> ersattningar;
+    @JsonProperty("producerade-resultat")
+    public Collection<ProduceratResultat> produceradeResultat;
 
     @JsonProperty("beslut")
     public Beslut beslut;
@@ -63,7 +66,7 @@ package se.fk.data.modell.v1;
 import ...
 
 @Context("https://data.fk.se/kontext/std/fysiskperson/1.0")
-public class FysiskPerson {
+public class FysiskPerson extends Person{
 
     @PII(typ="pii:personnummer")
     @JsonProperty("personnummer")
@@ -149,7 +152,6 @@ public class Ersattning extends LivscykelHanterad {
     public String typ;
 
     @Belopp
-    // or @Belopp(valuta="valuta:SEK", skattestatus="sfa:skattepliktig", period="sfa:perdag")
     @JsonProperty("belopp")
     public double belopp;
 
@@ -193,16 +195,56 @@ utvidgat med uppgift om hundens ras.
 // -------------------------------------------------------------------
 // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
 // -------------------------------------------------------------------
-Ersattning ers1 = new Ersattning("Avgift", 1000);
-Ersattning ers2 = new Ersattning("Bad", 500);
 
-Kundbehov kundbehov = new Kundbehov("Hundutställning", Arrays.asList(ers1, ers2), "Collie");
+// Efter etablering av kundbehov och i samband med initiering av kundbehovsflöde
+/* Yrkan */ Kundbehov kundbehov = new Kundbehov("Hundutställning (inkl. bad)","Collie");
+{
+    FysiskPerson person = new FysiskPerson("19121212-1212");
 
-FysiskPerson person = new FysiskPerson("19121212-1212");
-kundbehov.setPerson(person);
+    kundbehov.setPerson(person);
+}
 
-Beslut beslut = new Beslut(Date.from(Instant.now().truncatedTo(DAYS)));
-kundbehov.setBeslut(beslut);
+// Efter bedömning av rätten till...
+{
+    RattenTillPeriod rattenTillPeriod = new RattenTillPeriod();
+    rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
+    rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
+
+    kundbehov.addProduceradeResultat(rattenTillPeriod);
+}
+
+// Efter beräkning...
+{
+    Ersattning ersattning = new Ersattning();
+    ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
+    ersattning.belopp = 1000.0;
+    ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+    
+    kundbehov.addProduceradeResultat(ersattning);
+}
+{
+    Ersattning ersattning = new Ersattning();
+    ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
+    ersattning.belopp = 500.0;
+    ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+    
+    kundbehov.addProduceradeResultat(ersattning);
+}
+
+// I samband med beslut, så utfärdar vi ett "Hittepå"-intyg
+{
+    Intyg intyg = new Intyg();
+    intyg.beskrivning = "Hittepå";
+    intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+    
+    kundbehov.addProduceradeResultat(intyg);
+}
+{
+    Beslut beslut = new Beslut();
+    beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
+    
+    kundbehov.setBeslut(beslut);
+}
 ```
 
 ## Serialisering av processtillstånd och översättning från "förmånsspråk" till "organisationsspråk"

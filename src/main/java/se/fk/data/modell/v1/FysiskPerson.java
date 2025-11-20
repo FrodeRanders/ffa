@@ -1,11 +1,11 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import se.fk.data.modell.ffa.Context;
-import se.fk.data.modell.ffa.PII;
+import se.fk.data.modell.annotations.Context;
+import se.fk.data.modell.annotations.PII;
 
 @Context("https://data.fk.se/kontext/std/fysiskperson/1.0")
-public class FysiskPerson {
+public class FysiskPerson extends Person {
     @PII(typ="pii:personnummer")
     @JsonProperty("personnummer")
     public String personnummer;
@@ -23,5 +23,4 @@ public class FysiskPerson {
         sb.append('}');
         return sb.toString();
     }
-
 }

@@ -1,8 +1,8 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import se.fk.data.modell.annotations.Context;
 import se.fk.data.modell.annotations.Belopp;
+import se.fk.data.modell.annotations.Context;
 
 /* ----------------------------------------------------
  * Consider using Lombok for ergonomic reasons, to
@@ -23,12 +23,10 @@ import se.fk.data.modell.annotations.Belopp;
  * ----------------------------------------------------
  */
 
-@Context("https://data.fk.se/kontext/std/ersattning/1.0")
-public class Ersattning extends ProduceratResultat {
+@Context("https://data.fk.se/kontext/std/krav/1.0")
+public class Krav extends ProduceratResultat {
     public enum Typ {
-        SJUKPENNING ("ersattningstyp:SJUKPENNING"),
-        FORALDRAPENNING ("ersattningstyp:FORALDRAPENNING"),
-        HUNDBIDRAG ("ersattningstyp:HUNDBIDRAG");
+        NAGON("Någon typ");
 
         Typ(String typ) {
             this.typ = typ;
@@ -36,6 +34,7 @@ public class Ersattning extends ProduceratResultat {
 
         String typ;
     }
+
 
     @JsonProperty("typ")
     public Typ typ;
@@ -47,9 +46,9 @@ public class Ersattning extends ProduceratResultat {
     @JsonProperty("period")
     public Period period;
 
-    public Ersattning() {} // Required for deserialization
+    public Krav() {} // Required for deserialization
 
-    public Ersattning(String id) {
+    public Krav(String id) {
         super(id);
     }
 

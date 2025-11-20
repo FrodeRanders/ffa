@@ -1,7 +1,7 @@
 package se.fk.hundbidrag.modell;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import se.fk.data.modell.ffa.Context;
+import se.fk.data.modell.annotations.Context;
 import se.fk.data.modell.v1.Ersattning;
 import java.util.Collection;
 
@@ -14,8 +14,8 @@ public class Kundbehov extends se.fk.data.modell.v1.Kundbehov {
 
     public Kundbehov() {} // Required for deserialization
 
-    public Kundbehov(String description, Collection<Ersattning> ersattningar, String ras) {
-        super(description, ersattningar);
+    public Kundbehov(String description, String ras) {
+        super(description);
         this.ras = ras;
     }
 

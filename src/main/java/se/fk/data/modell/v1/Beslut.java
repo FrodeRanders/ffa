@@ -1,11 +1,32 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import se.fk.data.modell.ffa.Context;
+import se.fk.data.modell.annotations.Context;
 
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+/* ----------------------------------------------------
+ * Consider using Lombok for ergonomic reasons, to
+ * achieve fluent, chained, and custom accessors.
+ *
+ * Imports:
+ *   import lombok.experimental.Accessors;
+ *
+ * Class annotation:
+ *   @Data
+ *   @Accessors(chain = true, fluent = true)
+ *
+ * Use:
+ *   Beslut b = new Beslut("id-123")
+ *       .datum(new Date())
+ *       .typ(Beslut.Typ.SLUTLIGT)
+ *       .utfall(Beslut.Utfall.BEVILJAT)
+ *       .lagrum(Beslut.Lagrum.SFB_K112_P2a)
+ *       .beslutsfattare("123456");
+ * ----------------------------------------------------
+ */
 
 @Context("https://data.fk.se/kontext/std/beslut/1.0")
 public class Beslut extends LivscykelHanterad {
@@ -53,29 +74,39 @@ public class Beslut extends LivscykelHanterad {
         String lagrum;
     }
 
+    // beslutsdatum
     @JsonProperty("datum")
     public Date datum;
 
+    // beslutsfattare (ID)
     @JsonProperty("beslutsfattare")
     public String beslutsfattare;
 
+    // beslutstyp
     @JsonProperty("typ")
     public Typ typ;
 
+    // beslutsutfall
     @JsonProperty("utfall")
     public Utfall utfall;
 
+    // beslutande organisation
     @JsonProperty("organisation")
     public String organisation;
 
+    // beslut enligt lagrum
     @JsonProperty("lagrum")
     public Lagrum lagrum;
 
+    // avslagsanledning
+    @JsonProperty("avslagsanledning")
+    public String avslagsanledning;
+
+
     public Beslut() {} // Required for deserialization
 
-    public Beslut(Date datum) {
-        super(null);
-        this.datum = datum;
+    public Beslut(String id) {
+        super(id);
     }
 
     @Override

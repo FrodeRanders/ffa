@@ -1,10 +1,16 @@
 package se.fk.data.modell.v1;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import se.fk.data.modell.ffa.Belopp;
-import se.fk.data.modell.ffa.Context;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import se.fk.data.modell.adapters.ProduceratResultatTypeIdResolver;
 
-@Context("https://data.fk.se/kontext/std/ersattning/1.0")
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CUSTOM,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "@context",
+        visible = true
+)
+@JsonTypeIdResolver(ProduceratResultatTypeIdResolver.class)
 public class ProduceratResultat extends LivscykelHanterad {
 
     public ProduceratResultat() {} // Required for deserialization
