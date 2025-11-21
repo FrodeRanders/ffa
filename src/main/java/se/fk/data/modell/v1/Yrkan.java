@@ -7,7 +7,6 @@ import se.fk.data.modell.annotations.Som;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
 
 /* ----------------------------------------------------
@@ -22,14 +21,14 @@ import java.util.Collections;
  *   @Accessors(chain = true, fluent = true)
  *
  * Use:
- *   Kundbehov k = new Kundbehov("id-123")
+ *   Yrkan y = new Yrkan("id-123")
  *       .person(insuredPerson)
  *       .beskrivning("abc def ghi ...");
  * ----------------------------------------------------
  */
 
-@Context("https://data.fk.se/kontext/std/kundbehov/1.0")
-public class Kundbehov extends LivscykelHanterad {
+@Context("https://data.fk.se/kontext/std/yrkan/1.0")
+public class Yrkan extends LivscykelHanterad {
     @Som(typ = "ffa:yrkande")
     @JsonProperty("person")
     public Person person;
@@ -43,9 +42,9 @@ public class Kundbehov extends LivscykelHanterad {
     @JsonProperty("producerade_resultat")
     public Collection<ProduceratResultat> produceradeResultat = new ArrayList<>();
 
-    public Kundbehov() {} // Required for deserialization
+    public Yrkan() {} // Required for deserialization
 
-    public Kundbehov(String beskrivning) {
+    public Yrkan(String beskrivning) {
         super(null);
         this.beskrivning = beskrivning;
     }

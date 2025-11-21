@@ -1,18 +1,16 @@
 package se.fk.hundbidrag;
 
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import com.fasterxml.uuid.Generators;
 import se.fk.data.modell.json.DeserializationSnooper;
 import se.fk.data.modell.v1.*;
-import se.fk.hundbidrag.modell.Kundbehov;
+import se.fk.hundbidrag.modell.Yrkan;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Date;
 
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -35,7 +33,7 @@ public class Applikation {
         // -------------------------------------------------------------------
 
         // Efter etablering av kundbehov och i samband med initiering av kundbehovsflöde
-        /* Yrkan */ Kundbehov kundbehov = new Kundbehov("Hundutställning (inkl. bad)","Collie");
+        /* Yrkan */ Yrkan kundbehov = new Yrkan("Hundutställning (inkl. bad)","Collie");
         {
             FysiskPerson person = new FysiskPerson("19121212-1212");
 
@@ -102,7 +100,7 @@ public class Applikation {
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Subsequent deserialize from JSON
-            Kundbehov deserializedKundbehov = mapper.readValue(jsonLD, Kundbehov.class);
+            Yrkan deserializedKundbehov = mapper.readValue(jsonLD, Yrkan.class);
             log.debug("JSON -> Object:\n{}", deserializedKundbehov);
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)

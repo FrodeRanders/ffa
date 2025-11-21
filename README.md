@@ -8,7 +8,7 @@ till "organisationsspråk" samt detaljerna kring serialisering av processtillst�
 
 ## Vi tar utgångspunkt i behoven hos ett team som utvecklar affärslogik med FFAs informations- och datamodell som grund
 
-Affärslogiken utvecklas mot kärnobjekten i FFAs model, så som Kundbehov, Ersättning, Beslut, osv. Ansatsen
+Affärslogiken utvecklas mot kärnobjekten i FFAs model, så som Yrkan, Ersättning, Beslut, osv. Ansatsen
 är att erbjuda en versionshanterad standard-implementation av dessa kärnobjekt, som teamet kan utvidga/modifiera
 vid behov. För utvidning och modifikation används helt enkelt arvsmekanismen i Java.
 
@@ -34,14 +34,14 @@ public class LivscykelHanterad {
     ...
 }
 ```
-### Kundbehov
+### Yrkan
 ```java
 package se.fk.data.modell.v1;
 
 import ...
 
-@Context("https://data.fk.se/kontext/std/kundbehov/1.0")
-public class Kundbehov extends LivscykelHanterad {
+@Context("https://data.fk.se/kontext/std/yrkan/1.0")
+public class Yrkan extends LivscykelHanterad {
 
     @Som(typ = "ffa:yrkande")
     @JsonProperty("person")
@@ -160,16 +160,18 @@ public class Ersattning extends LivscykelHanterad {
 }
 ```
 
-### Utvidgning av Kundbehov för Hundbidraget (löjligt exempel)
-I detta exempel, så har FFA-standard Kundbehov utvidgats med uppgift om hundens ras. För
+### Utvidgning av Yrkan för Hundbidraget (löjligt exempel)
+I detta exempel, så har FFA-standard Yrkan utvidgats med uppgift om hundens ras. För
 utvidgning används Javas arvsmekanism.
+
 ```java
 package se.fk.hundbidrag.modell;
 
-import ...
+import
+import se.fk.data.modell.v1.Yrkan; ...
 
-@Context("https://data.fk.se/kontext/hundbidrag/kundbehov/1.0")
-public class Kundbehov extends se.fk.data.modell.v1.Kundbehov {
+@Context("https://data.fk.se/kontext/hundbidrag/yrkan/1.0")
+public class Yrkan extends Yrkan {
 
     @JsonProperty("ras")
     String ras;
@@ -183,13 +185,11 @@ public class Kundbehov extends se.fk.data.modell.v1.Kundbehov {
 ```java
 package se.fk.hundbidrag;
 
-import se.fk.data.modell.v1.*;
-import se.fk.hundbidrag.modell.Kundbehov;
 import ...
-...
+        ...
 ```
 Instansiera objekt efter behov, huvudsakligen från FFAs standardmodell, men också egna utvidgningar.
-I detta exempel används Hundbidragets Kundbehov (istället för FFA-standard Kundbehov), som är
+I detta exempel används Hundbidragets Yrkan (istället för FFA-standard Yrkan), som är
 utvidgat med uppgift om hundens ras.
 
 ```java
@@ -199,12 +199,12 @@ utvidgat med uppgift om hundens ras.
 Ersattning ers1 = new Ersattning("Avgift", 1000);
 Ersattning ers2 = new Ersattning("Bad", 500);
 
-// Efter etablering av kundbehov och i samband med initiering av kundbehovsflöde
-/* Yrkan */ Kundbehov kundbehov = new Kundbehov("Hundutställning (inkl. bad)","Collie");
+// Efter etablering av yrkan och i samband med initiering av yrkansflöde
+/* Yrkan */ Yrkan yrkan = new Yrkan("Hundutställning (inkl. bad)","Collie");
 {
     FysiskPerson person = new FysiskPerson("19121212-1212");
 
-    kundbehov.setPerson(person);
+    yrkan.setPerson(person);
 }
 
 // Efter bedömning av rätten till...
@@ -213,7 +213,7 @@ Ersattning ers2 = new Ersattning("Bad", 500);
     rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
     rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
 
-    kundbehov.addProduceradeResultat(rattenTillPeriod);
+    yrkan.addProduceradeResultat(rattenTillPeriod);
 }
 
 // Efter beräkning...
@@ -223,7 +223,7 @@ Ersattning ers2 = new Ersattning("Bad", 500);
     ersattning.belopp = 1000.0;
     ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
     
-    kundbehov.addProduceradeResultat(ersattning);
+    yrkan.addProduceradeResultat(ersattning);
 }
 {
     Ersattning ersattning = new Ersattning();
@@ -231,7 +231,7 @@ Ersattning ers2 = new Ersattning("Bad", 500);
     ersattning.belopp = 500.0;
     ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
     
-    kundbehov.addProduceradeResultat(ersattning);
+    yrkan.addProduceradeResultat(ersattning);
 }
 
 // I samband med beslut, så utfärdar vi ett "Hittepå"-intyg
@@ -240,13 +240,13 @@ Ersattning ers2 = new Ersattning("Bad", 500);
     intyg.beskrivning = "Hittepå";
     intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
     
-    kundbehov.addProduceradeResultat(intyg);
+    yrkan.addProduceradeResultat(intyg);
 }
 {
     Beslut beslut = new Beslut();
     beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
     
-    kundbehov.setBeslut(beslut);
+    yrkan.setBeslut(beslut);
 }
 ```
 
@@ -265,16 +265,16 @@ ObjectMapper mapper = new ObjectMapper()
     .addHandler(new DeserializationSnooper());
 
 // Initial serialize to JSON
-String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
+String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(yrkan);
 log.debug("Object -> JSON:\n{}", jsonLD);
 ```
 Låt oss titta på loggen som svarar mot serialiseringen:
 ```terminaloutput
-se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.Kundbehov#person
-se.fk.data.modell.json.LifecycleAwareSerializer   Created for se.fk.hundbidrag.modell.Kundbehov
-se.fk.data.modell.json.MutationSemantics          Initiating state for bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
-se.fk.data.modell.json.LifecycleAwareSerializer   ** New bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
-se.fk.data.modell.json.LifecycleAwareSerializer   Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
+se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.Yrkan#person
+se.fk.data.modell.json.LifecycleAwareSerializer   Created for se.fk.hundbidrag.modell.Yrkan
+se.fk.data.modell.json.MutationSemantics          Initiating state for bean: se.fk.hundbidrag.modell.Yrkan@13ad5cd3
+se.fk.data.modell.json.LifecycleAwareSerializer   ** New bean: se.fk.hundbidrag.modell.Yrkan@13ad5cd3
+se.fk.data.modell.json.LifecycleAwareSerializer   Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@13ad5cd3
 se.fk.data.modell.json.PropertySerializerModifier @PII property se.fk.data.modell.v1.FysiskPerson#personnummer)
 se.fk.data.modell.json.PropertySerializerModifier @Belopp property se.fk.data.modell.v1.Ersattning#belopp
 se.fk.data.modell.json.LifecycleAwareSerializer   Created for se.fk.data.modell.v1.Ersattning
@@ -291,14 +291,14 @@ se.fk.data.modell.json.MutationSemantics          Initiating state for bean: se.
 se.fk.data.modell.json.LifecycleAwareSerializer   ** New bean: se.fk.data.modell.v1.Beslut@34158c08
 se.fk.data.modell.json.LifecycleAwareSerializer   Stepping version of bean: se.fk.data.modell.v1.Beslut@34158c08
 se.fk.data.modell.json.LifecycleAwareSerializer   Serialized bean se.fk.data.modell.v1.Beslut@34158c08
-se.fk.data.modell.json.LifecycleAwareSerializer   Serialized bean se.fk.hundbidrag.modell.Kundbehov@13ad5cd3
+se.fk.data.modell.json.LifecycleAwareSerializer   Serialized bean se.fk.hundbidrag.modell.Yrkan@13ad5cd3
 ```
 Låt oss titta på vad som händer med ```se.fk.data.modell.v1.FysiskPerson#personnummer``` och 
 ```se.fk.data.modell.v1.Ersattning#belopp``` vid serialisering efter att vi tittat på producerad JSON.
 
 ```json
 {
-    "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+    "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
     "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
     "version" : 1,
     "beskrivning" : "Hundutställning",
@@ -397,14 +397,14 @@ Nåväl; vi föreställer oss att vi vid ett senare tillfälle återhämtar proc
 vi erhåller en JSON (samma JSON som vi tidigare producerade) och deserialiserar denna:
 
 ```java
-Kundbehov deserializedKundbehov = mapper.readValue(jsonLD, Kundbehov.class);
-log.debug("JSON -> Object:\n{}", deserializedKundbehov);
+Yrkan deserializedYrkan = mapper.readValue(jsonLD, Yrkan.class);
+log.debug("JSON -> Object:\n{}", deserializedYrkan);
 ```
 
 Låt oss titta på loggen:
 
 ```terminaloutput
-se.fk.data.modell.json.LifecycleAwareDeserializer    Created for se.fk.hundbidrag.modell.Kundbehov
+se.fk.data.modell.json.LifecycleAwareDeserializer    Created for se.fk.hundbidrag.modell.Yrkan
 se.fk.data.modell.json.PropertyDeserializerModifier  @PII property se.fk.data.modell.v1.FysiskPerson#personnummer
 se.fk.data.modell.json.LifecycleAwareDeserializer    Created for se.fk.data.modell.v1.Beslut
 se.fk.data.modell.json.PropertyDeserializerModifier  @Belopp property se.fk.data.modell.v1.Ersattning#belopp
@@ -416,11 +416,11 @@ se.fk.data.modell.json.LifecycleAwareDeserializer    Deserialized bean se.fk.dat
 se.fk.data.modell.json.MutationSemantics             Initiating state for bean: se.fk.data.modell.v1.Ersattning@13d9b21f
 se.fk.data.modell.json.LifecycleAwareDeserializer    Deserialized bean se.fk.data.modell.v1.Beslut@02826f61
 se.fk.data.modell.json.MutationSemantics             Initiating state for bean: se.fk.data.modell.v1.Beslut@02826f61
-se.fk.data.modell.json.LifecycleAwareDeserializer    Deserialized bean se.fk.hundbidrag.modell.Kundbehov@62727399
-se.fk.data.modell.json.MutationSemantics             Initiating state for bean: se.fk.hundbidrag.modell.Kundbehov@62727399
+se.fk.data.modell.json.LifecycleAwareDeserializer    Deserialized bean se.fk.hundbidrag.modell.Yrkan@62727399
+se.fk.data.modell.json.MutationSemantics             Initiating state for bean: se.fk.hundbidrag.modell.Yrkan@62727399
 
 se.fk.hundbidrag.Applikation JSON -> Object:
-Kundbehov{
+Yrkan{
     id='019a15dd-9823-7332-90df-6d5fc9e9c9c7', 
     version=1, 
     beskrivning='Hundutställning', 
@@ -454,22 +454,22 @@ Kundbehov{
 Notera hur det expanderade beloppet i JSON-serialiseringen nu återuppstår som ```belopp``` i ```Ersattning```.
 
 Nästa steg är att simulera en ändring i processens tillstånd -- i detta fall så har beskrivningen av
-Kundbehovet modifierats och vi har lagt till en ny ersättning (för torkning efter bad -- mycket viktigt):
+Yrkanet modifierats och vi har lagt till en ny ersättning (för torkning efter bad -- mycket viktigt):
 
 ```java
-deserializedKundbehov.beskrivning = "Modifierad beskrivning";
-deserializedKundbehov.ersattningar.add(new Ersattning("Tork", 100));
+deserializedYrkan.beskrivning = "Modifierad beskrivning";
+deserializedYrkan.ersattningar.add(new Ersattning("Tork", 100));
 
-jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
+jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedYrkan);
 log.debug("Object -> JSON:\n{}", jsonLD);
 ```
 
 Låt oss titta på loggen:
 
 ```terminaloutput
-se.fk.data.modell.json.MutationSemantics         Initiating state for bean: se.fk.hundbidrag.modell.Kundbehov@62727399
-se.fk.data.modell.json.LifecycleAwareSerializer  ** Modified bean: se.fk.hundbidrag.modell.Kundbehov#62727399
-se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@62727399
+se.fk.data.modell.json.MutationSemantics         Initiating state for bean: se.fk.hundbidrag.modell.Yrkan@62727399
+se.fk.data.modell.json.LifecycleAwareSerializer  ** Modified bean: se.fk.hundbidrag.modell.Yrkan#62727399
+se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@62727399
 se.fk.data.modell.json.MutationSemantics         Initiating state for bean: se.fk.data.modell.v1.Ersattning@12c7a01b
 se.fk.data.modell.json.LifecycleAwareSerializer  Serialized bean se.fk.data.modell.v1.Ersattning@12c7a01b
 se.fk.data.modell.json.MutationSemantics         Initiating state for bean: se.fk.data.modell.v1.Ersattning@13d9b21f
@@ -480,16 +480,16 @@ se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk
 se.fk.data.modell.json.LifecycleAwareSerializer  Serialized bean se.fk.data.modell.v1.Ersattning@737a135b
 se.fk.data.modell.json.MutationSemantics         Initiating state for bean: se.fk.data.modell.v1.Beslut@02826f61
 se.fk.data.modell.json.LifecycleAwareSerializer  Serialized bean se.fk.data.modell.v1.Beslut@02826f61
-se.fk.data.modell.json.LifecycleAwareSerializer  Serialized bean se.fk.hundbidrag.modell.Kundbehov@62727399
+se.fk.data.modell.json.LifecycleAwareSerializer  Serialized bean se.fk.hundbidrag.modell.Yrkan@62727399
 ```
 
 Notera hur ```se.fk.data.modell.json.LifecycleAwareSerializer``` upptäckt att två object är
-modifierade... Kundbehovet har en ändrad beskrivning och vi har en ny Ersattning
+modifierade... Yrkanet har en ändrad beskrivning och vi har en ny Ersattning
 
 ```terminaloutput
 ...
-se.fk.data.modell.json.LifecycleAwareSerializer  ** Modified bean: se.fk.hundbidrag.modell.Kundbehov#62727399
-se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@62727399
+se.fk.data.modell.json.LifecycleAwareSerializer  ** Modified bean: se.fk.hundbidrag.modell.Yrkan#62727399
+se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@62727399
 ...
 se.fk.data.modell.json.LifecycleAwareSerializer  ** New bean: se.fk.data.modell.v1.Ersattning@737a135b
 se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.data.modell.v1.Ersattning@737a135b
@@ -500,7 +500,7 @@ serialiserad JSON som i objektet.
 
 ```json
 {
-    "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+    "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
     "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
     "version" : 2,
     "beskrivning" : "Modifierad beskrivning",
@@ -565,10 +565,10 @@ serialiserad JSON som i objektet.
 Vi ändrar objektet igen, bara för att visa att version verkligen ändrats i objektet i samband med serialisering:
 
 ```java
-deserializedKundbehov.beskrivning = "Modfierad igen...";
-deserializedKundbehov.ersattningar.add(new Ersattning("Fön", 200));
+deserializedYrkan.beskrivning = "Modfierad igen...";
+deserializedYrkan.ersattningar.add(new Ersattning("Fön", 200));
 
-jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
+jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedYrkan);
 log.debug("Object -> JSON:\n{}", jsonLD);
 ```
 
@@ -576,8 +576,8 @@ Och så tittar vi på loggen igen:
 
 ```terminaloutput
 ...
-se.fk.data.modell.json.LifecycleAwareSerializer  ** Modified bean: se.fk.hundbidrag.modell.Kundbehov#62727399
-se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@62727399
+se.fk.data.modell.json.LifecycleAwareSerializer  ** Modified bean: se.fk.hundbidrag.modell.Yrkan#62727399
+se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@62727399
 ...
 se.fk.data.modell.json.LifecycleAwareSerializer  ** New bean: se.fk.data.modell.v1.Ersattning@687ef2e0
 se.fk.data.modell.json.LifecycleAwareSerializer  Stepping version of bean: se.fk.data.modell.v1.Ersattning@687ef2e0
@@ -588,7 +588,7 @@ Och så tittar vi på producerad JSON:
 
 ```json
 {
-    "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+    "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
     "id" : "019a1076-2403-7cc8-be2b-53e1256af498",
     "version" : 3,
     "beskrivning" : "Modfierad igen...",
@@ -667,10 +667,10 @@ Ytterligare transformation kan göras på det serialiserade formatet, så som at
 
 Detta är en dump av loggfilen som produceras:
 ```terminaloutput
-2025-11-20 20:17:28.139 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.Kundbehov#person
-2025-11-20 20:17:28.143 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.hundbidrag.modell.Kundbehov
-2025-11-20 20:17:28.172 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.hundbidrag.modell.Kundbehov@0c055c54
-2025-11-20 20:17:28.172 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@0c055c54
+2025-11-20 20:17:28.139 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.Yrkan#person
+2025-11-20 20:17:28.143 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.hundbidrag.modell.Yrkan
+2025-11-20 20:17:28.172 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.hundbidrag.modell.Yrkan@0c055c54
+2025-11-20 20:17:28.172 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@0c055c54
 2025-11-20 20:17:28.175 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.Beslut
 2025-11-20 20:17:28.175 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Beslut@7e276594
 2025-11-20 20:17:28.175 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Beslut@7e276594
@@ -692,10 +692,10 @@ Detta är en dump av loggfilen som produceras:
 2025-11-20 20:17:28.184 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Intyg@319bc845
 2025-11-20 20:17:28.185 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Intyg@319bc845
 2025-11-20 20:17:28.185 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@319bc845
-2025-11-20 20:17:28.185 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Kundbehov@0c055c54
+2025-11-20 20:17:28.185 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@0c055c54
 2025-11-20 20:17:28.186 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
 {
-  "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+  "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
   "beskrivning" : "Hundutställning (inkl. bad)",
   "beslut" : {
     "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
@@ -766,8 +766,8 @@ Detta är en dump av loggfilen som produceras:
   "ras" : "Collie",
   "version" : 1
 }
-2025-11-20 20:17:28.198 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @Som property se.fk.hundbidrag.modell.Kundbehov#person
-2025-11-20 20:17:28.201 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.hundbidrag.modell.Kundbehov
+2025-11-20 20:17:28.198 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @Som property se.fk.hundbidrag.modell.Yrkan#person
+2025-11-20 20:17:28.201 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.hundbidrag.modell.Yrkan
 2025-11-20 20:17:28.202 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Beslut
 2025-11-20 20:17:28.209 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.ProduceratResultat
 2025-11-20 20:17:28.212 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Beslut@25b2cfcb
@@ -780,11 +780,11 @@ Detta är en dump av loggfilen som produceras:
 2025-11-20 20:17:28.228 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Ersattning@7446d8d5
 2025-11-20 20:17:28.228 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Intyg
 2025-11-20 20:17:28.229 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Intyg@5c3b6c6e
-2025-11-20 20:17:28.229 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.hundbidrag.modell.Kundbehov@4fbda97b
+2025-11-20 20:17:28.229 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.hundbidrag.modell.Yrkan@4fbda97b
 2025-11-20 20:17:28.242 [DEBUG] [main] se.fk.hundbidrag.Applikation JSON -> Object:
-Kundbehov{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hundutställning (inkl. bad)', person=FysiskPerson{personnummer='19121212-1212'}, beslut=Beslut{id='019aa2b3-411b-7450-bd72-404cd5f786e6', version=1, datum='2025-11-20', beslutsfattare=, typ=, utfall=, organisation=, lagrum=}, producerade-resultat=[RattenTillPeriod{ProduceratResultat{id='019aa2b3-411a-7f25-90df-50574228673c', version=1}, ersattningstyp='HUNDBIDRAG', omfattning='HEL'}, Ersattning{ProduceratResultat{id='019aa2b3-411a-7662-ac72-8bc9bb39b7d4', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=1000.0}, Ersattning{ProduceratResultat{id='019aa2b3-411b-7395-83a0-606fa361ade5', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=500.0}, Intyg{ProduceratResultat{id='019aa2b3-411b-79ee-b158-f8ef622bf2b3', version=1}, giltighetsperiod=Period{from='Thu Nov 20 01:00:00 CET 2025', tom='Thu Nov 20 01:00:00 CET 2025'}, institution='null', beskrivning='Hittepå', utfardatDatum='null'}, ]}+{ras='Collie'}
-2025-11-20 20:17:28.243 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Kundbehov#4fbda97b
-2025-11-20 20:17:28.243 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@4fbda97b
+Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hundutställning (inkl. bad)', person=FysiskPerson{personnummer='19121212-1212'}, beslut=Beslut{id='019aa2b3-411b-7450-bd72-404cd5f786e6', version=1, datum='2025-11-20', beslutsfattare=, typ=, utfall=, organisation=, lagrum=}, producerade-resultat=[RattenTillPeriod{ProduceratResultat{id='019aa2b3-411a-7f25-90df-50574228673c', version=1}, ersattningstyp='HUNDBIDRAG', omfattning='HEL'}, Ersattning{ProduceratResultat{id='019aa2b3-411a-7662-ac72-8bc9bb39b7d4', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=1000.0}, Ersattning{ProduceratResultat{id='019aa2b3-411b-7395-83a0-606fa361ade5', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=500.0}, Intyg{ProduceratResultat{id='019aa2b3-411b-79ee-b158-f8ef622bf2b3', version=1}, giltighetsperiod=Period{from='Thu Nov 20 01:00:00 CET 2025', tom='Thu Nov 20 01:00:00 CET 2025'}, institution='null', beskrivning='Hittepå', utfardatDatum='null'}, ]}+{ras='Collie'}
+2025-11-20 20:17:28.243 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Yrkan#4fbda97b
+2025-11-20 20:17:28.243 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@4fbda97b
 2025-11-20 20:17:28.244 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@25b2cfcb
 2025-11-20 20:17:28.244 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@6821ea29
 2025-11-20 20:17:28.245 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@75c9e76b
@@ -793,10 +793,10 @@ Kundbehov{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hun
 2025-11-20 20:17:28.246 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@4cc6fa2a
 2025-11-20 20:17:28.246 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@4cc6fa2a
 2025-11-20 20:17:28.246 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@4cc6fa2a
-2025-11-20 20:17:28.246 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Kundbehov@4fbda97b
+2025-11-20 20:17:28.246 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@4fbda97b
 2025-11-20 20:17:28.246 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
 {
-  "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+  "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
   "beskrivning" : "Hundutställning (inkl. bad och tork)",
   "beslut" : {
     "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
@@ -878,8 +878,8 @@ Kundbehov{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hun
   "ras" : "Collie",
   "version" : 2
 }
-2025-11-20 20:17:28.247 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Kundbehov#4fbda97b
-2025-11-20 20:17:28.247 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Kundbehov@4fbda97b
+2025-11-20 20:17:28.247 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Yrkan#4fbda97b
+2025-11-20 20:17:28.247 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@4fbda97b
 2025-11-20 20:17:28.247 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@25b2cfcb
 2025-11-20 20:17:28.247 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@6821ea29
 2025-11-20 20:17:28.248 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@75c9e76b
@@ -889,10 +889,10 @@ Kundbehov{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hun
 2025-11-20 20:17:28.249 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@40f1be1b
 2025-11-20 20:17:28.249 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@40f1be1b
 2025-11-20 20:17:28.249 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@40f1be1b
-2025-11-20 20:17:28.249 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Kundbehov@4fbda97b
+2025-11-20 20:17:28.249 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@4fbda97b
 2025-11-20 20:17:28.249 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
 {
-  "@context" : "https://data.fk.se/kontext/hundbidrag/kundbehov/1.0",
+  "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
   "beskrivning" : "Hundutställning (inkl. bad, tork och fön)",
   "beslut" : {
     "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
