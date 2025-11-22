@@ -1,5 +1,8 @@
 package se.fk.data.modell.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.fk.data.modell.v1.LivscykelHanterad;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.SerializationContext;
@@ -8,22 +11,18 @@ import tools.jackson.databind.introspect.AnnotatedClass;
 import tools.jackson.databind.introspect.BeanPropertyDefinition;
 import tools.jackson.databind.ser.VirtualBeanPropertyWriter;
 import tools.jackson.databind.util.Annotations;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.fk.data.modell.annotations.Context;
 
 /**
- * A virtual property that writes "@context" using the URI
- * found in the bean's `@TypeContext` annotation.
+ * A virtual property that handles "__attention".
  */
-public class ContextPropertyWriter extends VirtualBeanPropertyWriter {
-    private static final Logger log = LoggerFactory.getLogger(ContextPropertyWriter.class);
+public class AttentionPropertyWriter extends VirtualBeanPropertyWriter {
+    private static final Logger log = LoggerFactory.getLogger(AttentionPropertyWriter.class);
 
-    public ContextPropertyWriter() { // Needed for Jackson
+    public AttentionPropertyWriter() { // Needed for Jackson
         super();
     }
 
-    protected ContextPropertyWriter(
+    protected AttentionPropertyWriter(
             BeanPropertyDefinition propDef,
             Annotations contextAnnotations,
             JavaType declaredType
@@ -38,12 +37,11 @@ public class ContextPropertyWriter extends VirtualBeanPropertyWriter {
             BeanPropertyDefinition propDef,
             JavaType type
     ) {
-        return new ContextPropertyWriter(propDef, declaringClass.getAnnotations(), type);
+        return new AttentionPropertyWriter(propDef, declaringClass.getAnnotations(), type);
     }
 
     /**
      * This method is called to figure out the value to serialize.
-     * We will read the bean's @TypeContext annotation to get the URI.
      */
     @Override
     protected Object value(
@@ -51,14 +49,9 @@ public class ContextPropertyWriter extends VirtualBeanPropertyWriter {
             JsonGenerator gen,
             SerializationContext prov
     ) throws Exception {
-        // Look for @Context annotation
-        Context annotation = bean.getClass().getAnnotation(Context.class);
-        if (null != annotation) {
-            String contextUri = annotation.value();
-            if (!contextUri.isEmpty()) {
-                return contextUri;
-            }
+        if (bean instanceof LivscykelHanterad lhb) {
+            return lhb.__attention; // may be null, in which case we ignore this field
         }
-        return null; // no context
+        return null;
     }
 }

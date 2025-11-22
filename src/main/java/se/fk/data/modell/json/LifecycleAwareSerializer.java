@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import se.fk.data.modell.v1.LivscykelHanterad;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 public final class LifecycleAwareSerializer<T extends LivscykelHanterad> extends StdSerializer<T> {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareSerializer.class);
@@ -50,13 +51,13 @@ public final class LifecycleAwareSerializer<T extends LivscykelHanterad> extends
 
         // Auto-increment version if bean is new or modified
         if (isNew || isModified) {
-            if (bean instanceof LivscykelHanterad lifeCycledBean) {
-                log.trace("Stepping version of bean: {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
-                lifeCycledBean.stepVersion();
+            log.trace("Stepping version of bean: {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
+            bean.stepVersion();
+            bean.__attention = Boolean.TRUE;
 
-                // Recalculate digest (after having modified version)
-                current = DigestUtils.computeDigest(bean, canonicalMapper);
-            }
+            // Recalculate digest (after having modified version)
+            current = DigestUtils.computeDigest(bean, canonicalMapper);
+
         }
 
         bean.resetDigest(current);

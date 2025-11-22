@@ -5,18 +5,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.uuid.Generators;
 
 import java.security.MessageDigest;
-import java.util.UUID;
 
 public class LivscykelHanterad {
     @JsonIgnore
     private transient byte[] digest;
 
+    @JsonIgnore
+    public Boolean __attention = null;
+
     @JsonProperty("id")
-    public String id = Generators.timeBasedEpochGenerator().generate().toString(); // Always set, but may be reset
+    public String id = Generators.timeBasedEpochGenerator().generate().toString(); // Always set here, but may be reset
 
     @JsonProperty("version")
     public int version = 0;
 
+    @JsonIgnore
     public void stepVersion() {
         this.version++;
     }
@@ -29,16 +32,24 @@ public class LivscykelHanterad {
         }
     }
 
+    @JsonIgnore
     public boolean compareDigest(byte[] current) {
         return MessageDigest.isEqual(current, digest);
     }
 
+    @JsonIgnore
     public void resetDigest(byte[] current) {
         digest = current;
     }
 
+    @JsonIgnore
     public byte[] getDigest() {
         return digest;
+    }
+
+    @JsonIgnore
+    public void flagAttention() {
+        this.__attention = true;
     }
 
     @Override
