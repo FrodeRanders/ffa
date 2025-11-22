@@ -32,12 +32,12 @@ public class Applikation {
         // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
         // -------------------------------------------------------------------
 
-        // Efter etablering av kundbehov och i samband med initiering av kundbehovsflöde
-        /* Yrkan */ Yrkan kundbehov = new Yrkan("Hundutställning (inkl. bad)","Collie");
+        // Efter etablering av yrkan och i samband med initiering av handläggningsflöde
+        /* Yrkan */ Yrkan yrkan = new Yrkan("Hundutställning (inkl. bad)","Collie");
         {
             FysiskPerson person = new FysiskPerson("19121212-1212");
 
-            kundbehov.setPerson(person);
+            yrkan.setPerson(person);
         }
 
         // Efter bedömning av rätten till...
@@ -46,7 +46,7 @@ public class Applikation {
             rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
             rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
 
-            kundbehov.addProduceradeResultat(rattenTillPeriod);
+            yrkan.addProduceradeResultat(rattenTillPeriod);
         }
 
         // Efter beräkning...
@@ -56,7 +56,7 @@ public class Applikation {
             ersattning.belopp = 1000.0;
             ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            kundbehov.addProduceradeResultat(ersattning);
+            yrkan.addProduceradeResultat(ersattning);
         }
         {
             Ersattning ersattning = new Ersattning();
@@ -64,7 +64,7 @@ public class Applikation {
             ersattning.belopp = 500.0;
             ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            kundbehov.addProduceradeResultat(ersattning);
+            yrkan.addProduceradeResultat(ersattning);
         }
 
         // I samband med beslut, så utfärdar vi ett "Hittepå"-intyg
@@ -73,13 +73,13 @@ public class Applikation {
             intyg.beskrivning = "Hittepå";
             intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            kundbehov.addProduceradeResultat(intyg);
+            yrkan.addProduceradeResultat(intyg);
         }
         {
             Beslut beslut = new Beslut();
             beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
 
-            kundbehov.setBeslut(beslut);
+            yrkan.setBeslut(beslut);
         }
 
         // -------------------------------------------------------------------
@@ -96,39 +96,39 @@ public class Applikation {
                     .build();
 
             // Initial serialize to JSON
-            String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kundbehov);
+            String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(yrkan);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Subsequent deserialize from JSON
-            Yrkan deserializedKundbehov = mapper.readValue(jsonLD, Yrkan.class);
-            log.debug("JSON -> Object:\n{}", deserializedKundbehov);
+            Yrkan aaterlaestYrkan = mapper.readValue(jsonLD, Yrkan.class);
+            log.debug("JSON -> Object:\n{}", aaterlaestYrkan);
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
-            deserializedKundbehov.beskrivning = "Hundutställning (inkl. bad och tork)";
+            aaterlaestYrkan.beskrivning = "Hundutställning (inkl. bad och tork)";
             {
                 Ersattning ersattning = new Ersattning();
                 ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
                 ersattning.belopp = 100.0;
 
-                deserializedKundbehov.addProduceradeResultat(ersattning);
+                aaterlaestYrkan.addProduceradeResultat(ersattning);
             }
 
             // Re-serialize to JSON
-            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
+            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(aaterlaestYrkan);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Re-modify, operating on same objects (no serializing+deserializing involved)
-            deserializedKundbehov.beskrivning = "Hundutställning (inkl. bad, tork och fön)";
+            aaterlaestYrkan.beskrivning = "Hundutställning (inkl. bad, tork och fön)";
             {
                 Ersattning ersattning = new Ersattning();
                 ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
                 ersattning.belopp = 200.0;
 
-                deserializedKundbehov.addProduceradeResultat(ersattning);
+                aaterlaestYrkan.addProduceradeResultat(ersattning);
             }
 
             // Re-re-serialize to JSON
-            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(deserializedKundbehov);
+            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(aaterlaestYrkan);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
       } catch (JacksonException e) {

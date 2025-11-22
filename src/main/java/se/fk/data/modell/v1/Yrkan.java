@@ -66,7 +66,7 @@ public class Yrkan extends LivscykelHanterad {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Kundbehov{");
+        StringBuilder sb = new StringBuilder("Yrkan{");
         sb.append(super.toString());
         sb.append(", beskrivning='").append(beskrivning).append('\'');
         sb.append(", person=").append(person);
