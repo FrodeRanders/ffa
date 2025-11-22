@@ -7,7 +7,8 @@ import tools.jackson.databind.deser.ValueDeserializerModifier;
 
 public class ClassDeserializerModifier extends ValueDeserializerModifier {
 
-    private final String JSONLD_CONTEXT_NAME = "@context";
+    private final String CONTEXT_NAME = "@context";
+    private final String ATTENTION_FLAG_NAME = "__attention";
 
     @Override
     public BeanDeserializerBuilder updateBuilder(
@@ -15,7 +16,8 @@ public class ClassDeserializerModifier extends ValueDeserializerModifier {
             BeanDescription.Supplier beanDesc,
             BeanDeserializerBuilder builder
     ) {
-        builder.addIgnorable(JSONLD_CONTEXT_NAME);
+        builder.addIgnorable(CONTEXT_NAME);
+        builder.addIgnorable(ATTENTION_FLAG_NAME);
         return builder;
     }
 }

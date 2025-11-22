@@ -50,7 +50,10 @@ public class AttentionPropertyWriter extends VirtualBeanPropertyWriter {
             SerializationContext prov
     ) throws Exception {
         if (bean instanceof LivscykelHanterad lhb) {
-            return lhb.__attention; // may be null, in which case we ignore this field
+            Boolean value = lhb.__attention;
+            lhb.__attention = null; // reset flag
+
+            return value; // may be null, in which case we ignore this field
         }
         return null;
     }
