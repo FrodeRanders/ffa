@@ -23,7 +23,10 @@ import ...
 public class LivscykelHanterad {
 
     @JsonIgnore
-    private transient byte[] digest; // modification detection
+    private transient byte[] __digest;
+
+    @JsonIgnore
+    public Boolean __attention = null;
 
     @JsonProperty("id")
     public String id;
@@ -667,43 +670,47 @@ Ytterligare transformation kan göras på det serialiserade formatet, så som at
 
 Detta är en dump av loggfilen som produceras:
 ```terminaloutput
-2025-11-20 20:17:28.139 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.Yrkan#person
-2025-11-20 20:17:28.143 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.hundbidrag.modell.Yrkan
-2025-11-20 20:17:28.172 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.hundbidrag.modell.Yrkan@0c055c54
-2025-11-20 20:17:28.172 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@0c055c54
-2025-11-20 20:17:28.175 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.Beslut
-2025-11-20 20:17:28.175 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Beslut@7e276594
-2025-11-20 20:17:28.175 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Beslut@7e276594
-2025-11-20 20:17:28.176 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@7e276594
-2025-11-20 20:17:28.177 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @PII property se.fk.data.modell.v1.FysiskPerson#personnummer
-2025-11-20 20:17:28.178 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.RattenTillPeriod
-2025-11-20 20:17:28.179 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.RattenTillPeriod@0555cf22
-2025-11-20 20:17:28.179 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.RattenTillPeriod@0555cf22
-2025-11-20 20:17:28.180 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@0555cf22
-2025-11-20 20:17:28.181 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @Belopp property se.fk.data.modell.v1.Ersattning#belopp
-2025-11-20 20:17:28.181 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.Ersattning
-2025-11-20 20:17:28.181 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@3c9bfddc
-2025-11-20 20:17:28.182 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@3c9bfddc
-2025-11-20 20:17:28.183 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@3c9bfddc
-2025-11-20 20:17:28.183 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@1a9c38eb
-2025-11-20 20:17:28.183 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@1a9c38eb
-2025-11-20 20:17:28.183 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@1a9c38eb
-2025-11-20 20:17:28.184 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.Intyg
-2025-11-20 20:17:28.184 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Intyg@319bc845
-2025-11-20 20:17:28.185 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Intyg@319bc845
-2025-11-20 20:17:28.185 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@319bc845
-2025-11-20 20:17:28.185 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@0c055c54
-2025-11-20 20:17:28.186 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
+2025-11-27 09:46:00.926 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.Yrkan#person
+2025-11-27 09:46:00.930 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.hundbidrag.modell.Yrkan
+2025-11-27 09:46:00.958 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.hundbidrag.modell.Yrkan@25e2ab5a
+2025-11-27 09:46:00.958 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@25e2ab5a
+2025-11-27 09:46:00.961 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.Beslut
+2025-11-27 09:46:00.962 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Beslut@3401a114
+2025-11-27 09:46:00.962 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Beslut@3401a114
+2025-11-27 09:46:00.962 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@3401a114
+2025-11-27 09:46:00.963 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @PII property se.fk.data.modell.v1.FysiskPerson#personnummer
+2025-11-27 09:46:00.965 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.RattenTillPeriod
+2025-11-27 09:46:00.965 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.RattenTillPeriod@6bb2d00b
+2025-11-27 09:46:00.965 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.RattenTillPeriod@6bb2d00b
+2025-11-27 09:46:00.966 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@6bb2d00b
+2025-11-27 09:46:00.967 [TRACE] [main] se.fk.data.modell.json.PropertySerializerModifier @Belopp property se.fk.data.modell.v1.Ersattning#belopp
+2025-11-27 09:46:00.968 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.Ersattning
+2025-11-27 09:46:00.968 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@1a9c38eb
+2025-11-27 09:46:00.968 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@1a9c38eb
+2025-11-27 09:46:00.969 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@1a9c38eb
+2025-11-27 09:46:00.969 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@319bc845
+2025-11-27 09:46:00.969 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@319bc845
+2025-11-27 09:46:00.970 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@319bc845
+2025-11-27 09:46:00.970 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.data.modell.v1.Intyg
+2025-11-27 09:46:00.971 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Intyg@4c5474f5
+2025-11-27 09:46:00.971 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Intyg@4c5474f5
+2025-11-27 09:46:00.972 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@4c5474f5
+2025-11-27 09:46:00.972 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@25e2ab5a
+2025-11-27 09:46:00.972 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
+```
+```json
 {
   "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
+  "__attention" : true,
   "beskrivning" : "Hundutställning (inkl. bad)",
   "beslut" : {
     "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-    "datum" : "2025-11-20T00:00:00.000Z",
-    "id" : "019aa2b3-411b-7450-bd72-404cd5f786e6",
+    "__attention" : true,
+    "datum" : "2025-11-27T00:00:00.000Z",
+    "id" : "019ac47d-a830-7847-9001-c560965035e2",
     "version" : 1
   },
-  "id" : "019aa2b3-4118-7d3e-98ab-cedd01567c00",
+  "id" : "019ac47d-a82e-7506-885a-1e30a5d7840b",
   "person" : {
     "varde" : {
       "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
@@ -716,95 +723,104 @@ Detta är en dump av loggfilen som produceras:
   },
   "producerade_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
+    "__attention" : true,
     "ersattningstyp" : "HUNDBIDRAG",
-    "id" : "019aa2b3-411a-7f25-90df-50574228673c",
+    "id" : "019ac47d-a82f-77fd-ac64-1f67bd65c4a9",
     "omfattning" : "HEL",
     "version" : 1
   }, {
     "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "__attention" : true,
     "belopp" : {
       "varde" : 1000.0,
       "valuta" : null,
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-411a-7662-ac72-8bc9bb39b7d4",
+    "id" : "019ac47d-a830-70b4-9cb9-7a26168e1eca",
     "period" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
     "typ" : "HUNDBIDRAG",
     "version" : 1
   }, {
     "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "__attention" : true,
     "belopp" : {
       "varde" : 500.0,
       "valuta" : null,
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-411b-7395-83a0-606fa361ade5",
+    "id" : "019ac47d-a830-7b21-9392-b26fec29ab4d",
     "period" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
     "typ" : "HUNDBIDRAG",
     "version" : 1
   }, {
     "@context" : "https://data.fk.se/kontext/std/intyg/1.0",
+    "__attention" : true,
     "beskrivning" : "Hittepå",
     "giltighetsperiod" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
-    "id" : "019aa2b3-411b-79ee-b158-f8ef622bf2b3",
+    "id" : "019ac47d-a830-7a49-ae64-b2e008676336",
     "version" : 1
   } ],
   "ras" : "Collie",
   "version" : 1
 }
-2025-11-20 20:17:28.198 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @Som property se.fk.hundbidrag.modell.Yrkan#person
-2025-11-20 20:17:28.201 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.hundbidrag.modell.Yrkan
-2025-11-20 20:17:28.202 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Beslut
-2025-11-20 20:17:28.209 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.ProduceratResultat
-2025-11-20 20:17:28.212 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Beslut@25b2cfcb
-2025-11-20 20:17:28.217 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @PII property se.fk.data.modell.v1.FysiskPerson#personnummer
-2025-11-20 20:17:28.220 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.RattenTillPeriod
-2025-11-20 20:17:28.221 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.RattenTillPeriod@6821ea29
-2025-11-20 20:17:28.222 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @Belopp property se.fk.data.modell.v1.Ersattning#belopp
-2025-11-20 20:17:28.222 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Ersattning
-2025-11-20 20:17:28.227 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Ersattning@75c9e76b
-2025-11-20 20:17:28.228 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Ersattning@7446d8d5
-2025-11-20 20:17:28.228 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Intyg
-2025-11-20 20:17:28.229 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Intyg@5c3b6c6e
-2025-11-20 20:17:28.229 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.hundbidrag.modell.Yrkan@4fbda97b
-2025-11-20 20:17:28.242 [DEBUG] [main] se.fk.hundbidrag.Applikation JSON -> Object:
-Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hundutställning (inkl. bad)', person=FysiskPerson{personnummer='19121212-1212'}, beslut=Beslut{id='019aa2b3-411b-7450-bd72-404cd5f786e6', version=1, datum='2025-11-20', beslutsfattare=, typ=, utfall=, organisation=, lagrum=}, producerade-resultat=[RattenTillPeriod{ProduceratResultat{id='019aa2b3-411a-7f25-90df-50574228673c', version=1}, ersattningstyp='HUNDBIDRAG', omfattning='HEL'}, Ersattning{ProduceratResultat{id='019aa2b3-411a-7662-ac72-8bc9bb39b7d4', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=1000.0}, Ersattning{ProduceratResultat{id='019aa2b3-411b-7395-83a0-606fa361ade5', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=500.0}, Intyg{ProduceratResultat{id='019aa2b3-411b-79ee-b158-f8ef622bf2b3', version=1}, giltighetsperiod=Period{from='Thu Nov 20 01:00:00 CET 2025', tom='Thu Nov 20 01:00:00 CET 2025'}, institution='null', beskrivning='Hittepå', utfardatDatum='null'}, ]}+{ras='Collie'}
-2025-11-20 20:17:28.243 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Yrkan#4fbda97b
-2025-11-20 20:17:28.243 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@4fbda97b
-2025-11-20 20:17:28.244 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@25b2cfcb
-2025-11-20 20:17:28.244 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@6821ea29
-2025-11-20 20:17:28.245 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@75c9e76b
-2025-11-20 20:17:28.245 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@7446d8d5
-2025-11-20 20:17:28.245 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@5c3b6c6e
-2025-11-20 20:17:28.246 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@4cc6fa2a
-2025-11-20 20:17:28.246 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@4cc6fa2a
-2025-11-20 20:17:28.246 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@4cc6fa2a
-2025-11-20 20:17:28.246 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@4fbda97b
-2025-11-20 20:17:28.246 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
+```
+```terminaloutput
+2025-11-27 09:46:00.984 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @Som property se.fk.hundbidrag.modell.Yrkan#person
+2025-11-27 09:46:00.987 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.hundbidrag.modell.Yrkan
+2025-11-27 09:46:00.988 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Beslut
+2025-11-27 09:46:00.995 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.ProduceratResultat
+2025-11-27 09:46:00.998 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Beslut@72758afa
+2025-11-27 09:46:01.003 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @PII property se.fk.data.modell.v1.FysiskPerson#personnummer
+2025-11-27 09:46:01.006 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.RattenTillPeriod
+2025-11-27 09:46:01.007 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.RattenTillPeriod@338494fa
+2025-11-27 09:46:01.008 [TRACE] [main] se.fk.data.modell.json.PropertyDeserializerModifier @Belopp property se.fk.data.modell.v1.Ersattning#belopp
+2025-11-27 09:46:01.008 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Ersattning
+2025-11-27 09:46:01.013 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Ersattning@7446d8d5
+2025-11-27 09:46:01.013 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Ersattning@5c3b6c6e
+2025-11-27 09:46:01.014 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Created for se.fk.data.modell.v1.Intyg
+2025-11-27 09:46:01.015 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.data.modell.v1.Intyg@4fbda97b
+2025-11-27 09:46:01.015 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareDeserializer Deserialized bean se.fk.hundbidrag.modell.Yrkan@75f5fd58
+2025-11-27 09:46:01.027 [DEBUG] [main] se.fk.hundbidrag.Applikation JSON -> Object:
+Yrkan{id='019ac47d-a82e-7506-885a-1e30a5d7840b', version=1, beskrivning='Hundutställning (inkl. bad)', person=FysiskPerson{personnummer='19121212-1212'}, beslut=Beslut{id='019ac47d-a830-7847-9001-c560965035e2', version=1, datum='2025-11-27', beslutsfattare=, typ=, utfall=, organisation=, lagrum=}, producerade-resultat=[RattenTillPeriod{ProduceratResultat{id='019ac47d-a82f-77fd-ac64-1f67bd65c4a9', version=1}, ersattningstyp='HUNDBIDRAG', omfattning='HEL'}, Ersattning{ProduceratResultat{id='019ac47d-a830-70b4-9cb9-7a26168e1eca', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=1000.0}, Ersattning{ProduceratResultat{id='019ac47d-a830-7b21-9392-b26fec29ab4d', version=1}, typ='ersattningstyp:HUNDBIDRAG', belopp=500.0}, Intyg{ProduceratResultat{id='019ac47d-a830-7a49-ae64-b2e008676336', version=1}, giltighetsperiod=Period{from='Thu Nov 27 01:00:00 CET 2025', tom='Thu Nov 27 01:00:00 CET 2025'}, institution='null', beskrivning='Hittepå', utfardatDatum='null'}, ]}+{ras='Collie'}
+2025-11-27 09:46:01.028 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Yrkan#75f5fd58
+2025-11-27 09:46:01.028 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@75f5fd58
+2025-11-27 09:46:01.029 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@72758afa
+2025-11-27 09:46:01.029 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@338494fa
+2025-11-27 09:46:01.030 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@7446d8d5
+2025-11-27 09:46:01.030 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@5c3b6c6e
+2025-11-27 09:46:01.030 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@4fbda97b
+2025-11-27 09:46:01.030 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@40f1be1b
+2025-11-27 09:46:01.031 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@40f1be1b
+2025-11-27 09:46:01.031 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@40f1be1b
+2025-11-27 09:46:01.031 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@75f5fd58
+2025-11-27 09:46:01.031 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
+```
+```json
 {
   "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
+  "__attention" : true,
   "beskrivning" : "Hundutställning (inkl. bad och tork)",
   "beslut" : {
     "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-    "datum" : "2025-11-20T00:00:00.000Z",
-    "id" : "019aa2b3-411b-7450-bd72-404cd5f786e6",
+    "datum" : "2025-11-27T00:00:00.000Z",
+    "id" : "019ac47d-a830-7847-9001-c560965035e2",
     "version" : 1
   },
-  "id" : "019aa2b3-4118-7d3e-98ab-cedd01567c00",
+  "id" : "019ac47d-a82e-7506-885a-1e30a5d7840b",
   "person" : {
     "varde" : {
       "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
@@ -818,7 +834,7 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
   "producerade_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
     "ersattningstyp" : "HUNDBIDRAG",
-    "id" : "019aa2b3-411a-7f25-90df-50574228673c",
+    "id" : "019ac47d-a82f-77fd-ac64-1f67bd65c4a9",
     "omfattning" : "HEL",
     "version" : 1
   }, {
@@ -829,11 +845,11 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-411a-7662-ac72-8bc9bb39b7d4",
+    "id" : "019ac47d-a830-70b4-9cb9-7a26168e1eca",
     "period" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
     "typ" : "HUNDBIDRAG",
     "version" : 1
@@ -845,11 +861,11 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-411b-7395-83a0-606fa361ade5",
+    "id" : "019ac47d-a830-7b21-9392-b26fec29ab4d",
     "period" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
     "typ" : "HUNDBIDRAG",
     "version" : 1
@@ -858,49 +874,55 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
     "beskrivning" : "Hittepå",
     "giltighetsperiod" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
-    "id" : "019aa2b3-411b-79ee-b158-f8ef622bf2b3",
+    "id" : "019ac47d-a830-7a49-ae64-b2e008676336",
     "version" : 1
   }, {
     "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "__attention" : true,
     "belopp" : {
       "varde" : 100.0,
       "valuta" : null,
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-4232-736c-9a4a-7ee98cd68cd2",
+    "id" : "019ac47d-a943-75ca-bcbe-d170912071d6",
     "typ" : "HUNDBIDRAG",
     "version" : 1
   } ],
   "ras" : "Collie",
   "version" : 2
 }
-2025-11-20 20:17:28.247 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Yrkan#4fbda97b
-2025-11-20 20:17:28.247 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@4fbda97b
-2025-11-20 20:17:28.247 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@25b2cfcb
-2025-11-20 20:17:28.247 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@6821ea29
-2025-11-20 20:17:28.248 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@75c9e76b
-2025-11-20 20:17:28.248 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@7446d8d5
-2025-11-20 20:17:28.248 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@5c3b6c6e
-2025-11-20 20:17:28.248 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@4cc6fa2a
-2025-11-20 20:17:28.249 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@40f1be1b
-2025-11-20 20:17:28.249 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@40f1be1b
-2025-11-20 20:17:28.249 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@40f1be1b
-2025-11-20 20:17:28.249 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@4fbda97b
-2025-11-20 20:17:28.249 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
+```
+```terminaloutput
+2025-11-27 09:46:01.031 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** Modified bean: se.fk.hundbidrag.modell.Yrkan#75f5fd58
+2025-11-27 09:46:01.032 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.hundbidrag.modell.Yrkan@75f5fd58
+2025-11-27 09:46:01.032 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Beslut@72758afa
+2025-11-27 09:46:01.032 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.RattenTillPeriod@338494fa
+2025-11-27 09:46:01.033 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@7446d8d5
+2025-11-27 09:46:01.033 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@5c3b6c6e
+2025-11-27 09:46:01.033 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@4fbda97b
+2025-11-27 09:46:01.033 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@40f1be1b
+2025-11-27 09:46:01.033 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v1.Ersattning@7a791b66
+2025-11-27 09:46:01.034 [TRACE] [main] se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@7a791b66
+2025-11-27 09:46:01.034 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Ersattning@7a791b66
+2025-11-27 09:46:01.034 [DEBUG] [main] se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.Yrkan@75f5fd58
+2025-11-27 09:46:01.034 [DEBUG] [main] se.fk.hundbidrag.Applikation Object -> JSON:
+```
+```json
 {
   "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
+  "__attention" : true,
   "beskrivning" : "Hundutställning (inkl. bad, tork och fön)",
   "beslut" : {
     "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
-    "datum" : "2025-11-20T00:00:00.000Z",
-    "id" : "019aa2b3-411b-7450-bd72-404cd5f786e6",
+    "datum" : "2025-11-27T00:00:00.000Z",
+    "id" : "019ac47d-a830-7847-9001-c560965035e2",
     "version" : 1
   },
-  "id" : "019aa2b3-4118-7d3e-98ab-cedd01567c00",
+  "id" : "019ac47d-a82e-7506-885a-1e30a5d7840b",
   "person" : {
     "varde" : {
       "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
@@ -914,7 +936,7 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
   "producerade_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
     "ersattningstyp" : "HUNDBIDRAG",
-    "id" : "019aa2b3-411a-7f25-90df-50574228673c",
+    "id" : "019ac47d-a82f-77fd-ac64-1f67bd65c4a9",
     "omfattning" : "HEL",
     "version" : 1
   }, {
@@ -925,11 +947,11 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-411a-7662-ac72-8bc9bb39b7d4",
+    "id" : "019ac47d-a830-70b4-9cb9-7a26168e1eca",
     "period" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
     "typ" : "HUNDBIDRAG",
     "version" : 1
@@ -941,11 +963,11 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-411b-7395-83a0-606fa361ade5",
+    "id" : "019ac47d-a830-7b21-9392-b26fec29ab4d",
     "period" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
     "typ" : "HUNDBIDRAG",
     "version" : 1
@@ -954,10 +976,10 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
     "beskrivning" : "Hittepå",
     "giltighetsperiod" : {
       "@context" : "https://data.fk.se/kontext/std/period/1.0",
-      "from" : "2025-11-20T00:00:00.000Z",
-      "tom" : "2025-11-20T00:00:00.000Z"
+      "from" : "2025-11-27T00:00:00.000Z",
+      "tom" : "2025-11-27T00:00:00.000Z"
     },
-    "id" : "019aa2b3-411b-79ee-b158-f8ef622bf2b3",
+    "id" : "019ac47d-a830-7a49-ae64-b2e008676336",
     "version" : 1
   }, {
     "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
@@ -967,18 +989,19 @@ Yrkan{id='019aa2b3-4118-7d3e-98ab-cedd01567c00', version=1, beskrivning='Hunduts
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-4232-736c-9a4a-7ee98cd68cd2",
+    "id" : "019ac47d-a943-75ca-bcbe-d170912071d6",
     "typ" : "HUNDBIDRAG",
     "version" : 1
   }, {
     "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "__attention" : true,
     "belopp" : {
       "varde" : 200.0,
       "valuta" : null,
       "skattestatus" : null,
       "period" : null
     },
-    "id" : "019aa2b3-4236-7332-b371-d2451e9befc2",
+    "id" : "019ac47d-a947-7c6c-bdbd-60b2d2b0f42c",
     "typ" : "HUNDBIDRAG",
     "version" : 1
   } ],

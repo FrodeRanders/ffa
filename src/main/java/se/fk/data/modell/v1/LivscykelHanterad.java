@@ -8,7 +8,7 @@ import java.security.MessageDigest;
 
 public class LivscykelHanterad {
     @JsonIgnore
-    private transient byte[] digest;
+    private transient byte[] __digest;
 
     @JsonIgnore
     public Boolean __attention = null;
@@ -34,17 +34,17 @@ public class LivscykelHanterad {
 
     @JsonIgnore
     public boolean compareDigest(byte[] current) {
-        return MessageDigest.isEqual(current, digest);
+        return MessageDigest.isEqual(current, __digest);
     }
 
     @JsonIgnore
     public void resetDigest(byte[] current) {
-        digest = current;
+        __digest = current;
     }
 
     @JsonIgnore
     public byte[] getDigest() {
-        return digest;
+        return __digest;
     }
 
     @JsonIgnore
