@@ -199,11 +199,9 @@ utvidgat med uppgift om hundens ras.
 // -------------------------------------------------------------------
 // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
 // -------------------------------------------------------------------
-Ersattning ers1 = new Ersattning("Avgift", 1000);
-Ersattning ers2 = new Ersattning("Bad", 500);
 
 // Efter etablering av yrkan och i samband med initiering av yrkansflöde
-/* Yrkan */ Yrkan yrkan = new Yrkan("Hundutställning (inkl. bad)","Collie");
+Yrkan yrkan = new Yrkan("Hundutställning (inkl. bad)","Collie");
 {
     FysiskPerson person = new FysiskPerson("19121212-1212");
 
