@@ -11,11 +11,11 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <log4j.version>2.25.2</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>4.13.2</junit.version>
-        <guid-gen.version>5.1.1</guid-gen.version>
-        <jackson.version>3.0.2</jackson.version>
+        <guid-gen.version>5.2.0</guid-gen.version>
+        <jackson.version>3.0.3</jackson.version>
     </properties>
 
     <dependencies>
