@@ -6,7 +6,7 @@ import com.fasterxml.uuid.Generators;
 
 import java.security.MessageDigest;
 
-public class LivscykelHanterad {
+public class Livscykelhanterad {
     @JsonIgnore
     private transient byte[] __digest;
 
@@ -24,9 +24,9 @@ public class LivscykelHanterad {
         this.version++;
     }
 
-    protected LivscykelHanterad() {} // Required for deserialization
+    protected Livscykelhanterad() {} // Required for deserialization
 
-    protected LivscykelHanterad(String id) {
+    protected Livscykelhanterad(String id) {
         if (null != id && !id.isEmpty()) {
             this.id = id;
         }

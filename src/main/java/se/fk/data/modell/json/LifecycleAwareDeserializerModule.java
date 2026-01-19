@@ -5,7 +5,7 @@ import tools.jackson.databind.deser.ValueDeserializerModifier;
 import tools.jackson.databind.module.SimpleModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.v1.LivscykelHanterad;
+import se.fk.data.modell.v1.Livscykelhanterad;
 
 public class LifecycleAwareDeserializerModule extends SimpleModule {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareDeserializerModule.class);
@@ -27,7 +27,7 @@ public class LifecycleAwareDeserializerModule extends SimpleModule {
             ) {
                 Class<?> beanClass = beanDesc.getBeanClass();
                 if (MutationPredicates.isLifeCycleHandled(beanClass)) {
-                    return new LifecycleAwareDeserializer<>(deserializer, (Class<LivscykelHanterad>) beanClass, canonicalMapper);
+                    return new LifecycleAwareDeserializer<>(deserializer, (Class<Livscykelhanterad>) beanClass, canonicalMapper);
                 }
                 return deserializer;
             }

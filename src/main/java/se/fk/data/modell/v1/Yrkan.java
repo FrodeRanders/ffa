@@ -28,7 +28,7 @@ import java.util.Collection;
  */
 
 @Context("https://data.fk.se/kontext/std/yrkan/1.0")
-public class Yrkan extends LivscykelHanterad {
+public class Yrkan extends Livscykelhanterad {
     @Som(typ = "ffa:yrkande")
     @JsonProperty("person")
     public Person person;

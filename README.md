@@ -38,13 +38,14 @@ public class LivscykelHanterad {
 }
 ```
 ### Yrkan
+
 ```java
 package se.fk.data.modell.v1;
 
 import ...
 
 @Context("https://data.fk.se/kontext/std/yrkan/1.0")
-public class Yrkan extends LivscykelHanterad {
+public class Yrkan extends Livscykelhanterad {
 
     @Som(typ = "ffa:yrkande")
     @JsonProperty("person")
@@ -81,42 +82,43 @@ public class FysiskPerson extends Person{
 ```
 
 ### Beslut
+
 ```java
 package se.fk.data.modell.v1;
 
 import ...
 
 @Context("https://data.fk.se/kontext/std/beslut/1.0")
-public class Beslut extends LivscykelHanterad {
+public class Beslut extends Livscykelhanterad {
 
     public enum Typ {
-        INTERRIMISTISK (1),
-        STALLNINGSTAGANDE (2),
-        SLUTLIGT (3);
+        INTERRIMISTISK(1),
+        STALLNINGSTAGANDE(2),
+        SLUTLIGT(3);
 
         ...
     }
 
     public enum Utfall {
-        BEVILJAT (1),
-        AVSLAG (2),
-        DELVIS_BEVILJANDE (3),
-        AVVISNING (4),
-        AVSKRIVNING (5);
+        BEVILJAT(1),
+        AVSLAG(2),
+        DELVIS_BEVILJANDE(3),
+        AVVISNING(4),
+        AVSKRIVNING(5);
 
         ...
     }
 
     public enum Lagrum {
-        SFB_K112_P2a ("SFB Kap. 112 § 2a"),
-        SFB_K112_P3 ("SFB Kap. 112 § 3"),
-        SFB_K112_P4 ("SFB Kap. 112 § 4"),
-        SFB_K113_P3_S1 ("SFB Kap. 113 § 3 p. 1"),
-        SFB_K113_P3_S2 ("SFB Kap. 113 § 3 p. 2"),
-        SFB_K113_P3_S3 ("SFB Kap. 113 § 3 p. 3"),
-        FL_P36 ("FL § 36"),
-        FL_P37 ("FL § 37"),
-        FL_P38 ("FL § 38");
+        SFB_K112_P2a("SFB Kap. 112 § 2a"),
+        SFB_K112_P3("SFB Kap. 112 § 3"),
+        SFB_K112_P4("SFB Kap. 112 § 4"),
+        SFB_K113_P3_S1("SFB Kap. 113 § 3 p. 1"),
+        SFB_K113_P3_S2("SFB Kap. 113 § 3 p. 2"),
+        SFB_K113_P3_S3("SFB Kap. 113 § 3 p. 3"),
+        FL_P36("FL § 36"),
+        FL_P37("FL § 37"),
+        FL_P38("FL § 38");
 
         ...
     }
@@ -144,13 +146,14 @@ public class Beslut extends LivscykelHanterad {
 ```
 
 ### Ersättning
+
 ```java
 package se.fk.data.modell.v1;
 
 import ...
 
 @Context("https://data.fk.se/kontext/std/ersattning/1.0")
-public class Ersattning extends LivscykelHanterad {
+public class Ersattning extends Livscykelhanterad {
 
     @JsonProperty("typ")
     public String typ;
@@ -174,7 +177,7 @@ import
 import se.fk.data.modell.v1.Yrkan; ...
 
 @Context("https://data.fk.se/kontext/hundbidrag/yrkan/1.0")
-public class Yrkan extends Yrkan {
+public class Yrkan extends se.fk.data.modell.v1.Yrkan {
 
     @JsonProperty("ras")
     String ras;

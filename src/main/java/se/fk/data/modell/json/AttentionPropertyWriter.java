@@ -2,7 +2,7 @@ package se.fk.data.modell.json;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.v1.LivscykelHanterad;
+import se.fk.data.modell.v1.Livscykelhanterad;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.SerializationContext;
@@ -49,7 +49,7 @@ public class AttentionPropertyWriter extends VirtualBeanPropertyWriter {
             JsonGenerator gen,
             SerializationContext prov
     ) throws Exception {
-        if (bean instanceof LivscykelHanterad lhb) {
+        if (bean instanceof Livscykelhanterad lhb) {
             Boolean value = lhb.__attention;
             lhb.__attention = null; // reset flag
 

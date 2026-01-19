@@ -29,7 +29,7 @@ import java.util.Locale;
  */
 
 @Context("https://data.fk.se/kontext/std/beslut/1.0")
-public class Beslut extends LivscykelHanterad {
+public class Beslut extends Livscykelhanterad {
     public enum Typ {
         INTERRIMISTISK (1),
         STALLNINGSTAGANDE (2),

@@ -8,12 +8,9 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ser.std.StdSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.v1.LivscykelHanterad;
+import se.fk.data.modell.v1.Livscykelhanterad;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-
-public final class LifecycleAwareSerializer<T extends LivscykelHanterad> extends StdSerializer<T> {
+public final class LifecycleAwareSerializer<T extends Livscykelhanterad> extends StdSerializer<T> {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareSerializer.class);
 
     private final ValueSerializer<Object> defaultSerializer;

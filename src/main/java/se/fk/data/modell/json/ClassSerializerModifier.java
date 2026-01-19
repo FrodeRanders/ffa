@@ -1,6 +1,5 @@
 package se.fk.data.modell.json;
 
-import se.fk.data.modell.v1.LivscykelHanterad;
 import tools.jackson.databind.BeanDescription;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.PropertyName;

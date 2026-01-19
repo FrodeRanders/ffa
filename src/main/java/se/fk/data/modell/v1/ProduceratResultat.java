@@ -11,7 +11,7 @@ import se.fk.data.modell.adapters.ProduceratResultatTypeIdResolver;
         visible = true
 )
 @JsonTypeIdResolver(ProduceratResultatTypeIdResolver.class)
-public class ProduceratResultat extends LivscykelHanterad {
+public class ProduceratResultat extends Livscykelhanterad {
 
     public ProduceratResultat() {} // Required for deserialization
 

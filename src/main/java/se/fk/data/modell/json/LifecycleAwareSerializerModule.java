@@ -3,7 +3,7 @@ package se.fk.data.modell.json;
 import tools.jackson.databind.*;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.ValueSerializerModifier;
-import se.fk.data.modell.v1.LivscykelHanterad;
+import se.fk.data.modell.v1.Livscykelhanterad;
 
 public class LifecycleAwareSerializerModule extends SimpleModule {
     private final ObjectMapper canonicalMapper;
@@ -25,7 +25,7 @@ public class LifecycleAwareSerializerModule extends SimpleModule {
                 if (MutationPredicates.isLifeCycleHandled(beanClass)) {
                     return new LifecycleAwareSerializer<>(
                             (ValueSerializer<Object>) serializer,
-                            (Class<LivscykelHanterad>) beanClass,
+                            (Class<Livscykelhanterad>) beanClass,
                             canonicalMapper
                     );
                 }
