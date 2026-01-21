@@ -6,6 +6,13 @@ import com.fasterxml.uuid.Generators;
 
 import java.security.MessageDigest;
 
+/**
+ * Utgör bas för att identifiera ett objekt ("id"), för att upptäcka att ett
+ * livscykelhanterat objekt har ändrats (genom användning av en kontrollsumma/digest),
+ * för att automatiskt inkrementera versionsnumret när en ändring upptäckts,
+ * samt för att markera att ett objekt har ändrats (via en uppmärksamhetsflagga) så att
+ * mottagaren inte behöver jämföra med redan lagrade data.
+ */
 public class Livscykelhanterad {
     @JsonIgnore
     private transient byte[] __digest;

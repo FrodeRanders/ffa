@@ -20,7 +20,14 @@ package se.fk.data.modell.v1;
 
 import ...
 
-public class LivscykelHanterad {
+/**
+ * Utgör bas för att identifiera ett objekt (“id”), för att upptäcka att ett
+ * livscykelhanterat objekt har ändrats (genom användning av en kontrollsumma/digest),
+ * för att automatiskt inkrementera versionsnumret när en ändring upptäckts,
+ * samt för att markera att ett objekt har ändrats (via en uppmärksamhetsflagga) så att
+ * mottagaren inte behöver jämföra med redan lagrade data. 
+ */
+public class Livscykelhanterad {
 
     @JsonIgnore
     private transient byte[] __digest;
@@ -166,6 +173,16 @@ public class Ersattning extends Livscykelhanterad {
 }
 ```
 
+Detta är en generell basklass för ersättning, så vi vill inte säga något särskilt kring vilken typ
+av `belopp` detta rör sig om. Om man finner det lämpligt så kan man specialisera ersättningsobjektet 
+vid användning och direkt i koden ange detta:
+
+```java
+    @Belopp(valuta = "SEK", skattestatus = "SKATTEPLIKTIG", period = "PER_DAG")
+    @JsonProperty("belopp")
+    public double belopp;
+```
+
 ### Utvidgning av Yrkan för Hundbidraget (löjligt exempel)
 I detta exempel, så har FFA-standard Yrkan utvidgats med uppgift om hundens ras. För
 utvidgning används Javas arvsmekanism.
@@ -297,8 +314,8 @@ se.fk.data.modell.json.LifecycleAwareSerializer   Stepping version of bean: se.f
 se.fk.data.modell.json.LifecycleAwareSerializer   Serialized bean se.fk.data.modell.v1.Beslut@34158c08
 se.fk.data.modell.json.LifecycleAwareSerializer   Serialized bean se.fk.hundbidrag.modell.Yrkan@13ad5cd3
 ```
-Låt oss titta på vad som händer med ```se.fk.data.modell.v1.FysiskPerson#personnummer``` och 
-```se.fk.data.modell.v1.Ersattning#belopp``` vid serialisering efter att vi tittat på producerad JSON.
+Låt oss titta på vad som händer med `se.fk.data.modell.v1.FysiskPerson#personnummer` och 
+`se.fk.data.modell.v1.Ersattning#belopp` vid serialisering efter att vi tittat på producerad JSON.
 
 ```json
 {
@@ -353,9 +370,9 @@ Låt oss titta på vad som händer med ```se.fk.data.modell.v1.FysiskPerson#pers
 }
 ```
 
-Notera hur fältet ```belopp``` i ```Ersättning```, som i Java var annnoterat med ```@Belopp```, har
-expanderats i samband med serialiseringen. ```@Belopp```-annoteringen indikerar att vi för detta fält
-behöver fånga förmånskontext kring beloppsuppgiften. Fältet ```belopp``` har i samband med serialisering
+Notera hur fältet `belopp` i `Ersättning`, som i Java var annnoterat med `@Belopp`, har
+expanderats i samband med serialiseringen. `@Belopp`-annoteringen indikerar att vi för detta fält
+behöver fånga förmånskontext kring beloppsuppgiften. Fältet `belopp` har i samband med serialisering
 expanderats till:
 
 ```json
@@ -366,7 +383,7 @@ expanderats till:
     "period" : null
 }
 ```
-Samma sak gäller ```personnummer``` i ```FysiskPerson```, som annoterats med ```@PII(typ="pii:personnummer")``` 
+Samma sak gäller `personnummer` i `FysiskPerson`, som annoterats med `@PII(typ="pii:personnummer")` 
 och som därför expanderats till:
 
 ```json
@@ -390,12 +407,12 @@ Det finns i allmänhet två varianter av dessa annoteringar:
  * en som expanderas i producerad JSON men med 'null'-värden och som möjliggör att dessa värden tillförs i ett eftersteg, samt
  * en som expanderas men med hårdkodade värden från källkoden, där man tillför kontext direkt i realiseringen.
 
-I fallet med ```@Belopp```-annoteringen så vore det inte lämpligt att göra detta i en basklass
-(där annoteringen sitter på standard-realiseringen av ```Ersättning```) eftersom vi har både
+I fallet med `@Belopp`-annoteringen så vore det inte lämpligt att göra detta i en basklass
+(där annoteringen sitter på standard-realiseringen av `Ersättning`) eftersom vi har både
 dagförmåner och periodbaserade förmåner, samt både skattade och oskattade ersättningar.
 
 Här bör kontext kring överföring av 'belopp' tillföras i ett eftersteg via context-hanteringen,
-som beror på ```@Context```-annoteringen.
+som beror på `@Context`-annoteringen.
 
 Nåväl; vi föreställer oss att vi vid ett senare tillfälle återhämtar processes tillstånd, varvid
 vi erhåller en JSON (samma JSON som vi tidigare producerade) och deserialiserar denna:
@@ -455,7 +472,7 @@ Yrkan{
     ras='Collie'
 }
 ```
-Notera hur det expanderade beloppet i JSON-serialiseringen nu återuppstår som ```belopp``` i ```Ersattning```.
+Notera hur det expanderade beloppet i JSON-serialiseringen nu återuppstår som `belopp` i `Ersattning`.
 
 Nästa steg är att simulera en ändring i processens tillstånd -- i detta fall så har beskrivningen av
 Yrkanet modifierats och vi har lagt till en ny ersättning (för torkning efter bad -- mycket viktigt):
@@ -487,7 +504,7 @@ se.fk.data.modell.json.LifecycleAwareSerializer  Serialized bean se.fk.data.mode
 se.fk.data.modell.json.LifecycleAwareSerializer  Serialized bean se.fk.hundbidrag.modell.Yrkan@62727399
 ```
 
-Notera hur ```se.fk.data.modell.json.LifecycleAwareSerializer``` upptäckt att två object är
+Notera hur `se.fk.data.modell.json.LifecycleAwareSerializer` upptäckt att två object är
 modifierade... Yrkanet har en ändrad beskrivning och vi har en ny Ersattning
 
 ```terminaloutput
