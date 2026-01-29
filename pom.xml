@@ -16,6 +16,9 @@
         <junit.version>4.13.2</junit.version>
         <guid-gen.version>5.2.0</guid-gen.version>
         <jackson.version>3.0.3</jackson.version>
+        <titanium-jcs.version>2.0.0</titanium-jcs.version>
+        <bcprov.version>1.78.1</bcprov.version>
+        <bcpkix.version>1.78.1</bcpkix.version>
     </properties>
 
     <dependencies>
@@ -23,6 +26,12 @@
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.apicatalog</groupId>
+            <artifactId>titanium-jcs</artifactId>
+            <version>${titanium-jcs.version}</version>
         </dependency>
 
         <dependency>
@@ -59,6 +68,20 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>${bcprov.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>${bcpkix.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

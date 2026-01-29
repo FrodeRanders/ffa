@@ -26,9 +26,37 @@ public class DigestUtils {
             ObjectMapper mapper
     ) {
         byte[] json = mapper.writeValueAsBytes(bean);
+        byte[] canonical = JcsUtils.canonicalize(json);
+        return sha256.digest(canonical);
+    }
+
+    public static byte[] computeJcsDigestFromJsonBytes(byte[] jsonBytes) {
+        if (jsonBytes == null) {
+            throw new IllegalArgumentException("jsonBytes must not be null");
+        }
+        byte[] canonical = JcsUtils.canonicalize(jsonBytes);
+        return sha256.digest(canonical);
+    }
+
+    public static byte[] computeLegacyDigest(
+            Object bean,
+            ObjectMapper mapper
+    ) {
+        byte[] json = mapper.writeValueAsBytes(bean);
         return sha256.digest(json);
     }
 
+    public static boolean isLegacyDigestMatch(
+            Object bean,
+            ObjectMapper mapper,
+            byte[] storedDigest
+    ) {
+        if (storedDigest == null) {
+            return false;
+        }
+        byte[] legacy = computeLegacyDigest(bean, mapper);
+        return MessageDigest.isEqual(legacy, storedDigest);
+    }
 
     private static final char[] HEX = "0123456789abcdef".toCharArray();
     // Light→dark ramp for ASCII bar

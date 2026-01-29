@@ -2,19 +2,16 @@ package se.fk.hundbidrag;
 
 import tools.jackson.core.JacksonException;
 import com.fasterxml.uuid.Generators;
-import se.fk.data.modell.json.DeserializationSnooper;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Yrkan;
+import se.fk.mimer.klient.MimerProxy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
 import java.util.Date;
 
 import static java.time.temporal.ChronoUnit.DAYS;
-import static se.fk.data.modell.json.Modifiers.getModules;
 
 
 /**
@@ -89,18 +86,14 @@ public class Applikation {
         //  - återläsning
         // -------------------------------------------------------------------
         try {
-            JsonMapper mapper = JsonMapper.builder()
-                    .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
-                    .addModules(getModules())
-                    .addHandler(new DeserializationSnooper())
-                    .build();
+            MimerProxy proxy = MimerProxy.defaultInstance();
 
             // Initial serialize to JSON
-            String jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(yrkan);
+            String jsonLD = proxy.serializePretty(yrkan);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Subsequent deserialize from JSON
-            Yrkan aaterlaestYrkan = mapper.readValue(jsonLD, Yrkan.class);
+            Yrkan aaterlaestYrkan = proxy.deserialize(jsonLD, Yrkan.class);
             log.debug("JSON -> Object:\n{}", aaterlaestYrkan);
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
@@ -114,7 +107,7 @@ public class Applikation {
             }
 
             // Re-serialize to JSON
-            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(aaterlaestYrkan);
+            jsonLD = proxy.serializePretty(aaterlaestYrkan);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Re-modify, operating on same objects (no serializing+deserializing involved)
@@ -128,7 +121,7 @@ public class Applikation {
             }
 
             // Re-re-serialize to JSON
-            jsonLD = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(aaterlaestYrkan);
+            jsonLD = proxy.serializePretty(aaterlaestYrkan);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
       } catch (JacksonException e) {

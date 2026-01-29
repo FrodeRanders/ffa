@@ -39,11 +39,21 @@ public final class LifecycleAwareSerializer<T extends Livscykelhanterad> extends
 
         boolean isNew = null == stored;
         boolean isModified = !bean.compareDigest(current);
+        boolean legacyDigestMatch = false;
+
+        if (!isNew && isModified) {
+            legacyDigestMatch = DigestUtils.isLegacyDigestMatch(bean, canonicalMapper, stored);
+            if (legacyDigestMatch) {
+                isModified = false;
+            }
+        }
 
         if (isNew) {
             log.trace("** New bean: {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
         } else if (isModified) {
             log.trace("** Modified bean: {}#{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
+        } else if (legacyDigestMatch) {
+            log.trace("** Legacy digest migrated for bean: {}#{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
         }
 
         // Auto-increment version if bean is new or modified
