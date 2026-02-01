@@ -1,17 +1,14 @@
 package se.fk.data.modell.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.BeanProperty;
-import tools.jackson.databind.ValueSerializer;
-import tools.jackson.databind.SerializationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.annotations.Belopp;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.jsontype.TypeSerializer;
-
-import java.io.IOException;
 
 public class BeloppPropertySerializer extends ValueSerializer<Object> {
     private static final Logger log = LoggerFactory.getLogger(BeloppPropertySerializer.class);

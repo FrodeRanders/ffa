@@ -8,25 +8,23 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.fk.data.modell.json.DigestUtils;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import javax.crypto.Cipher;
 import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Security;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Map;
 
-import se.fk.data.modell.json.DigestUtils;
-
 import static org.junit.Assert.*;
 
 public class MimerProxySignTest {
+    private static final Logger log = LoggerFactory.getLogger(MimerProxySignTest.class);
     private static final byte[] SHA256_DIGEST_INFO_PREFIX = new byte[] {
             0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, (byte) 0x86,
             0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20
@@ -34,6 +32,7 @@ public class MimerProxySignTest {
 
     @Test
     public void serializeAndSign_producesVerifiableSignature() throws Exception {
+        log.info("*** Testcase *** Serialize payload and sign it, then verify signature and chain");
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
@@ -80,6 +79,7 @@ public class MimerProxySignTest {
 
     @Test
     public void verifyAndDeserialize_acceptsValidSignature() throws Exception {
+        log.info("*** Testcase *** Verify signature and deserialize JSON when signature is valid");
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
@@ -119,6 +119,7 @@ public class MimerProxySignTest {
 
     @Test
     public void verifyAndDeserialize_rejectsInvalidSignature() throws Exception {
+        log.info("*** Testcase *** Reject verification when JSON bytes are tampered after signing");
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
@@ -161,6 +162,7 @@ public class MimerProxySignTest {
 
     @Test
     public void verifySignature_acceptsWhitespaceDifferences() throws Exception {
+        log.info("*** Testcase *** Accept signature when JSON differs only by whitespace formatting");
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
@@ -195,6 +197,7 @@ public class MimerProxySignTest {
 
     @Test
     public void verifySignature_rejectsSemanticChange() throws Exception {
+        log.info("*** Testcase *** Reject signature when JSON content changes semantically");
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
@@ -229,6 +232,7 @@ public class MimerProxySignTest {
 
     @Test
     public void verifySignature_acceptsKeyOrderingDifferences() throws Exception {
+        log.info("*** Testcase *** Accept signature when JSON key order is different but semantics match");
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
@@ -262,6 +266,7 @@ public class MimerProxySignTest {
 
     @Test
     public void verifySignature_rejectsNumericNormalizationChange() throws Exception {
+        log.info("*** Testcase *** Accept signature when numeric formatting changes but value is equivalent");
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();

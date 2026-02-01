@@ -1,13 +1,13 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import tools.jackson.databind.annotation.JsonTypeIdResolver;
 import se.fk.data.modell.adapters.ProduceratResultatTypeIdResolver;
+import tools.jackson.databind.annotation.JsonTypeIdResolver;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.CUSTOM,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
-        property = "@context",
+        property = "@type",
         visible = true
 )
 @JsonTypeIdResolver(ProduceratResultatTypeIdResolver.class)

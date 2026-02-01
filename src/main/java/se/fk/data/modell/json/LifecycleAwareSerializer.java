@@ -1,14 +1,14 @@
 package se.fk.data.modell.json;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.ValueSerializer;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.SerializationContext;
-import tools.jackson.databind.ser.std.StdSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.v1.Livscykelhanterad;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 public final class LifecycleAwareSerializer<T extends Livscykelhanterad> extends StdSerializer<T> {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareSerializer.class);
@@ -39,21 +39,10 @@ public final class LifecycleAwareSerializer<T extends Livscykelhanterad> extends
 
         boolean isNew = null == stored;
         boolean isModified = !bean.compareDigest(current);
-        boolean legacyDigestMatch = false;
-
-        if (!isNew && isModified) {
-            legacyDigestMatch = DigestUtils.isLegacyDigestMatch(bean, canonicalMapper, stored);
-            if (legacyDigestMatch) {
-                isModified = false;
-            }
-        }
-
         if (isNew) {
             log.trace("** New bean: {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
         } else if (isModified) {
             log.trace("** Modified bean: {}#{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
-        } else if (legacyDigestMatch) {
-            log.trace("** Legacy digest migrated for bean: {}#{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
         }
 
         // Auto-increment version if bean is new or modified
@@ -67,10 +56,12 @@ public final class LifecycleAwareSerializer<T extends Livscykelhanterad> extends
 
         }
 
-        bean.resetDigest(current);
-
         // Delegate the actual JSON structure
         defaultSerializer.serialize(bean, gen, provider);
+
+        // Recompute after serialization in case serializers mutate bean state.
+        current = DigestUtils.computeDigest(bean, canonicalMapper);
+        bean.resetDigest(current);
 
         log.debug("Serialized bean {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
     }

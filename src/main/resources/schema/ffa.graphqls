@@ -1,0 +1,564 @@
+#
+# Copyright (C) 2025-2026 Frode Randers
+# All rights reserved
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+##############  directive definitions ############################
+"""
+@datatypeRegistry annotates an enum, marking it as being definitions
+of basic data types (using the @datatype directive). These basic data
+types are not configurable as such -- they are inherent and known to
+the system -- but they need to be referable in the schema.
+
+All of the following attributes are defined using these basic data types.
+"""
+directive @datatypeRegistry on ENUM
+directive @datatype(id: Int) on ENUM_VALUE
+
+"""
+@attributeRegistry annotates an enum, marking it as being definitions
+of attributes (using the @attribute directive).
+
+All of the following types are defined using these attributes.
+"""
+directive @attributeRegistry on ENUM
+directive @attribute(
+    datatype: DataTypes!
+    array:    Boolean = true # is capable of handling arrays
+    name:     String = null
+    uri:      String = null
+    description: String = null
+) on ENUM_VALUE
+
+"""
+@template annotates identifiable units that consists of attributes
+(i.e. fields defined using the @use directive) that are defined
+in the @attributeRegistry.
+
+@record annotates bundles of attributes that can be combined in
+various ways to represent compounds, such as an address. Records
+are used to define units.
+"""
+directive @use(attribute: Attributes!) on FIELD_DEFINITION
+directive @template(name: String) on OBJECT
+directive @record(attribute: Attributes!) on OBJECT
+
+##############  basic data types ############################
+enum DataTypes @datatypeRegistry {
+    STRING    @datatype(id: 1)
+    TIME      @datatype(id: 2)
+    INTEGER   @datatype(id: 3)
+    LONG      @datatype(id: 4)
+    DOUBLE    @datatype(id: 5)
+    BOOLEAN   @datatype(id: 6)
+    DATA      @datatype(id: 7)
+    RECORD    @datatype(id: 99)
+}
+
+############## attributes ############################
+enum Attributes @attributeRegistry {
+    abstract @attribute(datatype: STRING, array: true,
+        name: "dcterms:abstract", uri: "http://purl.org/dc/terms/abstract",
+        description: "A summary of the resource.")
+
+    "Access Rights may include information regarding access or restrictions based on privacy, security, or other policies."
+    accessRights @attribute(datatype: STRING, array: true,
+        name: "dcterms:accessRights", uri: "http://purl.org/dc/terms/accessRights",
+        description: "Information about who access the resource or an indication of its security status.")
+
+    "Recommended practice is to use a value from the Collection Description Accrual Method Vocabulary [DCMI-ACCRUALMETHOD]."
+    accrualMethod @attribute(datatype: STRING, array: true,
+        name: "dcterms:accrualMethod", uri: "http://purl.org/dc/terms/accrualMethod",
+        description: "The method by which items are added to a collection.")
+
+    "Recommended practice is to use a value from the Collection Description Frequency Vocabulary [DCMI-COLLFREQ]."
+    accrualPeriodicity @attribute(datatype: STRING, array: true,
+        name: "dcterms:accrualPeriodicity", uri: "http://purl.org/dc/terms/accrualPeriodicity",
+        description: "The frequency with which items are added to a collection.")
+
+    "Recommended practice is to use a value from the Collection Description Accrual Policy Vocabulary [DCMI-ACCRUALPOLICY]."
+    accrualPolicy @attribute(datatype: STRING, array: true,
+        name: "dcterms:accrualPolicy", uri: "http://purl.org/dc/terms/accrualPolicy",
+        description: "The policy governing the addition of items to a collection.")
+
+    "The distinction between titles and alternative titles is application-specific."
+    alternative @attribute(datatype: STRING, array: true,
+        name: "dcterms:alternative", uri: "http://purl.org/dc/terms/alternative",
+        description: "An alternative name for the resource.")
+
+    "Recommended practice is to use this property with non-literal values from a vocabulary of audience types."
+    audience @attribute(datatype: STRING, array: true,
+        name: "dcterms:audience", uri: "http://purl.org/dc/terms/audience",
+        description: "A class of agents for whom the resource is intended or useful.")
+
+    "Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty."
+    available @attribute(datatype: STRING, array: true,
+        name: "dcterms:available", uri: "http://purl.org/dc/terms/available",
+        description: "Date that the resource became or will become available.")
+
+    "Recommended practice is to include sufficient bibliographic detail to identify the resource as unambiguously as possible."
+    bibliographicCitation @attribute(datatype: STRING, array: true,
+        name: "dcterms:bibliographicCitation", uri: "http://purl.org/dc/terms/bibliographicCitation",
+        description: "A bibliographic reference for the resource.")
+
+    conformsTo @attribute(datatype: STRING, array: true,
+        name: "dcterms:conformsTo", uri: "http://purl.org/dc/terms/conformsTo",
+        description: "An established standard to which the described resource conforms.")
+
+    "Entity that have contributed to the creation or modification of the resource, but is not the primary creator. The guidelines for using names of persons or organizations as creators apply to contributors."
+    contributor @attribute(datatype: STRING, array: true,
+        name: "dcterms:contributor", uri: "http://purl.org/dc/terms/contributor",
+        description: "Entitet som har bidragit till skapandet eller modifieringen av resursen, men som inte är primär skapare.")
+
+    "The spatial or temporal extent of the content, indicating geographical locations or time periods relevant to the resource. Spatial topic and spatial applicability may be a named place or a location specified by its geographic coordinates. Temporal topic may be a named period, date, or date range. A jurisdiction may be a named administrative entity or a geographic place to which the resource applies. Recommended practice is to use a controlled vocabulary such as the Getty Thesaurus of Geographic Names [TGN]. Where appropriate, named places or time periods may be used in preference to numeric identifiers such as sets of coordinates or date ranges. Because coverage is so broadly defined, it is preferable to use the more specific subproperties Temporal Coverage and Spatial Coverage."
+    coverage @attribute(datatype: STRING, array: true,
+        name: "dcterms:coverage", uri: "http://purl.org/dc/terms/coverage",
+        description: "Den rumsliga eller tidsmässiga omfattningen av innehållet, som anger geografiska platser eller tidsperioder som är relevanta för resursen.")
+
+    "Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty."
+    created @attribute(datatype: TIME, array: true,
+        name: "dcterms:created", uri: "http://purl.org/dc/terms/created",
+        description: "Date of creation of the resource.")
+
+    "An entity primarily responsible for making the resource, typically an individual, organization, or service. Recommended practice is to identify the creator with a URI. If this is not possible or feasible, a literal value that identifies the creator may be provided."
+    creator @attribute(datatype: STRING, array: true,
+        name: "dcterms:creator", uri: "http://purl.org/dc/terms/creator",
+        description: "En entitet som primärt är ansvarig för att skapa resursen, vanligtvis en individ, organisation eller tjänst.")
+
+    "A point or period of time associated with the lifecycle of the resource, such as creation, publication, or modification date, often represented in ISO 8601 format. Date may be used to express temporal information at any level of granularity. Recommended practice is to express the date, date/time, or period of time according to ISO 8601-1 [ISO 8601-1] or a published profile of the ISO standard, such as the W3C Note on Date and Time Formats [W3CDTF] or the Extended Date/Time Format Specification [EDTF]. If the full date is unknown, month and year (YYYY-MM) or just year (YYYY) may be used. Date ranges may be specified using ISO 8601 period of time specification in which start and end dates are separated by a '/' (slash) character. Either the start or end date may be missing."
+    date @attribute(datatype: TIME, array: true,
+        name: "dcterms:date", uri: "http://purl.org/dc/terms/date",
+        description: "En tidpunkt eller tidsperiod associerad med resursens livscykel, som skapande-, publicerings- eller ändringsdatum, ofta representerat i ISO 8601-format.")
+
+    "Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty. Examples of resources to which a date of acceptance may be relevant are a thesis (accepted by a university department) or an article (accepted by a journal)."
+    dateAccepted @attribute(datatype: TIME, array: true,
+        name: "dcterms:dateAccepted", uri: "http://purl.org/dc/terms/dateAccepted",
+        description: "Date of acceptance of the resource.")
+
+    "Typically a year. Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty."
+    dateCopyrighted @attribute(datatype: TIME, array: true,
+        name: "dcterms:dateCopyrighted", uri: "http://purl.org/dc/terms/dateCopyrighted",
+        description: "Date of copyright of the resource.")
+
+    "Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty. Examples of resources to which a 'Date Submitted' may be relevant include a thesis (submitted to a university department) or an article (submitted to a journal)."
+    dateSubmitted @attribute(datatype: TIME, array: true,
+        name: "dcterms:dateSubmitted", uri: "http://purl.org/dc/terms/dateSubmitted",
+        description: "Date of submission of the resource.")
+
+    "A summary or abstract detailing the content, purpose, or scope of the resource, providing insight into its primary features. Description may include but is not limited to: an abstract, a table of contents, a graphical representation, or a free-text account of the resource."
+    description @attribute(datatype: STRING, array: true,
+        name: "dcterms:description", uri: "http://purl.org/dc/terms/description",
+        description: "En sammanfattning eller abstrakt som beskriver innehållet, syftet eller omfånget av resursen och ger insikt i dess huvudsakliga egenskaper.")
+
+    "A class of agents, defined in terms of progression through an educational or training context, for which the described resource is intended."
+    educationLevel @attribute(datatype: STRING, array: true,
+        name: "dcterms:educationLevel", uri: "http://purl.org/dc/terms/educationLevel",
+        description: "Audience Education Level")
+
+    "Recommended practice is to specify the file size in megabytes and duration in ISO 8601 format."
+    extent @attribute(datatype: STRING, array: true,
+        name: "dcterms:extent", uri: "http://purl.org/dc/terms/extent",
+        description: "The size or duration of the resource.")
+
+    "The file format, physical medium, or dimensions of the resource, often standardized using MIME types (e.g., text/html, image/jpeg). Recommended practice is to use a controlled vocabulary where available. For example, for file formats one could use the list of Internet Media Types [MIME]. Examples of dimensions include size and duration."
+    format @attribute(datatype: STRING, array: true,
+        name: "dcterms:format", uri: "http://purl.org/dc/terms/format",
+        description: "Filformatet, det fysiska mediet eller dimensionerna av resursen, ofta standardiserade med MIME-typer (t.ex. text/html, image/jpeg).")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Is Format Of."
+    hasFormat @attribute(datatype: STRING, array: true,
+        name: "dcterms:hasFormat", uri: "http://purl.org/dc/terms/hasFormat",
+        description: "A related resource that is substantially the same as the pre-existing described resource, but in another format.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Is Part Of."
+    hasPart @attribute(datatype: STRING, array: true,
+        name: "dcterms:hasPart", uri: "http://purl.org/dc/terms/hasPart",
+        description: "A related resource that is included either physically or logically in the described resource.")
+
+    "Changes in version imply substantive changes in content rather than differences in format. This property is intended to be used with non-literal values. This property is an inverse property of Is Version Of."
+    hasVersion @attribute(datatype: STRING, array: true,
+        name: "dcterms:hasVersion", uri: "http://purl.org/dc/terms/hasVersion",
+        description: "A related resource that is a version, edition, or adaptation of the described resource.")
+
+    "A unique reference to the resource within a given context, such as a URL, DOI, ISBN, or URN, enabling unambiguous identification and access. Recommended practice is to identify the resource by means of a string conforming to an identification system. Examples include International Standard Book Number (ISBN), Digital Object Identifier (DOI), and Uniform Resource Name (URN). Persistent identifiers should be provided as HTTP URIs."
+    identifier @attribute(datatype: STRING, array: false,
+        name: "dcterms:identifier", uri: "http://purl.org/dc/terms/identifier",
+        description: "En unik referens till resursen inom ett givet sammanhang, såsom en URL, DOI, ISBN eller URN, som möjliggör entydig identifiering och åtkomst.")
+
+    "Instructional Method typically includes ways of presenting instructional materials or conducting instructional activities, patterns of learner-to-learner and learner-to-instructor interactions, and mechanisms by which group and individual levels of learning are measured. Instructional methods include all aspects of the instruction and learning processes from planning and implementation through evaluation and feedback."
+    instructionalMethod @attribute(datatype: STRING, array: true,
+        name: "dcterms:instructionalMethod", uri: "http://purl.org/dc/terms/instructionalMethod",
+        description: "A process, used to engender knowledge, attitudes and skills, that the described resource is designed to support.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Has Format."
+    isFormatOf @attribute(datatype: STRING, array: true,
+        name: "dcterms:isFormatOf", uri: "http://purl.org/dc/terms/isFormatOf",
+        description: "A pre-existing related resource that is substantially the same as the described resource, but in another format.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Has Part."
+    isPartOf @attribute(datatype: STRING, array: true,
+        name: "dcterms:isPartOf", uri: "http://purl.org/dc/terms/isPartOf",
+        description: "A related resource in which the described resource is physically or logically included.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of References."
+    isReferencedBy @attribute(datatype: STRING, array: true,
+        name: "dcterms:isReferencedBy", uri: "http://purl.org/dc/terms/isReferencedBy",
+        description: "A related resource that references, cites, or otherwise points to the described resource.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Replaces."
+    isReplacedBy @attribute(datatype: STRING, array: true,
+        name: "dcterms:isReplacedBy", uri: "http://purl.org/dc/terms/isReplacedBy",
+        description: "A related resource that supplants, displaces, or supersedes by the described resource.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Requires."
+    isRequiredBy @attribute(datatype: STRING, array: true,
+        name: "dcterms:isRequiredBy", uri: "http://purl.org/dc/terms/isRequiredBy",
+        description: "A related resource that requires the described resource to support its function, delivery, or coherence.")
+
+    "Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty."
+    issued @attribute(datatype: TIME, array: true,
+        name: "dcterms:issued", uri: "http://purl.org/dc/terms/issued",
+        description: "Date of formal issuance of the resource.")
+
+    "Changes in version imply substantive changes in content rather than differences in format. This property is intended to be used with non-literal values. This property is an inverse property of Has Version."
+    isVersionOf @attribute(datatype: STRING, array: true,
+        name: "dcterms:isVersionOf", uri: "http://purl.org/dc/terms/isVersionOf",
+        description: "A related resource of which the described resource is a version, edition, or adaptation.")
+
+    "The primary language(s) of the content, often denoted using ISO 639 codes (e.g., en for English, fr for French). Recommended practice is to use either a non-literal value representing a language from a controlled vocabulary such as ISO 639-2 or ISO 639-3, or a literal value consisting of an IETF Best Current Practice 47 [IETF-BCP47] language tag."
+    language @attribute(datatype: STRING, array: true,
+        name: "dcterms:language", uri: "http://purl.org/dc/terms/language",
+        description: "Huvudspråket (eller språken) för innehållet, ofta angivet med ISO 639-koder (t.ex. en för engelska, fr för franska).")
+
+    "Recommended practice is to identify the license document with a URI. If this is not possible or feasible, a literal value that identifies the license may be provided."
+    license @attribute(datatype: STRING, array: true,
+        name: "dcterms:license", uri: "http://purl.org/dc/terms/license",
+        description: "A legal document giving official permission to do something with the resource.")
+
+    "In an educational context, a mediator might be a parent, teacher, teaching assistant, or care-giver."
+    mediator @attribute(datatype: STRING, array: true,
+        name: "dcterms:mediator", uri: "http://purl.org/dc/terms/mediator",
+        description: "An entity that mediates access to the resource.")
+
+    medium @attribute(datatype: STRING, array: true,
+        name: "dcterms:medium", uri: "http://purl.org/dc/terms/medium",
+        description: "The material or physical carrier of the resource.")
+
+    "Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty."
+    modified @attribute(datatype: TIME, array: true,
+        name: "dcterms:modified", uri: "http://purl.org/dc/terms/modified",
+        description: "Date on which the resource was changed.")
+
+    "The statement may include a description of any changes successive custodians made to the resource."
+    provenance @attribute(datatype: STRING, array: true,
+        name: "dcterms:provenance", uri: "http://purl.org/dc/terms/provenance",
+        description: "A statement of any changes in ownership and custody of the resource since its creation that are significant for its authenticity, integrity, and interpretation.")
+
+    "The entity responsible for making the resource available, which could be a person, organization, or service."
+    publisher @attribute(datatype: STRING, array: true,
+        name: "dcterms:publisher", uri: "http://purl.org/dc/terms/publisher",
+        description: "Den entitet som ansvarar för att göra resursen tillgänglig, vilket kan vara en person, organisation eller tjänst.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Is Referenced By."
+    references @attribute(datatype: STRING, array: true,
+        name: "dcterms:references", uri: "http://purl.org/dc/terms/references",
+        description: "A related resource that is referenced, cited, or otherwise pointed to by the described resource.")
+
+    "A reference to a related resource, indicating a connection or association, such as a parent, child, or sibling relationship. Recommended practice is to identify the related resource by means of a URI. If this is not possible or feasible, a string conforming to a formal identification system may be provided."
+    relation @attribute(datatype: STRING, array: true,
+        name: "dcterms:relation", uri: "http://purl.org/dc/terms/relation",
+        description: "En referens till en relaterad resurs, som anger en koppling eller association, såsom en föräldra-, barn- eller syskonrelation.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Is Replaced By."
+    replaces @attribute(datatype: STRING, array: true,
+        name: "dcterms:replaces", uri: "http://purl.org/dc/terms/replaces",
+        description: "A related resource that is supplanted, displaced, or superseded by the described resource.")
+
+    "This property is intended to be used with non-literal values. This property is an inverse property of Is Required By."
+    requires @attribute(datatype: STRING, array: true,
+        name: "dcterms:requires", uri: "http://purl.org/dc/terms/requires",
+        description: "A related resource that is required by the described resource to support its function, delivery, or coherence.")
+
+    "Information about the rights held in and over the resource, such as copyright status, licensing terms, or access restrictions, ensuring proper usage and distribution. Typically, rights information includes a statement about various property rights associated with the resource, including intellectual property rights. Recommended practice is to refer to a rights statement with a URI. If this is not possible or feasible, a literal value (name, label, or short text) may be provided."
+    rights @attribute(datatype: STRING, array: true,
+        name: "dcterms:rights-management", uri: "http://purl.org/dc/terms/rights-management",
+        description: "Information om rättigheterna som innehas i och över resursen, såsom upphovsrättsstatus, licensvillkor eller åtkomstbegränsningar, vilket säkerställer korrekt användning och distribution.")
+
+    "Recommended practice is to refer to the rights holder with a URI. If this is not possible or feasible, a literal value that identifies the rights holder may be provided."
+    rightsHolder @attribute(datatype: STRING, array: true,
+        name: "dcterms:rightsHolder", uri: "http://purl.org/dc/terms/rightsHolder",
+        description: "A person or organization owning or managing rights over the resource.")
+
+    "The resource from which the current resource is derived or generated, providing context on its origins or predecessors. This property is intended to be used with non-literal values. The described resource may be derived from the related resource in whole or in part. Best practice is to identify the related resource by means of a URI or a string conforming to a formal identification system."
+    source @attribute(datatype: STRING, array: true,
+        name: "dcterms:source", uri: "http://purl.org/dc/terms/source",
+        description: "Relaterad resurs från vilken den aktuella resursen är härledd eller genererad, vilket ger kontext om dess ursprung eller föregångare.")
+
+    spatial @attribute(datatype: STRING, array: true,
+        name: "dcterms:spatial", uri: "http://purl.org/dc/terms/spatial",
+        description: "Spatial characteristics of the resource.")
+
+    "The topic or the focus of the content within the resource, often represented by keywords, phrases, or classification codes. Recommended practice is to refer to the subject with a URI. If this is not possible or feasible, a literal value that identifies the subject may be provided. Both should preferably refer to a subject in a controlled vocabulary."
+    subject @attribute(datatype: STRING, array: true,
+        name: "dcterms:subject", uri: "http://purl.org/dc/terms/subject",
+        description: "Ämnet eller fokuset för innehållet inom resursen, ofta representerat av nyckelord, fraser eller klassifikationskoder.")
+
+    tableOfContents @attribute(datatype: STRING, array: true,
+        name: "dcterms:tableOfContents", uri: "http://purl.org/dc/terms/tableOfContents",
+        description: "A list of subunits of the resource.")
+
+    temporal @attribute(datatype: STRING, array: true,
+        name: "dcterms:temporal", uri: "http://purl.org/dc/terms/temporal",
+        description: "Temporal characteristics of the resource.")
+
+    "The name given to the resource. It''s a human-readable identifier that provides a concise representation of the resource''s content."
+    title @attribute(datatype: STRING, array: false,
+        name: "dcterms:title", uri: "http://purl.org/dc/terms/title",
+        description: "Namnet som ges till resursen. Det är en människoläsbar identifierare som ger en kortfattad representation av resursens innehåll.")
+
+    "The nature or genre of the content within the resource, such as text, image, video, dataset, etc., aiding in understanding its format and use. Recommended practice is to use a controlled vocabulary such as the DCMI Type Vocabulary [DCMI-TYPE]. To describe the file format, physical medium, or dimensions of the resource, use the property Format."
+    type @attribute(datatype: STRING, array: true,
+        name: "dcterms:type", uri: "http://purl.org/dc/terms/type",
+        description: "Innehållets natur eller genre inom resursen, såsom text, bild, video, dataset, etc., vilket hjälper till att förstå dess format och användning.")
+
+    "Recommended practice is to describe the date, date/time, or period of time as recommended for the property Date, of which this is a subproperty."
+    valid @attribute(datatype: TIME, array: true,
+        name: "dcterms:valid", uri: "http://purl.org/dc/terms/valid",
+        description: "Date (often a range) of validity of a resource.")
+
+    # Some domain specific attributes
+    avslagsanledning     @attribute(datatype: STRING, name: "ffa:avslagsanledning", uri: "https://data.sfa.se/termer/1.0/avslagsanledning")
+    beloppsvarde         @attribute(datatype: DOUBLE, name: "ffa:beloppsvarde", uri: "https://data.sfa.se/termer/1.0/beloppsvarde")
+    beloppsperiodisering @attribute(datatype: STRING, name: "ffa:beloppsperiodisering", uri: "https://data.sfa.se/termer/1.0/beloppsperiodisering")
+    valuta               @attribute(datatype: STRING, name: "ffa:valuta", uri: "https://data.sfa.se/termer/1.0/valuta")
+    skattestatus         @attribute(datatype: STRING, name: "ffa:skattestatus", uri: "https://data.sfa.se/termer/1.0/skattestatus")
+    beslutsfattare       @attribute(datatype: STRING, name: "ffa:beslutsfattare", uri: "https://data.sfa.se/termer/1.0/beslutsfattare")
+    beslutstyp           @attribute(datatype: STRING, name: "ffa:beslutstyp", uri: "https://data.sfa.se/termer/1.0/beslutstyp")
+    beslutsutfall        @attribute(datatype: STRING, name: "ffa:beslutsutfall", uri: "https://data.sfa.se/termer/1.0/beslutsutfall")
+    giltighetsperiod     @attribute(datatype: STRING, name: "ffa:giltighetsperiod", uri: "https://data.sfa.se/termer/1.0/giltighetsperiod")
+    institution          @attribute(datatype: STRING, name: "ffa:institution", uri: "https://data.sfa.se/termer/1.0/institution")
+    organisation         @attribute(datatype: STRING, name: "ffa:organisation", uri: "https://data.sfa.se/termer/1.0/organisation")
+    orgnummer            @attribute(datatype: STRING, name: "ffa:organisationsnummer", uri: "https://data.sfa.se/termer/1.0/organisationsnummer")
+    personnummer         @attribute(datatype: STRING, name: "ffa:personnummer", uri: "https://data.sfa.se/termer/1.0/personnummer")
+    from                 @attribute(datatype: TIME,   name: "ffa:from", uri: "https://data.sfa.se/termer/1.0/from")
+    tom                  @attribute(datatype: TIME,   name: "ffa:tom", uri: "https://data.sfa.se/termer/1.0/tom")
+    ersattningstyp       @attribute(datatype: STRING, name: "ffa:ersattningstyp", uri: "https://data.sfa.se/termer/1.0/ersattningstyp")
+    omfattning           @attribute(datatype: STRING, name: "ffa:omfattning", uri: "https://data.sfa.se/termer/1.0/omfattning")
+    lagrum               @attribute(datatype: STRING, name: "ffa:lagrum", uri: "https://data.sfa.se/termer/1.0/lagrum")
+    kravstyp             @attribute(datatype: STRING, name: "ffa:kravstyp", uri: "https://data.sfa.se/termer/1.0/kravstyp")
+    beloppsperiod        @attribute(datatype: STRING, name: "ffa:beloppsperiod", uri: "https://data.sfa.se/termer/1.0/beloppsperiod")
+
+    producerade_resultat @attribute(datatype: RECORD, name: "ffa:producerade_resultat", uri: "https://data.sfa.se/termer/1.0/producerade_resultat")
+    belopp               @attribute(datatype: RECORD, name: "ffa:belopp", uri: "https://data.sfa.se/termer/1.0/belopp")
+    beslut               @attribute(datatype: RECORD, name: "ffa:beslut", uri: "https://data.sfa.se/termer/1.0/beslut")
+    ersattning           @attribute(datatype: RECORD, name: "ffa:ersattning", uri: "https://data.sfa.se/termer/1.0/ersattning")
+    fysisk_person        @attribute(datatype: RECORD, name: "ffa:fysisk_person", uri: "https://data.sfa.se/termer/1.0/fysisk_person")
+    intyg                @attribute(datatype: RECORD, name: "ffa:intyg", uri: "https://data.sfa.se/termer/1.0/intyg")
+    juridisk_person      @attribute(datatype: RECORD, name: "ffa:juridisk_person", uri: "https://data.sfa.se/termer/1.0/juridisk_person")
+    krav                 @attribute(datatype: RECORD, name: "ffa:krav", uri: "https://data.sfa.se/termer/1.0/krav")
+    period               @attribute(datatype: RECORD, name: "ffa:period", uri: "https://data.sfa.se/termer/1.0/period")
+    ratten_till_period   @attribute(datatype: RECORD, name: "ffa:ratten_till_period", uri: "https://data.sfa.se/termer/1.0/ratten_till_period")
+    bedomd_arbetsformaga @attribute(datatype: RECORD, name: "ffa:bedomd_arbetsformaga", uri: "https://data.sfa.se/termer/1.0/bedomd_arbetsformaga")
+    yrkan                @attribute(datatype: RECORD, name: "ffa:yrkan", uri: "https://data.sfa.se/termer/1.0/yrkan")
+    person               @attribute(datatype: RECORD, name: "ffa:person", uri: "https://data.sfa.se/termer/1.0/person")
+
+    raw_payload          @attribute(datatype: DATA,   name: "ffa:raw_payload", uri: "https://data.sfa.se/termer/1.0/raw_payload")
+
+    dataleverans_id      @attribute(datatype: STRING, name: "mimer:dataleveransid", uri: "https://data.sfa.se/mimer/1.0/dataleveransid")
+}
+
+##############  object & unit types ##############################
+scalar Long
+scalar DateTime
+scalar Bytes    # Base-64 strings (JSON) on the wire
+
+enum BeloppsPeriod {
+    PER_TIMME
+    PER_DAG
+    PER_MAANAD
+    PER_AAR
+}
+
+enum Valuta {
+    SEK
+    EUR
+}
+
+enum Skattestatus {
+    SKATTEFRI
+    SKATTEPLIKTIG
+}
+
+type Belopp @record(attribute: belopp) {
+    beloppsvarde : Float
+    beloppsperiod : BeloppsPeriod
+    skattestatus : Skattestatus
+    valuta : Valuta
+}
+
+type Period @record(attribute: period){
+    from : DateTime
+    tom : DateTime
+}
+
+enum ArbetsformagaOmfattning {
+    HEL
+    EN_ATTONDEL
+    OCHSAAVIDARE
+}
+
+type BedomdArbetsformaga @record(attribute: bedomd_arbetsformaga) {
+    omfattning : ArbetsformagaOmfattning
+}
+
+enum BeslutsTyp {
+    INTERRIMISTISK
+    STALLNINGSTAGANDE
+    SLUTLIGT
+}
+
+enum BeslutsUtfall {
+    BEVILJAT
+    AVSLAG
+    DELVIS_BEVILJANDE
+    AVVISNING
+    AVSKRIVNING
+}
+
+enum BeslutsLagrum {
+    SFB_K112_P2a # SFB Kap. 112 § 2a
+    SFB_K112_P3  # SFB Kap. 112 § 3
+    SFB_K112_P4  # SFB Kap. 112 § 4
+    SFB_K113_P3_S1 # SFB Kap. 113 § 3 p. 1
+    SFB_K113_P3_S2 # SFB Kap. 113 § 3 p. 2
+    SFB_K113_P3_S3 # SFB Kap. 113 § 3 p. 3
+    FL_P36 # FL § 36
+    FL_P37 # FL § 37
+    FL_P38 # FL § 38
+}
+
+type Beslut @record(attribute: beslut) {
+    datum : DateTime @use(attribute: date)
+    beslutsfattare : String
+    beslutstyp : BeslutsTyp
+    beslutsutfall : BeslutsUtfall
+    organisation : String
+    lagrum : BeslutsLagrum
+    avslagsanledning : String
+}
+
+enum ErsattningsTyp {
+    SJUKPENNING # ersattningstyp:SJUKPENNING
+    FORALDRAPENNING # ersattningstyp:FORALDRAPENNING
+    HUNDBIDRAG # ersattningstyp:HUNDBIDRAG
+}
+
+type Ersattning @record(attribute: ersattning) {
+    ersattningstyp : ErsattningsTyp
+    belopp : Belopp
+    period : Period
+}
+
+enum KravTyp {
+    NAGON
+}
+
+type Krav @record(attribute: krav) {
+    kravstyp : KravTyp
+    belopp : Belopp
+    period : Period
+}
+
+type FysiskPerson @record(attribute: fysisk_person) {
+    personnummer : String
+}
+
+type JuridiskPerson @record(attribute: juridisk_person) {
+    orgnummer : String
+}
+
+union Person = FysiskPerson | JuridiskPerson
+
+type Intyg @record(attribute: intyg) {
+    giltighetsperiod : Period  @use(attribute: period)
+    institution : String
+    beskrivning : String @use(attribute: description)
+    utfardat_datum : DateTime  @use(attribute: date)
+}
+
+enum RattenTillPeriodOmfattning {
+    HEL
+    EN_ATTONDEL
+    OCHSAAVIDARE
+}
+
+type RattenTillPeriod @record(attribute: ratten_till_period) {
+    ersattningstyp : ErsattningsTyp
+    omfattning : RattenTillPeriodOmfattning
+}
+
+union ProduceratResultat = Ersattning | Krav | Intyg | BedomdArbetsformaga | RattenTillPeriod
+
+type Yrkan @record(attribute: yrkan) @template {
+    person : Person
+    beskrivning : String @use(attribute: description)
+    beslut : Beslut
+    producerade_resultat : [ProduceratResultat]
+}
+
+##############  Query related ####################################
+
+input UnitIdentification {
+    tenantId : Int!
+    unitId : Long!
+}
+
+input YrkanIdentification {
+    tenantId : Int!
+    corrId : String!
+}
+
+input Filter {
+    tenantId: Int!
+    where: String
+    offset: Int = 0
+    size: Int = 20
+    orderBy: String
+    orderDirection: String
+}
+
+
+##############  Queries ###########################################
+type Query {
+    yrkan(id : UnitIdentification!) : Yrkan
+    yrkanRaw(id : YrkanIdentification!) : Bytes
+    yrkanden(filter: Filter!) : [Yrkan]
+    yrkandenRaw(filter: Filter!) : Bytes
+
+    unitRaw(id : UnitIdentification!) : Bytes
+    unitsRaw(filter: Filter!) : Bytes
+}
+
+##############  Mutations ###########################################
+type Mutation {
+    lagraYrkanRaw(tenantId : Int!, data : Bytes!) : Bytes
+
+    lagraUnitRaw(data : Bytes!) : Bytes
+}

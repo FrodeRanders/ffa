@@ -1,0 +1,133 @@
+{
+  "@context": {
+    "id": "@id",
+    "dcterms": "http://purl.org/dc/terms/",
+    "ffa": "https://data.sfa.se/termer/1.0/",
+    "mimer": "https://data.sfa.se/mimer/1.0/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "version": "ffa:version",
+    "typ": "ffa:typ",
+    "varde": "rdf:value",
+    "abstract": "http://purl.org/dc/terms/abstract",
+    "accessRights": "http://purl.org/dc/terms/accessRights",
+    "accrualMethod": "http://purl.org/dc/terms/accrualMethod",
+    "accrualPeriodicity": "http://purl.org/dc/terms/accrualPeriodicity",
+    "accrualPolicy": "http://purl.org/dc/terms/accrualPolicy",
+    "alternative": "http://purl.org/dc/terms/alternative",
+    "audience": "http://purl.org/dc/terms/audience",
+    "available": "http://purl.org/dc/terms/available",
+    "avslagsanledning": "https://data.sfa.se/termer/1.0/avslagsanledning",
+    "bedomd_arbetsformaga": "https://data.sfa.se/termer/1.0/bedomd_arbetsformaga",
+    "belopp": "https://data.sfa.se/termer/1.0/belopp",
+    "beloppsperiod": "https://data.sfa.se/termer/1.0/beloppsperiod",
+    "beloppsperiodisering": "https://data.sfa.se/termer/1.0/beloppsperiodisering",
+    "beloppsvarde": "https://data.sfa.se/termer/1.0/beloppsvarde",
+    "beslut": "https://data.sfa.se/termer/1.0/beslut",
+    "beslutsfattare": "https://data.sfa.se/termer/1.0/beslutsfattare",
+    "beslutstyp": "https://data.sfa.se/termer/1.0/beslutstyp",
+    "beslutsutfall": "https://data.sfa.se/termer/1.0/beslutsutfall",
+    "bibliographicCitation": "http://purl.org/dc/terms/bibliographicCitation",
+    "conformsTo": "http://purl.org/dc/terms/conformsTo",
+    "contributor": "http://purl.org/dc/terms/contributor",
+    "coverage": "http://purl.org/dc/terms/coverage",
+    "created": {
+      "@id": "http://purl.org/dc/terms/created",
+      "@type": "xsd:dateTime"
+    },
+    "creator": "http://purl.org/dc/terms/creator",
+    "dataleverans_id": "https://data.sfa.se/mimer/1.0/dataleveransid",
+    "date": {
+      "@id": "http://purl.org/dc/terms/date",
+      "@type": "xsd:dateTime"
+    },
+    "dateAccepted": {
+      "@id": "http://purl.org/dc/terms/dateAccepted",
+      "@type": "xsd:dateTime"
+    },
+    "dateCopyrighted": {
+      "@id": "http://purl.org/dc/terms/dateCopyrighted",
+      "@type": "xsd:dateTime"
+    },
+    "dateSubmitted": {
+      "@id": "http://purl.org/dc/terms/dateSubmitted",
+      "@type": "xsd:dateTime"
+    },
+    "description": "http://purl.org/dc/terms/description",
+    "educationLevel": "http://purl.org/dc/terms/educationLevel",
+    "ersattning": "https://data.sfa.se/termer/1.0/ersattning",
+    "ersattningstyp": "https://data.sfa.se/termer/1.0/ersattningstyp",
+    "extent": "http://purl.org/dc/terms/extent",
+    "format": "http://purl.org/dc/terms/format",
+    "from": {
+      "@id": "https://data.sfa.se/termer/1.0/from",
+      "@type": "xsd:dateTime"
+    },
+    "fysisk_person": "https://data.sfa.se/termer/1.0/fysisk_person",
+    "giltighetsperiod": "https://data.sfa.se/termer/1.0/giltighetsperiod",
+    "hasFormat": "http://purl.org/dc/terms/hasFormat",
+    "hasPart": "http://purl.org/dc/terms/hasPart",
+    "hasVersion": "http://purl.org/dc/terms/hasVersion",
+    "identifier": "http://purl.org/dc/terms/identifier",
+    "institution": "https://data.sfa.se/termer/1.0/institution",
+    "instructionalMethod": "http://purl.org/dc/terms/instructionalMethod",
+    "intyg": "https://data.sfa.se/termer/1.0/intyg",
+    "isFormatOf": "http://purl.org/dc/terms/isFormatOf",
+    "isPartOf": "http://purl.org/dc/terms/isPartOf",
+    "isReferencedBy": "http://purl.org/dc/terms/isReferencedBy",
+    "isReplacedBy": "http://purl.org/dc/terms/isReplacedBy",
+    "isRequiredBy": "http://purl.org/dc/terms/isRequiredBy",
+    "isVersionOf": "http://purl.org/dc/terms/isVersionOf",
+    "issued": {
+      "@id": "http://purl.org/dc/terms/issued",
+      "@type": "xsd:dateTime"
+    },
+    "juridisk_person": "https://data.sfa.se/termer/1.0/juridisk_person",
+    "krav": "https://data.sfa.se/termer/1.0/krav",
+    "kravstyp": "https://data.sfa.se/termer/1.0/kravstyp",
+    "lagrum": "https://data.sfa.se/termer/1.0/lagrum",
+    "language": "http://purl.org/dc/terms/language",
+    "license": "http://purl.org/dc/terms/license",
+    "mediator": "http://purl.org/dc/terms/mediator",
+    "medium": "http://purl.org/dc/terms/medium",
+    "modified": {
+      "@id": "http://purl.org/dc/terms/modified",
+      "@type": "xsd:dateTime"
+    },
+    "omfattning": "https://data.sfa.se/termer/1.0/omfattning",
+    "organisation": "https://data.sfa.se/termer/1.0/organisation",
+    "orgnummer": "https://data.sfa.se/termer/1.0/organisationsnummer",
+    "period": "https://data.sfa.se/termer/1.0/period",
+    "person": "https://data.sfa.se/termer/1.0/person",
+    "personnummer": "https://data.sfa.se/termer/1.0/personnummer",
+    "producerade_resultat": "https://data.sfa.se/termer/1.0/producerade_resultat",
+    "provenance": "http://purl.org/dc/terms/provenance",
+    "publisher": "http://purl.org/dc/terms/publisher",
+    "ratten_till_period": "https://data.sfa.se/termer/1.0/ratten_till_period",
+    "raw_payload": "https://data.sfa.se/termer/1.0/raw_payload",
+    "references": "http://purl.org/dc/terms/references",
+    "relation": "http://purl.org/dc/terms/relation",
+    "replaces": "http://purl.org/dc/terms/replaces",
+    "requires": "http://purl.org/dc/terms/requires",
+    "rights": "http://purl.org/dc/terms/rights-management",
+    "rightsHolder": "http://purl.org/dc/terms/rightsHolder",
+    "skattestatus": "https://data.sfa.se/termer/1.0/skattestatus",
+    "source": "http://purl.org/dc/terms/source",
+    "spatial": "http://purl.org/dc/terms/spatial",
+    "subject": "http://purl.org/dc/terms/subject",
+    "tableOfContents": "http://purl.org/dc/terms/tableOfContents",
+    "temporal": "http://purl.org/dc/terms/temporal",
+    "title": "http://purl.org/dc/terms/title",
+    "tom": {
+      "@id": "https://data.sfa.se/termer/1.0/tom",
+      "@type": "xsd:dateTime"
+    },
+    "type": "http://purl.org/dc/terms/type",
+    "valid": {
+      "@id": "http://purl.org/dc/terms/valid",
+      "@type": "xsd:dateTime"
+    },
+    "valuta": "https://data.sfa.se/termer/1.0/valuta",
+    "yrkan": "https://data.sfa.se/termer/1.0/yrkan"
+  }
+}

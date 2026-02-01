@@ -8,6 +8,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -19,9 +21,12 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Base64;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class KeyMaterialLoaderTest {
+    private static final Logger log = LoggerFactory.getLogger(KeyMaterialLoaderTest.class);
+
     static {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(new BouncyCastleProvider());
@@ -30,6 +35,7 @@ public class KeyMaterialLoaderTest {
 
     @Test
     public void loadFromPemStrings_parsesKeyAndCert() throws Exception {
+        log.info("*** Testcase *** Parse PEM key + certificate from strings and keep key/cert details intact");
         KeyPair keyPair = rsaKeyPair();
         X509Certificate cert = selfSigned(keyPair, "CN=Test");
 
@@ -47,6 +53,7 @@ public class KeyMaterialLoaderTest {
 
     @Test
     public void loadFromFiles_parsesChainAndTrustAnchors() throws Exception {
+        log.info("*** Testcase *** Parse key, certificate chain, and trust anchors from PEM files");
         KeyPair keyPair = rsaKeyPair();
         X509Certificate cert1 = selfSigned(keyPair, "CN=ChainOne");
         X509Certificate cert2 = selfSigned(keyPair, "CN=ChainTwo");

@@ -1,25 +1,33 @@
 package se.fk.data.modell.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.fk.data.modell.annotations.Context;
 import tools.jackson.databind.BeanDescription;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.PropertyName;
 import tools.jackson.databind.SerializationConfig;
-import tools.jackson.databind.ser.*;
-import tools.jackson.databind.introspect.*;
+import tools.jackson.databind.introspect.BeanPropertyDefinition;
+import tools.jackson.databind.introspect.VirtualAnnotatedMember;
+import tools.jackson.databind.ser.BeanPropertyWriter;
+import tools.jackson.databind.ser.ValueSerializerModifier;
 import tools.jackson.databind.util.SimpleBeanPropertyDefinition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.fk.data.modell.annotations.Context;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClassSerializerModifier extends ValueSerializerModifier {
     private static final Logger log = LoggerFactory.getLogger(ClassSerializerModifier.class);
+    private static final Set<Class<?>> WARNED_MISSING_CONTEXT = ConcurrentHashMap.newKeySet();
 
     private final String CONTEXT_NAME = "@context";
     private final PropertyName contextPropertyName = PropertyName.construct(CONTEXT_NAME);
+
+    private final String TYPE_NAME = "@type";
+    private final PropertyName typePropertyName = PropertyName.construct(TYPE_NAME);
 
     private final String ATTENTION_FLAG_NAME = "__attention";
     private final PropertyName attentionFlagPropertyName = PropertyName.construct(ATTENTION_FLAG_NAME);
@@ -67,6 +75,27 @@ public class ClassSerializerModifier extends ValueSerializerModifier {
         if (null != contextAnnotation) {
             JavaType strType = config.getTypeFactory().constructType(String.class);
 
+            // Create a BeanPropertyDefinition for the virtual property "@type"
+            BeanPropertyDefinition typePropDef = SimpleBeanPropertyDefinition
+                    .construct(
+                            config,
+                            new VirtualAnnotatedMember(
+                                    beanDesc.getClassInfo(),
+                                    beanDesc.getBeanClass(),
+                                    TYPE_NAME,
+                                    strType
+                            ),
+                            typePropertyName
+                    );
+
+            TypePropertyWriter typePropertyWriter = new TypePropertyWriter(
+                    typePropDef,
+                    beanDesc.getClassAnnotations(),
+                    config.getTypeFactory().constructType(String.class)
+            );
+
+            newProps.addFirst(typePropertyWriter);
+
             // Create a BeanPropertyDefinition for the virtual property
             BeanPropertyDefinition propDef = SimpleBeanPropertyDefinition
                     .construct(
@@ -86,7 +115,12 @@ public class ClassSerializerModifier extends ValueSerializerModifier {
                     config.getTypeFactory().constructType(String.class)
             );
 
-            newProps.addFirst(propertyWriter); // place "@context" first
+            newProps.addFirst(propertyWriter); // place "@context" before "@type"
+        } else {
+            Class<?> beanClass = beanDesc.getBeanClass();
+            if (WARNED_MISSING_CONTEXT.add(beanClass)) {
+                log.warn("Missing @Context on {}. JSON will omit @context, treat as private domain data.", beanClass.getName());
+            }
         }
         return newProps;
     }

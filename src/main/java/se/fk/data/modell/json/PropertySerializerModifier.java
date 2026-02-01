@@ -8,7 +8,6 @@ import se.fk.data.modell.annotations.Som;
 import tools.jackson.databind.BeanDescription;
 import tools.jackson.databind.SerializationConfig;
 import tools.jackson.databind.introspect.AnnotatedMember;
-import tools.jackson.databind.introspect.AnnotationMap;
 import tools.jackson.databind.ser.BeanPropertyWriter;
 import tools.jackson.databind.ser.ValueSerializerModifier;
 
@@ -28,46 +27,42 @@ public class PropertySerializerModifier extends ValueSerializerModifier {
 
         for (BeanPropertyWriter writer : writers) {
             AnnotatedMember member = writer.getMember();
-
             if (member != null) {
-                AnnotationMap annotations = member._annotationMap();
-                if (annotations != null) {
-                    //------------------------------------------------
-                    // These are all the known property annotations,
-                    // known at design-time (i.e. right now)
-                    //------------------------------------------------
-                    PII pii = annotations.get(PII.class);
-                    if (null != pii) {
-                        log.trace("@PII property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
-                        writer.assignSerializer(
-                                new PIIPropertySerializer(
-                                        pii.typ()
-                                )
-                        );
-                        return writers;
-                    }
+                //------------------------------------------------
+                // These are all the known property annotations,
+                // known at design-time (i.e. right now)
+                //------------------------------------------------
+                PII pii = member.getAnnotation(PII.class);
+                if (null != pii) {
+                    log.trace("@PII property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    writer.assignSerializer(
+                            new PIIPropertySerializer(
+                                    pii.typ()
+                            )
+                    );
+                    return writers;
+                }
 
-                    Som som = annotations.get(Som.class);
-                    if (null != som) {
-                        log.trace("@Som property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
-                        writer.assignSerializer(
-                                new SomPropertySerializer(
-                                        som.typ()
-                                )
-                        );
-                        return writers;
-                    }
+                Som som = member.getAnnotation(Som.class);
+                if (null != som) {
+                    log.trace("@Som property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    writer.assignSerializer(
+                            new SomPropertySerializer(
+                                    som.typ()
+                            )
+                    );
+                    return writers;
+                }
 
-                    Belopp belopp = annotations.get(Belopp.class);
-                    if (null != belopp) {
-                        log.trace("@Belopp property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
-                        writer.assignSerializer(
-                                new BeloppPropertySerializer(
-                                        belopp.valuta(), belopp.skattestatus(), belopp.period()
-                                )
-                        );
-                        return writers;
-                    }
+                Belopp belopp = member.getAnnotation(Belopp.class);
+                if (null != belopp) {
+                    log.trace("@Belopp property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    writer.assignSerializer(
+                            new BeloppPropertySerializer(
+                                    belopp.valuta(), belopp.skattestatus(), belopp.period()
+                            )
+                    );
+                    return writers;
                 }
             }
         }

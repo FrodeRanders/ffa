@@ -2,7 +2,6 @@ package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import se.fk.data.modell.annotations.Context;
-import se.fk.data.modell.annotations.PII;
 
 @Context("https://data.fk.se/kontext/std/juridiskperson/1.0")
 public class JuridiskPerson extends Person {

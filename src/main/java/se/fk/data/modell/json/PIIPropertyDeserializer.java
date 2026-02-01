@@ -1,14 +1,11 @@
 package se.fk.data.modell.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tools.jackson.databind.jsontype.TypeDeserializer;
-
-
-import static se.fk.data.modell.json.PIIPropertySerializer.MAGIC_WRAPPED_PROPERTY_NAME;
 
 public class PIIPropertyDeserializer extends ValueDeserializer<Object> {
     private static final Logger log = LoggerFactory.getLogger(PIIPropertyDeserializer.class);

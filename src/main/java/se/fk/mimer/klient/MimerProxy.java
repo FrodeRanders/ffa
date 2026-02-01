@@ -1,34 +1,20 @@
 package se.fk.mimer.klient;
 
-import java.time.Instant;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertPathBuilder;
-import java.security.cert.CertPathBuilderResult;
-import java.security.cert.CertPathValidator;
-import java.security.cert.CertStore;
-import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.PKIXCertPathValidatorResult;
-import java.security.cert.PKIXBuilderParameters;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509CertSelector;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import javax.crypto.Cipher;
-
+import se.fk.data.modell.json.DeserializationSnooper;
+import se.fk.data.modell.json.DigestUtils;
+import se.fk.data.modell.json.SignatureUtils;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
-import se.fk.data.modell.json.DeserializationSnooper;
-import static se.fk.data.modell.json.Modifiers.getModules;
 
-import se.fk.data.modell.json.SignatureUtils;
-import se.fk.data.modell.json.DigestUtils;
+import javax.crypto.Cipher;
+import java.security.PrivateKey;
+import java.security.cert.*;
+import java.time.Instant;
+import java.util.*;
+
+import static se.fk.data.modell.json.Modifiers.getModules;
 
 public final class MimerProxy {
     private static final ObjectMapper DEFAULT_MAPPER = buildMapper();

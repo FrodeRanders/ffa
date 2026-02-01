@@ -1,12 +1,12 @@
 package se.fk.hundbidrag;
 
-import tools.jackson.core.JacksonException;
 import com.fasterxml.uuid.Generators;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import se.fk.data.modell.v1.*;
 import se.fk.hundbidrag.modell.Yrkan;
 import se.fk.mimer.klient.MimerProxy;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import tools.jackson.core.JacksonException;
 
 import java.time.Instant;
 import java.util.Date;

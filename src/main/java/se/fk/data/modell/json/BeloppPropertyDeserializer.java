@@ -1,10 +1,10 @@
 package se.fk.data.modell.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tools.jackson.databind.jsontype.TypeDeserializer;
 
 public class BeloppPropertyDeserializer extends ValueDeserializer<Object> {

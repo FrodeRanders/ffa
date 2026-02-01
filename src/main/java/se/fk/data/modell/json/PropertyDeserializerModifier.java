@@ -11,7 +11,6 @@ import tools.jackson.databind.deser.BeanDeserializerBuilder;
 import tools.jackson.databind.deser.SettableBeanProperty;
 import tools.jackson.databind.deser.ValueDeserializerModifier;
 import tools.jackson.databind.introspect.AnnotatedMember;
-import tools.jackson.databind.introspect.AnnotationMap;
 
 import java.util.Iterator;
 
@@ -29,38 +28,35 @@ public class PropertyDeserializerModifier extends ValueDeserializerModifier {
             SettableBeanProperty prop = it.next();
             AnnotatedMember member = prop.getMember();
             if (member != null) {
-                AnnotationMap annotations = member._annotationMap();
-                if (annotations != null) {
-                    //------------------------------------------------
-                    // These are all the known property annotations,
-                    // known at design-time (i.e. right now)
-                    //------------------------------------------------
-                    PII pii = annotations.get(PII.class);
-                    if (null != pii) {
-                        log.trace("@PII property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
-                        PIIPropertyDeserializer des = new PIIPropertyDeserializer();
-                        prop = prop.withValueDeserializer(des);
-                        builder.addOrReplaceProperty(prop, true);
-                        return builder;
-                    }
+                //------------------------------------------------
+                // These are all the known property annotations,
+                // known at design-time (i.e. right now)
+                //------------------------------------------------
+                PII pii = member.getAnnotation(PII.class);
+                if (null != pii) {
+                    log.trace("@PII property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    PIIPropertyDeserializer des = new PIIPropertyDeserializer();
+                    prop = prop.withValueDeserializer(des);
+                    builder.addOrReplaceProperty(prop, true);
+                    return builder;
+                }
 
-                    Som som = annotations.get(Som.class);
-                    if (null != som) {
-                        log.trace("@Som property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
-                        SomPropertyDeserializer des = new SomPropertyDeserializer();
-                        prop = prop.withValueDeserializer(des);
-                        builder.addOrReplaceProperty(prop, true);
-                        return builder;
-                    }
+                Som som = member.getAnnotation(Som.class);
+                if (null != som) {
+                    log.trace("@Som property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    SomPropertyDeserializer des = new SomPropertyDeserializer();
+                    prop = prop.withValueDeserializer(des);
+                    builder.addOrReplaceProperty(prop, true);
+                    return builder;
+                }
 
-                    Belopp belopp = annotations.get(Belopp.class);
-                    if (null != belopp) {
-                        log.trace("@Belopp property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
-                        BeloppPropertyDeserializer des = new BeloppPropertyDeserializer();
-                        prop = prop.withValueDeserializer(des);
-                        builder.addOrReplaceProperty(prop, true);
-                        return builder;
-                    }
+                Belopp belopp = member.getAnnotation(Belopp.class);
+                if (null != belopp) {
+                    log.trace("@Belopp property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    BeloppPropertyDeserializer des = new BeloppPropertyDeserializer();
+                    prop = prop.withValueDeserializer(des);
+                    builder.addOrReplaceProperty(prop, true);
+                    return builder;
                 }
             }
         }

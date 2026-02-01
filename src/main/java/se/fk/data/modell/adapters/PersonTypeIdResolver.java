@@ -3,12 +3,12 @@ package se.fk.data.modell.adapters;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.json.PropertyDeserializerModifier;
+import se.fk.data.modell.v1.FysiskPerson;
+import se.fk.data.modell.v1.JuridiskPerson;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DatabindContext;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.jsontype.impl.TypeIdResolverBase;
-import se.fk.data.modell.v1.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,26 +41,19 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
         String id = CLASS_TO_ID.get(suggestedType);
         if (id == null) {
             throw new IllegalStateException(
-                    "No @Context registered for subtype " + suggestedType.getName()
+                    "No @type registered for subtype " + suggestedType.getName()
             );
         }
         return id;
     }
 
     private static void register(Class<?> subtype) {
-        se.fk.data.modell.annotations.Context ctx = subtype.getAnnotation(se.fk.data.modell.annotations.Context.class);
-        if (ctx == null) {
-            throw new IllegalStateException(
-                    "Subtype " + subtype.getName() + " is missing @Context annotation"
-            );
-        }
-
-        String id = ctx.value();
+        String id = subtype.getName();
 
         Class<?> old = ID_TO_CLASS.putIfAbsent(id, subtype);
         if (old != null && !old.equals(subtype)) {
             throw new IllegalStateException(
-                    "Duplicate @Context value '" + id +
+                    "Duplicate @type value '" + id +
                             "' for " + subtype.getName() + " and " + old.getName()
             );
         }
@@ -75,7 +68,7 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
         Class<?> subtype = ID_TO_CLASS.get(id);
         if (subtype == null) {
             throw new IllegalArgumentException(
-                    "Unknown @context '" + id + "' for base type " +
+                    "Unknown @type '" + id + "' for base type " +
                             (baseType != null ? baseType.toString() : "<unknown>")
             );
         }

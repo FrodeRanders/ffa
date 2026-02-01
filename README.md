@@ -1,4 +1,5 @@
 # Förenklad IT-arkitektur för förmåner
+
 Detta är en (fungerande) demo, som är menat att vara utgångspunkt för vidare diskussioner kring hur vi kan
 underlätta för team att bygga lösningar baserade på FFA och som integreras med Mimer.
 
@@ -6,7 +7,57 @@ Frågan vi ställer är om det är möjligt att dölja vissa grepp från utveckl
 helt kan fokusera på affärslogik och inte behöva engagera sig i översättning från "förmånsspråk"
 till "organisationsspråk" samt detaljerna kring serialisering av processtillstånd.
 
-## Vi tar utgångspunkt i behoven hos ett team som utvecklar affärslogik med FFAs informations- och datamodell som grund
+## Livscykelbeteende (versionering och __attention)
+FFA-objekt som ärver från `Livscykelhanterad` versionshanteras automatiskt vid (de)serialisering.
+Målet är att kunna avgöra om ett objekt är nytt eller ändrat utan att applikationskoden behöver
+hantera checksummor, och att bara flagga ändrade objekt i JSON.
+
+### Översikt
+Vid ny instans: när objektet serialiseras första gången finns ingen digest sparad. Versionen
+  stegas (0 → 1) och `__attention` sätts till `true` för objektet i JSON.
+
+Vid ändrat objekt: om innehållet skiljer sig från sparad digest, stegas versionen (t.ex. 1 → 2)
+  och `__attention` sätts till `true` i JSON.
+
+Vid oändrat objekt: om innehållet matchar sparad digest stegas versionen inte, och `__attention`
+  skrivs inte ut i JSON (fältet finns alltså inte med).
+
+### Flöde
+1) Efter deserialisering beräknas en digest och sparas i objektet (internt, ej i JSON).
+2) Inför serialisering beräknas en ny digest och jämförs med den sparade:
+   - skillnad betyder att objektet betraktas som ändrat (version +1, `__attention=true`).
+3) Efter serialisering beräknas digest om och lagras, så att serializer‑drivna ändringar
+   (t.ex. interna flaggor) inte ger falska förändringar vid nästa serialisering.
+
+### Kanonisk JSON
+Digest baseras på JCS‑kanonisering av JSON, vilket ger stabila checksummor och är kompatibelt
+med signering/verifiering. 
+
+## JSON-LD context for objektmodellen
+This repo includes a JSON-LD context that maps the object model fields to their registered
+URIs. The context is specific to this object model and can evolve as more wrapper objects
+are introduced.
+
+Path:
+- `src/main/resources/context/ffa-1.0.jsonld`
+- `src/main/resources/schema/ffa.graphqls` (source of truth)
+
+Conventions:
+- `id` is mapped to `@id` (UUID identity per instance).
+- `@type` is emitted as the fully qualified Java class name (polymorphism).
+- `typ` remains a domain classification (not `@type`).
+- `varde` is mapped to `rdf:value` (used by wrapped values like PII and belopp).
+- `__attention` is pipeline metadata and is intentionally not part of the JSON-LD context.
+
+JSON output note:
+- Consumers of JSON-LD should ignore `__attention`. It is emitted only as pipeline metadata to indicate changes.
+
+Regenerate context:
+- `python3 tools/generate_context.py src/main/resources/schema/ffa.graphqls src/main/resources/context/ffa-1.0.jsonld`
+
+## Demonstration 
+
+Vi tar utgångspunkt i behoven hos ett team som utvecklar affärslogik med FFAs informations- och datamodell som grund
 
 Affärslogiken utvecklas mot kärnobjekten i FFAs model, så som Yrkan, Ersättning, Beslut, osv. Ansatsen
 är att erbjuda en versionshanterad standard-implementation av dessa kärnobjekt, som teamet kan utvidga/modifiera

@@ -1,7 +1,6 @@
 package se.fk.data.modell.v1;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import se.fk.data.modell.annotations.Belopp;
 import se.fk.data.modell.annotations.Context;
 
 import java.util.Date;

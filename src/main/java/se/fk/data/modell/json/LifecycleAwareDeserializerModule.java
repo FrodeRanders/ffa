@@ -1,11 +1,14 @@
 package se.fk.data.modell.json;
 
-import tools.jackson.databind.*;
-import tools.jackson.databind.deser.ValueDeserializerModifier;
-import tools.jackson.databind.module.SimpleModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.v1.Livscykelhanterad;
+import tools.jackson.databind.BeanDescription;
+import tools.jackson.databind.DeserializationConfig;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.deser.ValueDeserializerModifier;
+import tools.jackson.databind.module.SimpleModule;
 
 public class LifecycleAwareDeserializerModule extends SimpleModule {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareDeserializerModule.class);

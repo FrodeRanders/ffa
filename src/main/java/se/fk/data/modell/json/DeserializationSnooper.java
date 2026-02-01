@@ -1,14 +1,16 @@
 package se.fk.data.modell.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
-import tools.jackson.databind.*;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.deser.DeserializationProblemHandler;
 import tools.jackson.databind.deser.ValueInstantiator;
 import tools.jackson.databind.jsontype.TypeIdResolver;
-import tools.jackson.databind.deser.DeserializationProblemHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DeserializationSnooper extends DeserializationProblemHandler {
     private static final Logger log = LoggerFactory.getLogger(DeserializationSnooper.class);
