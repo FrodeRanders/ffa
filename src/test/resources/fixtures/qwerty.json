@@ -1,0 +1,8 @@
+{
+  "@type": "se.fk.data.modell.v1.Ersattning",
+  "ersattningstyp": "HUNDBIDRAG",
+  "belopp": {
+    "beloppsvarde": 1000.0,
+    "valuta": "SEK"
+  }
+}

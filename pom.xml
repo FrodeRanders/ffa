@@ -21,6 +21,8 @@
         <titanium-jcs.version>2.0.0</titanium-jcs.version>
         <bcprov.version>1.79</bcprov.version>
         <bcpkix.version>1.79</bcpkix.version>
+        <titanium-jsonld.version>1.6.0</titanium-jsonld.version>
+        <jakarta-json.version>2.0.1</jakarta-json.version>
     </properties>
 
     <dependencies>
@@ -104,6 +106,22 @@
             <version>${bcpkix.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.apicatalog</groupId>
+            <artifactId>titanium-json-ld</artifactId>
+            <version>${titanium-jsonld.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <version>${jakarta-json.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.json</artifactId>
+            <version>${jakarta-json.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -143,6 +161,33 @@
                 <configuration>
                     <useModulePath>false</useModulePath>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <id>jsonld-expansion</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>se.fk.mimer.receiver.JsonLdExpansionExample</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>jsonld-graph</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>se.fk.mimer.receiver.JsonLdGraphPackagingExample</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

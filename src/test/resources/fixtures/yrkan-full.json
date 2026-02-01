@@ -1,0 +1,108 @@
+{
+  "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
+  "@type": "se.fk.hundbidrag.modell.Yrkan",
+  "__attention" : true,
+  "beskrivning" : "Hundutställning (inkl. bad, tork och fön)",
+  "beslut" : {
+    "@context" : "https://data.fk.se/kontext/std/beslut/1.0",
+    "@type": "se.fk.data.modell.v1.Beslut",
+    "datum" : "2026-02-01T00:00:00.000Z",
+    "id" : "019c1a42-ca0f-7544-a6aa-6f64e9468dac",
+    "version" : 1
+  },
+  "id" : "019c1a42-ca0f-7473-9dfd-082628a7cfdc",
+  "person" : {
+    "varde" : {
+      "@context" : "https://data.fk.se/kontext/std/fysiskperson/1.0",
+      "@type": "se.fk.data.modell.v1.FysiskPerson",
+      "personnummer" : {
+        "varde" : "19121212-1212",
+        "typ" : "pii:personnummer"
+      }
+    },
+    "typ" : "ffa:yrkande"
+  },
+  "producerade_resultat" : [ {
+    "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
+    "@type": "se.fk.data.modell.v1.RattenTillPeriod",
+    "ersattningstyp" : "HUNDBIDRAG",
+    "id" : "019c1a42-ca0f-705a-9018-a71498420734",
+    "omfattning" : "HEL",
+    "version" : 1
+  }, {
+    "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "@type": "se.fk.data.modell.v1.Ersattning",
+    "belopp" : {
+      "varde" : 1000.0,
+      "valuta" : null,
+      "skattestatus" : null,
+      "period" : null
+    },
+    "id" : "019c1a42-ca0f-7275-8571-a9020c420a3e",
+    "period" : {
+      "@context" : "https://data.fk.se/kontext/std/period/1.0",
+      "@type": "se.fk.data.modell.v1.Period",
+      "from" : "2026-02-01T00:00:00.000Z",
+      "tom" : "2026-02-01T00:00:00.000Z"
+    },
+    "typ" : "HUNDBIDRAG",
+    "version" : 1
+  }, {
+    "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "@type": "se.fk.data.modell.v1.Ersattning",
+    "belopp" : {
+      "varde" : 500.0,
+      "valuta" : null,
+      "skattestatus" : null,
+      "period" : null
+    },
+    "id" : "019c1a42-ca0f-7646-9c71-fb8fc5f6e419",
+    "period" : {
+      "@context" : "https://data.fk.se/kontext/std/period/1.0",
+      "@type": "se.fk.data.modell.v1.Period",
+      "from" : "2026-02-01T00:00:00.000Z",
+      "tom" : "2026-02-01T00:00:00.000Z"
+    },
+    "typ" : "HUNDBIDRAG",
+    "version" : 1
+  }, {
+    "@context" : "https://data.fk.se/kontext/std/intyg/1.0",
+    "@type": "se.fk.data.modell.v1.Intyg",
+    "beskrivning" : "Hittepå",
+    "giltighetsperiod" : {
+      "@context" : "https://data.fk.se/kontext/std/period/1.0",
+      "@type": "se.fk.data.modell.v1.Period",
+      "from" : "2026-02-01T00:00:00.000Z",
+      "tom" : "2026-02-01T00:00:00.000Z"
+    },
+    "id" : "019c1a42-ca0f-723e-98e0-ea3fc5d9b169",
+    "version" : 1
+  }, {
+    "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "@type": "se.fk.data.modell.v1.Ersattning",
+    "belopp" : {
+      "varde" : 100.0,
+      "valuta" : null,
+      "skattestatus" : null,
+      "period" : null
+    },
+    "id" : "019c1a42-ca21-77ec-a42b-423ad9258370",
+    "typ" : "HUNDBIDRAG",
+    "version" : 1
+  }, {
+    "@context" : "https://data.fk.se/kontext/std/ersattning/1.0",
+    "@type": "se.fk.data.modell.v1.Ersattning",
+    "__attention" : true,
+    "belopp" : {
+      "varde" : 200.0,
+      "valuta" : null,
+      "skattestatus" : null,
+      "period" : null
+    },
+    "id" : "019c1a42-ca27-762c-bd39-efdb133b4512",
+    "typ" : "HUNDBIDRAG",
+    "version" : 1
+  } ],
+  "ras" : "Collie",
+  "version" : 3
+}

@@ -14,8 +14,13 @@ import tools.jackson.databind.jsontype.TypeIdResolver;
 
 public class DeserializationSnooper extends DeserializationProblemHandler {
     private static final Logger log = LoggerFactory.getLogger(DeserializationSnooper.class);
+    private static final java.util.Set<String> IGNORED_PROPERTIES = java.util.Set.of("@type", "@context", "__attention");
 
     public boolean handleUnknownProperty(DeserializationContext ctxt, JsonParser p, ValueDeserializer<?> deserializer, Object beanOrClass, String propertyName) throws JacksonException {
+        if (IGNORED_PROPERTIES.contains(propertyName)) {
+            p.skipChildren();
+            return true;
+        }
         log.warn("Unknown property '{}' encountered in class {}", propertyName, beanOrClass);
         p.skipChildren();
         return false;

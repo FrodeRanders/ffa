@@ -19,7 +19,14 @@ DEFAULT_TERMS = {
     "varde": "rdf:value",
 }
 
-TIME_TYPES = {"TIME"}
+DATATYPE_TO_XSD = {
+    "TIME": "xsd:dateTime",
+    "INTEGER": "xsd:integer",
+    "LONG": "xsd:long",
+    "DOUBLE": "xsd:double",
+    "BOOLEAN": "xsd:boolean",
+    "STRING": "xsd:string",
+}
 
 
 def extract_enum_block(text: str, enum_name: str) -> str:
@@ -71,8 +78,9 @@ def build_context(entries):
         uri = entry["uri"] or entry["name"]
         if not uri:
             continue
-        if entry["datatype"] in TIME_TYPES:
-            context[term] = {"@id": uri, "@type": "xsd:dateTime"}
+        xsd_type = DATATYPE_TO_XSD.get(entry["datatype"])
+        if xsd_type:
+            context[term] = {"@id": uri, "@type": xsd_type}
         else:
             context[term] = uri
 
@@ -86,6 +94,21 @@ def build_context(entries):
 
     for key in sorted(context.keys()):
         ordered["@context"][key] = context[key]
+
+    # Scoped context for belopp to map its "period" field to beloppsperiod
+    belopp_key = "belopp"
+    if belopp_key in ordered["@context"]:
+        belopp_id = ordered["@context"][belopp_key]
+        if isinstance(belopp_id, str):
+            ordered["@context"][belopp_key] = {
+                "@id": belopp_id,
+                "@context": {
+                    "varde": "rdf:value",
+                    "valuta": "ffa:valuta",
+                    "skattestatus": "ffa:skattestatus",
+                    "period": "ffa:beloppsperiod"
+                }
+            }
 
     return ordered
 
