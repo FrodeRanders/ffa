@@ -960,6 +960,9 @@ Koden ligger här:
 Efter expansion kan vi paketera en graf med bara de RECORD-typer som finns
 definierade i SDL:en. Detta ger en grafvänlig snapshot utan att ändra original-JSON.
 
+Notera i exemplet nedan att förmåns-privata uppgifen om ras ("Collie") inte följer med vidare till grafen,
+eftersom denna inte ingår i organisationsspråket (FFA-modellen).
+
 ```terminaloutput
 ➜ tools/run-jsonld-graph.sh src/test/resources/fixtures/yrkan-full.json
 ```
