@@ -45,6 +45,25 @@ public final class MimerProxy {
                 .build();
     }
 
+    public enum SignatureEncoding {
+        BASE64("base64"),
+        BASE64_URL("base64url"),
+        HEX("hex"),
+        PEM("pem");
+
+        private static final String PEM_BEGIN = "-----BEGIN SIGNATURE-----";
+        private static final String PEM_END = "-----END SIGNATURE-----";
+        private final String wireName;
+
+        SignatureEncoding(String wireName) {
+            this.wireName = wireName;
+        }
+
+        public String wireName() {
+            return wireName;
+        }
+    }
+
     public record SignedJson(
             byte[] jsonBytes,
             byte[] signatureBytes,
@@ -55,13 +74,51 @@ public final class MimerProxy {
             String keyId,
             byte[] signerCertificateDer,
             byte[][] certificateChainDer
-    ) {}
+    ) {
+        public String signatureText() {
+            return signatureText(SignatureEncoding.BASE64_URL);
+        }
+
+        public String signatureText(SignatureEncoding encoding) {
+            return encodeSignature(signatureBytes, encoding);
+        }
+
+        public static byte[] decodeSignature(String signatureText, SignatureEncoding encoding) {
+            return decodeSignatureText(signatureText, encoding);
+        }
+    }
 
     public record VerificationResult(
             boolean signatureValid,
             boolean chainValid,
             String message
     ) {}
+
+    public static String encodeSignature(byte[] signatureBytes, SignatureEncoding encoding) {
+        if (signatureBytes == null) {
+            throw new IllegalArgumentException("signatureBytes must not be null");
+        }
+        SignatureEncoding effective = encoding == null ? SignatureEncoding.BASE64_URL : encoding;
+        return switch (effective) {
+            case BASE64 -> Base64.getEncoder().encodeToString(signatureBytes);
+            case BASE64_URL -> Base64.getUrlEncoder().withoutPadding().encodeToString(signatureBytes);
+            case HEX -> toHex(signatureBytes);
+            case PEM -> toPem(signatureBytes);
+        };
+    }
+
+    public static byte[] decodeSignatureText(String signatureText, SignatureEncoding encoding) {
+        if (signatureText == null || signatureText.isBlank()) {
+            throw new IllegalArgumentException("signatureText must not be null/blank");
+        }
+        SignatureEncoding effective = encoding == null ? SignatureEncoding.BASE64_URL : encoding;
+        return switch (effective) {
+            case BASE64 -> Base64.getDecoder().decode(signatureText);
+            case BASE64_URL -> Base64.getUrlDecoder().decode(signatureText);
+            case HEX -> fromHex(signatureText);
+            case PEM -> fromPem(signatureText);
+        };
+    }
 
     public static SignedJson serializeAndSign(
             Object bean,
@@ -83,6 +140,16 @@ public final class MimerProxy {
             ObjectMapper mapper,
             KeyMaterialLoader.KeyMaterial keyMaterial,
             String keyId
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, keyMaterial, keyId, SignatureUtils.DigestAlgorithm.SHA_512);
+    }
+
+    public static SignedJson serializeAndSign(
+            Object bean,
+            ObjectMapper mapper,
+            KeyMaterialLoader.KeyMaterial keyMaterial,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
     ) throws JacksonException {
         if (keyMaterial == null) {
             throw new IllegalArgumentException("keyMaterial must not be null");
@@ -94,7 +161,8 @@ public final class MimerProxy {
                 keyId,
                 keyMaterial.signerCertificate(),
                 keyMaterial.certificateChain(),
-                keyMaterial.trustAnchors()
+                keyMaterial.trustAnchors(),
+                digestAlgorithm
         );
     }
 
@@ -104,6 +172,15 @@ public final class MimerProxy {
             String keyId
     ) throws JacksonException {
         return serializeAndSign(bean, mapper, keyMaterial, keyId);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            KeyMaterialLoader.KeyMaterial keyMaterial,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, keyMaterial, keyId, digestAlgorithm);
     }
 
     public static byte[] serialize(
@@ -176,6 +253,21 @@ public final class MimerProxy {
         return deserialize(jsonBytes, mapper, type);
     }
 
+    public static <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            ObjectMapper mapper,
+            Class<T> type
+    ) throws JacksonException {
+        VerificationResult result = verifySignature(jsonBytes, signatureText, signatureEncoding, signerCertificate);
+        if (!result.signatureValid()) {
+            throw new IllegalStateException("Signature verification failed: " + result.message());
+        }
+        return deserialize(jsonBytes, mapper, type);
+    }
+
     public <T> T verifyAndDeserialize(
             byte[] jsonBytes,
             byte[] signatureBytes,
@@ -183,6 +275,16 @@ public final class MimerProxy {
             Class<T> type
     ) throws JacksonException {
         return verifyAndDeserialize(jsonBytes, signatureBytes, signerCertificate, mapper, type);
+    }
+
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(jsonBytes, signatureText, signatureEncoding, signerCertificate, mapper, type);
     }
 
     public static <T> T verifyAndDeserialize(
@@ -198,6 +300,35 @@ public final class MimerProxy {
         VerificationResult result = verifySignature(
                 jsonBytes,
                 signatureBytes,
+                signerCertificate,
+                chain,
+                trustAnchors,
+                enableRevocation
+        );
+        if (!result.signatureValid()) {
+            throw new IllegalStateException("Signature verification failed: " + result.message());
+        }
+        if (!result.chainValid()) {
+            throw new IllegalStateException("Certificate validation failed: " + result.message());
+        }
+        return deserialize(jsonBytes, mapper, type);
+    }
+
+    public static <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            List<X509Certificate> chain,
+            List<X509Certificate> trustAnchors,
+            boolean enableRevocation,
+            ObjectMapper mapper,
+            Class<T> type
+    ) throws JacksonException {
+        VerificationResult result = verifySignature(
+                jsonBytes,
+                signatureText,
+                signatureEncoding,
                 signerCertificate,
                 chain,
                 trustAnchors,
@@ -233,13 +364,54 @@ public final class MimerProxy {
         );
     }
 
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            List<X509Certificate> chain,
+            List<X509Certificate> trustAnchors,
+            boolean enableRevocation,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(
+                jsonBytes,
+                signatureText,
+                signatureEncoding,
+                signerCertificate,
+                chain,
+                trustAnchors,
+                enableRevocation,
+                mapper,
+                type
+        );
+    }
+
     public static SignedJson serializeAndSign(
             Object bean,
             ObjectMapper mapper,
             PrivateKey privateKey,
             String keyId
     ) throws JacksonException {
-        return serializeAndSign(bean, mapper, privateKey, keyId, null, null);
+        return serializeAndSign(
+                bean,
+                mapper,
+                privateKey,
+                keyId,
+                null,
+                null,
+                SignatureUtils.DigestAlgorithm.SHA_512
+        );
+    }
+
+    public static SignedJson serializeAndSign(
+            Object bean,
+            ObjectMapper mapper,
+            PrivateKey privateKey,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, privateKey, keyId, null, null, digestAlgorithm);
     }
 
     public SignedJson serializeAndSign(
@@ -247,7 +419,16 @@ public final class MimerProxy {
             PrivateKey privateKey,
             String keyId
     ) throws JacksonException {
-        return serializeAndSign(bean, mapper, privateKey, keyId, null, null);
+        return serializeAndSign(bean, mapper, privateKey, keyId);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            PrivateKey privateKey,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, privateKey, keyId, digestAlgorithm);
     }
 
     public static SignedJson serializeAndSign(
@@ -258,8 +439,31 @@ public final class MimerProxy {
             X509Certificate signerCertificate,
             List<X509Certificate> certificateChain
     ) throws JacksonException {
+        return serializeAndSign(
+                bean,
+                mapper,
+                privateKey,
+                keyId,
+                signerCertificate,
+                certificateChain,
+                SignatureUtils.DigestAlgorithm.SHA_512
+        );
+    }
+
+    public static SignedJson serializeAndSign(
+            Object bean,
+            ObjectMapper mapper,
+            PrivateKey privateKey,
+            String keyId,
+            X509Certificate signerCertificate,
+            List<X509Certificate> certificateChain,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) throws JacksonException {
+        SignatureUtils.DigestAlgorithm effective = digestAlgorithm == null
+                ? SignatureUtils.DigestAlgorithm.SHA_512
+                : digestAlgorithm;
         byte[] json = mapper.writeValueAsBytes(bean);
-        byte[] signature = SignatureUtils.signJcsDigestSha256RsaPkcs1FromJsonBytes(json, privateKey);
+        byte[] signature = SignatureUtils.signJcsDigestRsaPkcs1FromJsonBytes(json, privateKey, effective);
         List<X509Certificate> chain = certificateChain;
         if ((chain == null || chain.isEmpty()) && signerCertificate != null) {
             chain = List.of(signerCertificate);
@@ -268,7 +472,7 @@ public final class MimerProxy {
                 json,
                 signature,
                 "RSASSA-PKCS1-v1_5",
-                "SHA-256",
+                effective.jsonName(),
                 "JCS",
                 Instant.now(),
                 keyId,
@@ -286,8 +490,30 @@ public final class MimerProxy {
             List<X509Certificate> intermediates,
             List<X509Certificate> trustAnchors
     ) throws JacksonException {
+        return serializeAndSign(
+                bean,
+                mapper,
+                privateKey,
+                keyId,
+                signerCertificate,
+                intermediates,
+                trustAnchors,
+                SignatureUtils.DigestAlgorithm.SHA_512
+        );
+    }
+
+    public static SignedJson serializeAndSign(
+            Object bean,
+            ObjectMapper mapper,
+            PrivateKey privateKey,
+            String keyId,
+            X509Certificate signerCertificate,
+            List<X509Certificate> intermediates,
+            List<X509Certificate> trustAnchors,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) throws JacksonException {
         List<X509Certificate> builtChain = buildCertificateChain(signerCertificate, intermediates, trustAnchors);
-        return serializeAndSign(bean, mapper, privateKey, keyId, signerCertificate, builtChain);
+        return serializeAndSign(bean, mapper, privateKey, keyId, signerCertificate, builtChain, digestAlgorithm);
     }
 
     public static VerificationResult verifySignature(
@@ -300,12 +526,40 @@ public final class MimerProxy {
 
     public static VerificationResult verifySignature(
             byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate
+    ) {
+        return verifySignature(jsonBytes, signatureText, signatureEncoding, signerCertificate, null, null, false);
+    }
+
+    public static VerificationResult verifySignature(
+            byte[] jsonBytes,
             byte[] signatureBytes,
             X509Certificate signerCertificate,
             List<X509Certificate> chain,
             List<X509Certificate> trustAnchors
     ) {
         return verifySignature(jsonBytes, signatureBytes, signerCertificate, chain, trustAnchors, false);
+    }
+
+    public static VerificationResult verifySignature(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            List<X509Certificate> chain,
+            List<X509Certificate> trustAnchors
+    ) {
+        return verifySignature(
+                jsonBytes,
+                signatureText,
+                signatureEncoding,
+                signerCertificate,
+                chain,
+                trustAnchors,
+                false
+        );
     }
 
     public static VerificationResult verifySignature(
@@ -332,6 +586,31 @@ public final class MimerProxy {
             message = "Signature and certificate chain valid";
         }
         return new VerificationResult(signatureValid, chainValid, message);
+    }
+
+    public static VerificationResult verifySignature(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            List<X509Certificate> chain,
+            List<X509Certificate> trustAnchors,
+            boolean enableRevocation
+    ) {
+        final byte[] signatureBytes;
+        try {
+            signatureBytes = decodeSignatureText(signatureText, signatureEncoding);
+        } catch (IllegalArgumentException e) {
+            return new VerificationResult(false, false, "Invalid signature encoding/text");
+        }
+        return verifySignature(
+                jsonBytes,
+                signatureBytes,
+                signerCertificate,
+                chain,
+                trustAnchors,
+                enableRevocation
+        );
     }
 
     private static byte[] encodeCertificate(X509Certificate certificate) {
@@ -362,9 +641,13 @@ public final class MimerProxy {
             X509Certificate signerCertificate
     ) {
         try {
-            byte[] digest = DigestUtils.computeJcsDigestFromJsonBytes(jsonBytes);
-            byte[] expected = digestInfo(digest);
             byte[] actual = rsaPkcs1Decrypt(signatureBytes, signerCertificate.getPublicKey());
+            SignatureUtils.DigestAlgorithm digestAlgorithm = SignatureUtils.detectDigestAlgorithmFromDigestInfo(actual);
+            if (digestAlgorithm == null) {
+                return false;
+            }
+            byte[] digest = DigestUtils.computeJcsDigestFromJsonBytes(jsonBytes, digestAlgorithm);
+            byte[] expected = SignatureUtils.digestInfo(digest, digestAlgorithm);
             return java.security.MessageDigest.isEqual(expected, actual);
         } catch (Exception e) {
             return false;
@@ -375,14 +658,6 @@ public final class MimerProxy {
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.DECRYPT_MODE, publicKey);
         return cipher.doFinal(signature);
-    }
-
-    private static byte[] digestInfo(byte[] sha256Digest) {
-        byte[] prefix = SignatureUtils.SHA256_DIGEST_INFO_PREFIX;
-        byte[] out = new byte[prefix.length + sha256Digest.length];
-        System.arraycopy(prefix, 0, out, 0, prefix.length);
-        System.arraycopy(sha256Digest, 0, out, prefix.length, sha256Digest.length);
-        return out;
     }
 
     private static boolean validateCertificateChain(
@@ -511,5 +786,49 @@ public final class MimerProxy {
             }
         }
         return false;
+    }
+
+    private static String toHex(byte[] value) {
+        char[] out = new char[value.length * 2];
+        final char[] hex = "0123456789abcdef".toCharArray();
+        for (int i = 0; i < value.length; i++) {
+            int v = value[i] & 0xFF;
+            out[i * 2] = hex[v >>> 4];
+            out[i * 2 + 1] = hex[v & 0x0F];
+        }
+        return new String(out);
+    }
+
+    private static byte[] fromHex(String hex) {
+        String cleaned = hex.replaceAll("\\s+", "");
+        if ((cleaned.length() % 2) != 0) {
+            throw new IllegalArgumentException("HEX value must have even length");
+        }
+        byte[] out = new byte[cleaned.length() / 2];
+        for (int i = 0; i < cleaned.length(); i += 2) {
+            int hi = Character.digit(cleaned.charAt(i), 16);
+            int lo = Character.digit(cleaned.charAt(i + 1), 16);
+            if (hi < 0 || lo < 0) {
+                throw new IllegalArgumentException("HEX value contains invalid characters");
+            }
+            out[i / 2] = (byte) ((hi << 4) + lo);
+        }
+        return out;
+    }
+
+    private static String toPem(byte[] signatureBytes) {
+        String base64 = Base64.getMimeEncoder(64, new byte[]{'\n'}).encodeToString(signatureBytes);
+        return SignatureEncoding.PEM_BEGIN + "\n" + base64 + "\n" + SignatureEncoding.PEM_END;
+    }
+
+    private static byte[] fromPem(String pem) {
+        String body = pem
+                .replace(SignatureEncoding.PEM_BEGIN, "")
+                .replace(SignatureEncoding.PEM_END, "")
+                .replaceAll("\\s+", "");
+        if (body.isEmpty()) {
+            throw new IllegalArgumentException("PEM value does not contain a signature body");
+        }
+        return Base64.getDecoder().decode(body);
     }
 }

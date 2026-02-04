@@ -10,31 +10,48 @@ import java.util.Locale;
 public class DigestUtils {
     private static final Logger log = LoggerFactory.getLogger(DigestUtils.class);
 
-    private static final MessageDigest sha256;
-
-    static {
-        try {
-            sha256 = MessageDigest.getInstance("SHA-256");
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
     public static byte[] computeDigest(
             Object bean,
             ObjectMapper mapper
     ) {
+        return computeDigest(bean, mapper, SignatureUtils.DigestAlgorithm.SHA_256);
+    }
+
+    public static byte[] computeDigest(
+            Object bean,
+            ObjectMapper mapper,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) {
         byte[] json = mapper.writeValueAsBytes(bean);
         byte[] canonical = JcsUtils.canonicalize(json);
-        return sha256.digest(canonical);
+        return digestCanonical(canonical, digestAlgorithm);
     }
 
     public static byte[] computeJcsDigestFromJsonBytes(byte[] jsonBytes) {
+        return computeJcsDigestFromJsonBytes(jsonBytes, SignatureUtils.DigestAlgorithm.SHA_256);
+    }
+
+    public static byte[] computeJcsDigestFromJsonBytes(
+            byte[] jsonBytes,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) {
         if (jsonBytes == null) {
             throw new IllegalArgumentException("jsonBytes must not be null");
         }
         byte[] canonical = JcsUtils.canonicalize(jsonBytes);
-        return sha256.digest(canonical);
+        return digestCanonical(canonical, digestAlgorithm);
+    }
+
+    private static byte[] digestCanonical(byte[] canonical, SignatureUtils.DigestAlgorithm digestAlgorithm) {
+        SignatureUtils.DigestAlgorithm effective = digestAlgorithm == null
+                ? SignatureUtils.DigestAlgorithm.SHA_256
+                : digestAlgorithm;
+        try {
+            MessageDigest md = MessageDigest.getInstance(effective.jcaName());
+            return md.digest(canonical);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to compute " + effective.jsonName() + " digest", e);
+        }
     }
 
     private static final char[] HEX = "0123456789abcdef".toCharArray();

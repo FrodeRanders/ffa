@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.json.DigestUtils;
+import se.fk.data.modell.json.SignatureUtils;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -25,10 +26,6 @@ import static org.junit.Assert.*;
 
 public class MimerProxySignTest {
     private static final Logger log = LoggerFactory.getLogger(MimerProxySignTest.class);
-    private static final byte[] SHA256_DIGEST_INFO_PREFIX = new byte[] {
-            0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, (byte) 0x86,
-            0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20
-    };
 
     @Test
     public void serializeAndSign_producesVerifiableSignature() throws Exception {
@@ -59,9 +56,13 @@ public class MimerProxySignTest {
         assertNotNull(signed.signatureBytes());
         assertTrue(signed.signatureBytes().length > 0);
         assertNotNull(signed.signerCertificateDer());
+        assertEquals("SHA-512", signed.digestAlgorithm());
 
-        byte[] digest = DigestUtils.computeJcsDigestFromJsonBytes(signed.jsonBytes());
-        byte[] expected = digestInfo(digest);
+        byte[] digest = DigestUtils.computeJcsDigestFromJsonBytes(
+                signed.jsonBytes(),
+                SignatureUtils.DigestAlgorithm.SHA_512
+        );
+        byte[] expected = SignatureUtils.digestInfo(digest, SignatureUtils.DigestAlgorithm.SHA_512);
 
         byte[] actual = rsaPkcs1Decrypt(signed.signatureBytes(), publicKey);
         assertArrayEquals(expected, actual);
@@ -299,11 +300,112 @@ public class MimerProxySignTest {
         assertTrue(result.signatureValid());
     }
 
-    private static byte[] digestInfo(byte[] sha256Digest) {
-        byte[] out = new byte[SHA256_DIGEST_INFO_PREFIX.length + sha256Digest.length];
-        System.arraycopy(SHA256_DIGEST_INFO_PREFIX, 0, out, 0, SHA256_DIGEST_INFO_PREFIX.length);
-        System.arraycopy(sha256Digest, 0, out, SHA256_DIGEST_INFO_PREFIX.length, sha256Digest.length);
-        return out;
+    @Test
+    public void serializeAndSign_allowsSha256AsOption() throws Exception {
+        ensureBcProvider();
+        KeyPair keyPair = rsaKeyPair();
+        PrivateKey privateKey = keyPair.getPrivate();
+        X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
+        PublicKey publicKey = cert.getPublicKey();
+
+        ObjectMapper mapper = JsonMapper.builder().build();
+        Map<String, Object> payload = Map.of(
+                "id", "abc-123",
+                "amount", 2500,
+                "currency", "SEK"
+        );
+
+        MimerProxy.SignedJson signed = MimerProxy.serializeAndSign(
+                payload,
+                mapper,
+                privateKey,
+                "test-key",
+                cert,
+                null,
+                SignatureUtils.DigestAlgorithm.SHA_256
+        );
+
+        assertEquals("SHA-256", signed.digestAlgorithm());
+
+        byte[] digest = DigestUtils.computeJcsDigestFromJsonBytes(
+                signed.jsonBytes(),
+                SignatureUtils.DigestAlgorithm.SHA_256
+        );
+        byte[] expected = SignatureUtils.digestInfo(digest, SignatureUtils.DigestAlgorithm.SHA_256);
+        byte[] actual = rsaPkcs1Decrypt(signed.signatureBytes(), publicKey);
+        assertArrayEquals(expected, actual);
+
+        MimerProxy.VerificationResult result = MimerProxy.verifySignature(
+                signed.jsonBytes(),
+                signed.signatureBytes(),
+                cert
+        );
+        assertTrue(result.signatureValid());
+    }
+
+    @Test
+    public void signatureText_roundTripsForAllSupportedEncodings() throws Exception {
+        ensureBcProvider();
+        KeyPair keyPair = rsaKeyPair();
+        PrivateKey privateKey = keyPair.getPrivate();
+        X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
+
+        ObjectMapper mapper = JsonMapper.builder().build();
+        Map<String, Object> payload = Map.of(
+                "id", "abc-123",
+                "amount", 2500,
+                "currency", "SEK"
+        );
+
+        MimerProxy.SignedJson signed = MimerProxy.serializeAndSign(
+                payload,
+                mapper,
+                privateKey,
+                "test-key",
+                cert,
+                null
+        );
+
+        for (MimerProxy.SignatureEncoding encoding : MimerProxy.SignatureEncoding.values()) {
+            String text = signed.signatureText(encoding);
+            byte[] decoded = MimerProxy.decodeSignatureText(text, encoding);
+            assertArrayEquals("Roundtrip failed for " + encoding, signed.signatureBytes(), decoded);
+        }
+    }
+
+    @Test
+    public void verifySignature_acceptsAllTextEncodings() throws Exception {
+        ensureBcProvider();
+        KeyPair keyPair = rsaKeyPair();
+        PrivateKey privateKey = keyPair.getPrivate();
+        X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
+
+        ObjectMapper mapper = JsonMapper.builder().build();
+        Map<String, Object> payload = Map.of(
+                "id", "abc-123",
+                "amount", 2500,
+                "currency", "SEK"
+        );
+
+        MimerProxy.SignedJson signed = MimerProxy.serializeAndSign(
+                payload,
+                mapper,
+                privateKey,
+                "test-key",
+                cert,
+                null
+        );
+
+        for (MimerProxy.SignatureEncoding encoding : MimerProxy.SignatureEncoding.values()) {
+            String signatureText = signed.signatureText(encoding);
+            MimerProxy.VerificationResult result = MimerProxy.verifySignature(
+                    signed.jsonBytes(),
+                    signatureText,
+                    encoding,
+                    cert
+            );
+            assertTrue("Text verification failed for " + encoding, result.signatureValid());
+        }
     }
 
     private static byte[] rsaPkcs1Decrypt(byte[] signature, PublicKey publicKey) throws Exception {

@@ -332,6 +332,32 @@ MyType value = proxy.verifyAndDeserialize(
 );
 ```
 
+Standard för signering är `SHA-512`. Om du behöver `SHA-256` kan du välja det explicit:
+```java
+MimerProxy.SignedJson signedSha256 = proxy.serializeAndSign(
+        objekt,
+        km,
+        "key-1",
+        SignatureUtils.DigestAlgorithm.SHA_256
+);
+```
+
+Signaturen kan kodas som text vid transport:
+```java
+String sigBase64 = signed.signatureText(MimerProxy.SignatureEncoding.BASE64);
+String sigBase64Url = signed.signatureText(MimerProxy.SignatureEncoding.BASE64_URL);
+String sigHex = signed.signatureText(MimerProxy.SignatureEncoding.HEX);
+String sigPem = signed.signatureText(MimerProxy.SignatureEncoding.PEM);
+
+byte[] signatureBytes = MimerProxy.decodeSignatureText(sigBase64Url, MimerProxy.SignatureEncoding.BASE64_URL);
+MimerProxy.VerificationResult vr = MimerProxy.verifySignature(
+        signed.jsonBytes(),
+        sigBase64Url,
+        MimerProxy.SignatureEncoding.BASE64_URL,
+        km.signerCertificate()
+);
+```
+
 ## Realisering av affärslogik
 
 ```java
