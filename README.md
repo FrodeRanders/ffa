@@ -270,11 +270,10 @@ utvidgning används Javas arvsmekanism.
 ```java
 package se.fk.hundbidrag.modell;
 
-import
-import se.fk.data.modell.v1.Yrkan; ...
+import ...
 
 @Context("https://data.fk.se/kontext/hundbidrag/yrkan/1.0")
-public class Yrkan extends se.fk.data.modell.v1.Yrkan {
+public class YrkanOmHundbidrag extends se.fk.data.modell.v1.Yrkan {
 
     @JsonProperty("ras")
     String ras;
