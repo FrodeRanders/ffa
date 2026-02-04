@@ -5,14 +5,14 @@ import se.fk.data.modell.annotations.Context;
 
 
 @Context("https://data.fk.se/kontext/hundbidrag/yrkan/1.0")
-public class Yrkan extends se.fk.data.modell.v1.Yrkan {
+public class YrkanOmHundbidrag extends se.fk.data.modell.v1.Yrkan {
 
     @JsonProperty("ras")
     String ras;
 
-    public Yrkan() {} // Required for deserialization
+    public YrkanOmHundbidrag() {} // Required for deserialization
 
-    public Yrkan(String description, String ras) {
+    public YrkanOmHundbidrag(String description, String ras) {
         super(description);
         this.ras = ras;
     }

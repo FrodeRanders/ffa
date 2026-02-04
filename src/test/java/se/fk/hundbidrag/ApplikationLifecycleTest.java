@@ -9,7 +9,7 @@ import se.fk.data.modell.v1.FysiskPerson;
 import se.fk.data.modell.v1.Intyg;
 import se.fk.data.modell.v1.Period;
 import se.fk.data.modell.v1.RattenTillPeriod;
-import se.fk.hundbidrag.modell.Yrkan;
+import se.fk.hundbidrag.modell.YrkanOmHundbidrag;
 import se.fk.mimer.klient.MimerProxy;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -31,7 +31,7 @@ public class ApplikationLifecycleTest {
     void serialize_incrementsVersionAndSetsAttentionOnFirstSerialize() throws Exception {
         log.info("*** Testcase *** Serialize new Yrkan and verify version increment plus __attention flag");
         MimerProxy proxy = MimerProxy.defaultInstance();
-        Yrkan yrkan = buildDemoYrkan();
+        YrkanOmHundbidrag yrkan = buildDemoYrkan();
 
         assertEquals(0, yrkan.version);
 
@@ -59,12 +59,12 @@ public class ApplikationLifecycleTest {
     void serializeDeserializeModify_stepsVersionAndFlagsAttention() throws Exception {
         log.info("*** Testcase *** Serialize, deserialize, modify, re-serialize and verify version/attention behavior");
         MimerProxy proxy = MimerProxy.defaultInstance();
-        Yrkan yrkan = buildDemoYrkan();
+        YrkanOmHundbidrag yrkan = buildDemoYrkan();
 
         String json1 = proxy.serializePretty(yrkan);
         assertEquals(1, yrkan.version);
 
-        Yrkan roundTripped = proxy.deserialize(json1, Yrkan.class);
+        YrkanOmHundbidrag roundTripped = proxy.deserialize(json1, YrkanOmHundbidrag.class);
         assertEquals(1, roundTripped.version);
         assertEquals("Hundutställning (inkl. bad)", roundTripped.beskrivning);
 
@@ -93,7 +93,7 @@ public class ApplikationLifecycleTest {
     void serializeTwiceWithoutChanges_doesNotBumpVersionOrAttention() throws Exception {
         log.info("*** Testcase *** Serialize twice without changes and ensure version/attention stay stable");
         MimerProxy proxy = MimerProxy.defaultInstance();
-        Yrkan yrkan = buildDemoYrkan();
+        YrkanOmHundbidrag yrkan = buildDemoYrkan();
 
         String json1 = proxy.serializePretty(yrkan);
         assertEquals(1, yrkan.version);
@@ -111,8 +111,8 @@ public class ApplikationLifecycleTest {
         }
     }
 
-    private static Yrkan buildDemoYrkan() {
-        Yrkan yrkan = new Yrkan("Hundutställning (inkl. bad)", "Collie");
+    private static YrkanOmHundbidrag buildDemoYrkan() {
+        YrkanOmHundbidrag yrkan = new YrkanOmHundbidrag("Hundutställning (inkl. bad)", "Collie");
         yrkan.setPerson(new FysiskPerson("19121212-1212"));
 
         RattenTillPeriod rattenTillPeriod = new RattenTillPeriod();

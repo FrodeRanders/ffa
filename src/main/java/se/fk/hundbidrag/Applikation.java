@@ -4,7 +4,7 @@ import com.fasterxml.uuid.Generators;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.fk.data.modell.v1.*;
-import se.fk.hundbidrag.modell.Yrkan;
+import se.fk.hundbidrag.modell.YrkanOmHundbidrag;
 import se.fk.mimer.klient.MimerProxy;
 import tools.jackson.core.JacksonException;
 
@@ -30,7 +30,7 @@ public class Applikation {
         // -------------------------------------------------------------------
 
         // Efter etablering av yrkan och i samband med initiering av handläggningsflöde
-        /* Yrkan */ Yrkan yrkan = new Yrkan("Hundutställning (inkl. bad)","Collie");
+        YrkanOmHundbidrag yrkan = new YrkanOmHundbidrag("Hundutställning (inkl. bad)","Collie");
         {
             FysiskPerson person = new FysiskPerson("19121212-1212");
 
@@ -93,7 +93,7 @@ public class Applikation {
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Subsequent deserialize from JSON
-            Yrkan aaterlaestYrkan = proxy.deserialize(jsonLD, Yrkan.class);
+            YrkanOmHundbidrag aaterlaestYrkan = proxy.deserialize(jsonLD, YrkanOmHundbidrag.class);
             log.debug("JSON -> Object:\n{}", aaterlaestYrkan);
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
