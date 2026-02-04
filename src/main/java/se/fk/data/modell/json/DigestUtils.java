@@ -54,6 +54,8 @@ public class DigestUtils {
         }
     }
 
+    /* ----------- The rest of this class handles various visualisation of digests ----------- */
+
     private static final char[] HEX = "0123456789abcdef".toCharArray();
     // Light→dark ramp for ASCII bar
     private static final char[] RAMP = " .:-=+*#%@".toCharArray();

@@ -4,6 +4,10 @@ import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.Cipher;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 
 public final class SignatureUtils {
     public static final byte[] SHA256_DIGEST_INFO_PREFIX = new byte[] {
@@ -50,6 +54,28 @@ public final class SignatureUtils {
 
         public int digestLengthBytes() {
             return digestLengthBytes;
+        }
+    }
+
+    /*
+     * RFC 3447 (from 2003) encourages moving away from RSASSA PKCS #1 v1.5.
+     * RFC 8017 (from 2016) states that RSASSA PKCS #1 v1.5 is deprecated.
+     * The latter states that RSASSA-PSS is REQUIRED in new applications.
+     *
+     * We support both, but RSASSA_PSS will be default.
+     */
+    public enum SignatureScheme {
+        RSASSA_PKCS1_V1_5("RSASSA-PKCS1-v1_5"),
+        RSASSA_PSS("RSASSA-PSS");
+
+        private final String jsonName;
+
+        SignatureScheme(String jsonName) {
+            this.jsonName = jsonName;
+        }
+
+        public String jsonName() {
+            return jsonName;
         }
     }
 
@@ -139,6 +165,59 @@ public final class SignatureUtils {
         return signJcsDigestRsaPkcs1(digest, privateKey, effective);
     }
 
+    public static byte[] signJcsRsaFromJsonBytes(
+            byte[] jsonBytes,
+            PrivateKey privateKey,
+            SignatureScheme signatureScheme,
+            DigestAlgorithm digestAlgorithm
+    ) {
+        SignatureScheme effectiveScheme = signatureScheme == null
+                ? SignatureScheme.RSASSA_PKCS1_V1_5
+                : signatureScheme;
+        DigestAlgorithm effectiveDigest = digestAlgorithm == null ? DigestAlgorithm.SHA_512 : digestAlgorithm;
+        return switch (effectiveScheme) {
+            case RSASSA_PKCS1_V1_5 -> signJcsDigestRsaPkcs1FromJsonBytes(jsonBytes, privateKey, effectiveDigest);
+            case RSASSA_PSS -> signJcsRsaPssFromJsonBytes(jsonBytes, privateKey, effectiveDigest);
+        };
+    }
+
+    public static byte[] signJcsRsaPssFromJsonBytes(
+            byte[] jsonBytes,
+            PrivateKey privateKey,
+            DigestAlgorithm digestAlgorithm
+    ) {
+        DigestAlgorithm effective = digestAlgorithm == null ? DigestAlgorithm.SHA_512 : digestAlgorithm;
+        try {
+            byte[] canonical = JcsUtils.canonicalize(jsonBytes);
+            Signature signature = Signature.getInstance("RSASSA-PSS");
+            signature.setParameter(pssParameterSpec(effective));
+            signature.initSign(privateKey);
+            signature.update(canonical);
+            return signature.sign();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to sign JCS payload with " + effective.jsonName() + " RSASSA-PSS", e);
+        }
+    }
+
+    public static boolean verifyJcsRsaPssFromJsonBytes(
+            byte[] jsonBytes,
+            byte[] signatureBytes,
+            PublicKey publicKey,
+            DigestAlgorithm digestAlgorithm
+    ) {
+        DigestAlgorithm effective = digestAlgorithm == null ? DigestAlgorithm.SHA_512 : digestAlgorithm;
+        try {
+            byte[] canonical = JcsUtils.canonicalize(jsonBytes);
+            Signature verifier = Signature.getInstance("RSASSA-PSS");
+            verifier.setParameter(pssParameterSpec(effective));
+            verifier.initVerify(publicKey);
+            verifier.update(canonical);
+            return verifier.verify(signatureBytes);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public static byte[] digestInfo(byte[] digest, DigestAlgorithm digestAlgorithm) {
         DigestAlgorithm effective = digestAlgorithm == null ? DigestAlgorithm.SHA_512 : digestAlgorithm;
         if (digest == null || digest.length != effective.digestLengthBytes()) {
@@ -173,5 +252,19 @@ public final class SignatureUtils {
             }
         }
         return true;
+    }
+
+    private static PSSParameterSpec pssParameterSpec(DigestAlgorithm digestAlgorithm) {
+        MGF1ParameterSpec mgf1Spec = switch (digestAlgorithm) {
+            case SHA_256 -> MGF1ParameterSpec.SHA256;
+            case SHA_512 -> MGF1ParameterSpec.SHA512;
+        };
+        return new PSSParameterSpec(
+                digestAlgorithm.jcaName(),
+                "MGF1",
+                mgf1Spec,
+                digestAlgorithm.digestLengthBytes(),
+                1
+        );
     }
 }

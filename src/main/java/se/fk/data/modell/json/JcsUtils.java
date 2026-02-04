@@ -17,6 +17,7 @@ public final class JcsUtils {
             Object tree = mapper.readValue(json, Object.class);
             String canonical = Jcs.canonize(tree, NativeAdapter.instance());
             return canonical.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
         } catch (Exception e) {
             throw new IllegalStateException("Failed to canonicalize JSON with JCS", e);
         }

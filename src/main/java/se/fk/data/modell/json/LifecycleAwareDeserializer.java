@@ -37,6 +37,7 @@ public final class LifecycleAwareDeserializer<T extends Livscykelhanterad> exten
             DeserializationContext ctxt
     ) throws JacksonException {
 
+        //noinspection unchecked
         T bean = (T) super.deserialize(p, ctxt);
         log.debug("Deserialized bean {}@{}", bean.getClass().getCanonicalName(), String.format("%08x", bean.hashCode()));
 

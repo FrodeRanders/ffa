@@ -102,7 +102,6 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
             SerializationContext prov,
             BeanProperty property
     ) {
-
         log.trace("Creating contextual serialiser for property: {}", property);
 
         if (property != null) {
@@ -112,9 +111,7 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
             }
             if (null != annotation) {
                 // Build a serializer instance configured with the annotation params
-                return new SomPropertySerializer(
-                        annotation.typ()
-                );
+                return new SomPropertySerializer(annotation.typ());
             }
         }
         // If there's no annotation, just return 'this' with empty defaults

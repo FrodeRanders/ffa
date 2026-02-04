@@ -47,7 +47,7 @@ public class PIIPropertySerializer extends ValueSerializer<Object> {
          * available.
          *
          * We have another way of handling this, utilising the fact that we
-         * pepper the JSON with '@context' information. So we have a specific
+         * pepper the JSON with '@type' information. So we have a specific
          * adapter for abstract classes in our object model.
          *
          * Example:
@@ -55,7 +55,7 @@ public class PIIPropertySerializer extends ValueSerializer<Object> {
          * @JsonTypeInfo(
          *   use = JsonTypeInfo.Id.CUSTOM,
          *   include = JsonTypeInfo.As.EXISTING_PROPERTY,
-         *   property = "@context",
+         *   property = "@type",
          *   visible = true
          * )
          * @JsonTypeIdResolver(PersonTypeIdResolver.class)

@@ -86,9 +86,4 @@ public class SomPropertyDeserializer extends ValueDeserializer<Object> {
         // Capture the property's declared JavaType for use above
         return new SomPropertyDeserializer(property.getType());
     }
-
-    @Override
-    public Object getNullValue(DeserializationContext ctxt) {
-        return null;
-    }
 }

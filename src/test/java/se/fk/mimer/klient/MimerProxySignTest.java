@@ -374,6 +374,42 @@ public class MimerProxySignTest {
     }
 
     @Test
+    public void serializeAndSign_supportsRsaPss() throws Exception {
+        ensureBcProvider();
+        KeyPair keyPair = rsaKeyPair();
+        PrivateKey privateKey = keyPair.getPrivate();
+        X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
+
+        ObjectMapper mapper = JsonMapper.builder().build();
+        Map<String, Object> payload = Map.of(
+                "id", "abc-123",
+                "amount", 2500,
+                "currency", "SEK"
+        );
+
+        MimerProxy.SignedJson signed = MimerProxy.serializeAndSign(
+                payload,
+                mapper,
+                privateKey,
+                "test-key",
+                cert,
+                null,
+                SignatureUtils.DigestAlgorithm.SHA_512,
+                SignatureUtils.SignatureScheme.RSASSA_PSS
+        );
+
+        assertEquals("RSASSA-PSS", signed.signatureAlgorithm());
+        assertEquals("SHA-512", signed.digestAlgorithm());
+
+        MimerProxy.VerificationResult result = MimerProxy.verifySignature(
+                signed.jsonBytes(),
+                signed.signatureBytes(),
+                cert
+        );
+        assertTrue(result.signatureValid());
+    }
+
+    @Test
     public void verifySignature_acceptsAllTextEncodings() throws Exception {
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
@@ -406,6 +442,41 @@ public class MimerProxySignTest {
             );
             assertTrue("Text verification failed for " + encoding, result.signatureValid());
         }
+    }
+
+    @Test
+    public void signAndVerify_supportsOptionsObjects() throws Exception {
+        ensureBcProvider();
+        KeyPair keyPair = rsaKeyPair();
+        PrivateKey privateKey = keyPair.getPrivate();
+        X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
+
+        ObjectMapper mapper = JsonMapper.builder().build();
+        Map<String, Object> payload = Map.of(
+                "id", "abc-123",
+                "amount", 2500,
+                "currency", "SEK"
+        );
+
+        MimerProxy.SignOptions signOptions = MimerProxy.SignOptions.defaults()
+                .withKeyId("test-key")
+                .withDigestAlgorithm(SignatureUtils.DigestAlgorithm.SHA_512)
+                .withSignatureScheme(SignatureUtils.SignatureScheme.RSASSA_PSS);
+
+        MimerProxy.SignedJson signed = MimerProxy.serializeAndSign(payload, mapper, privateKey, signOptions);
+        assertEquals("RSASSA-PSS", signed.signatureAlgorithm());
+
+        String signatureText = signed.signatureText(MimerProxy.SignatureEncoding.BASE64_URL);
+        MimerProxy.VerifyOptions verifyOptions = MimerProxy.VerifyOptions.defaults()
+                .withSignatureEncoding(MimerProxy.SignatureEncoding.BASE64_URL);
+
+        MimerProxy.VerificationResult result = MimerProxy.verifySignature(
+                signed.jsonBytes(),
+                signatureText,
+                cert,
+                verifyOptions
+        );
+        assertTrue(result.signatureValid());
     }
 
     private static byte[] rsaPkcs1Decrypt(byte[] signature, PublicKey publicKey) throws Exception {

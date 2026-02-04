@@ -340,6 +340,20 @@ MimerProxy.SignedJson signedSha256 = proxy.serializeAndSign(
         "key-1",
         SignatureUtils.DigestAlgorithm.SHA_256
 );
+
+MimerProxy.SignedJson signedPss = proxy.serializeAndSign(
+        objekt,
+        km,
+        "key-1",
+        SignatureUtils.DigestAlgorithm.SHA_512,
+        SignatureUtils.SignatureScheme.RSASSA_PSS
+);
+
+MimerProxy.SignOptions signOptions = MimerProxy.SignOptions.defaults()
+        .withKeyId("key-1")
+        .withDigestAlgorithm(SignatureUtils.DigestAlgorithm.SHA_512)
+        .withSignatureScheme(SignatureUtils.SignatureScheme.RSASSA_PSS);
+MimerProxy.SignedJson signedWithOptions = proxy.serializeAndSign(objekt, km, signOptions);
 ```
 
 Signaturen kan kodas som text vid transport:
@@ -355,6 +369,17 @@ MimerProxy.VerificationResult vr = MimerProxy.verifySignature(
         sigBase64Url,
         MimerProxy.SignatureEncoding.BASE64_URL,
         km.signerCertificate()
+);
+
+MimerProxy.VerifyOptions verifyOptions = MimerProxy.VerifyOptions.defaults()
+        .withSignatureEncoding(MimerProxy.SignatureEncoding.BASE64_URL)
+        .withTrustAnchors(km.trustAnchors())
+        .withChain(km.certificateChain());
+MimerProxy.VerificationResult vr2 = MimerProxy.verifySignature(
+        signed.jsonBytes(),
+        sigBase64Url,
+        km.signerCertificate(),
+        verifyOptions
 );
 ```
 

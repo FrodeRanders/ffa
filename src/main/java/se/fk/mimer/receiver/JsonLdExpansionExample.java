@@ -78,7 +78,7 @@ public final class JsonLdExpansionExample {
     ) throws JsonLdError {
         String uriString = uri.toString();
         try {
-            if (contextUri != null && uriString.equals(contextUri)) {
+            if (uriString.equals(contextUri)) {
                 return JsonDocument.of(Files.newInputStream(contextFile));
             }
             if (uriString.startsWith("https://data.fk.se/kontext/")) {

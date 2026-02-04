@@ -8,23 +8,4 @@ public final class MutationPredicates {
     public static boolean isLifeCycleHandled(Class<?> raw) {
         return raw != null && Livscykelhanterad.class.isAssignableFrom(raw);
     }
-
-    /*
-    public static boolean isLifeCycleHandled(JavaType t) {
-        return t != null && isTrackedClass(t.getRawClass());
-    }
-    */
-
-    /*
-    public static boolean isSimpleLeaf(Class<?> raw) {
-        return raw.isPrimitive()
-                || Number.class.isAssignableFrom(raw)
-                || CharSequence.class.isAssignableFrom(raw) // String, StringBuilder
-                || java.util.Date.class.isAssignableFrom(raw)
-                || java.time.temporal.Temporal.class.isAssignableFrom(raw)
-                || Boolean.class == raw
-                || Character.class == raw
-                || Enum.class.isAssignableFrom(raw);
-    }
-    */
 }

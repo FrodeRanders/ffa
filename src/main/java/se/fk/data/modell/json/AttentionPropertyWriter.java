@@ -13,7 +13,7 @@ import tools.jackson.databind.ser.VirtualBeanPropertyWriter;
 import tools.jackson.databind.util.Annotations;
 
 /**
- * A virtual property that handles "__attention".
+ * A virtual property that handles the "__attention" flag.
  */
 public class AttentionPropertyWriter extends VirtualBeanPropertyWriter {
     private static final Logger log = LoggerFactory.getLogger(AttentionPropertyWriter.class);
