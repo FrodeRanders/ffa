@@ -1,0 +1,157 @@
+@prefix rr: <http://www.w3.org/ns/r2rml#> .
+@prefix rml: <http://semweb.mmlab.be/ns/rml#> .
+@prefix ql: <http://semweb.mmlab.be/ns/ql#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ffa: <https://data.sfa.se/termer/1.0/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#AllNodes> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][*]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [
+    rr:predicate rdf:type ;
+    rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/{['@type']}" ; rr:termType rr:IRI ] ;
+  ] .
+
+<#Yrkan> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='yrkan')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate dcterms:description ; rr:objectMap [ rml:reference "description" ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:person ; rr:objectMap [ rml:reference "person.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beslut ; rr:objectMap [ rml:reference "beslut.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:producerade_resultat ; rr:objectMap [ rml:reference "producerade_resultat.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:producerade_resultat ; rr:objectMap [ rml:reference "producerade_resultat[*].id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:roll ; rr:objectMap [ rml:reference "roll.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:roll ; rr:objectMap [ rml:reference "roll[*].id" ; rr:termType rr:IRI ] ] .
+
+<#Roll> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='roll' || @['@type']=='Roll')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:person ; rr:objectMap [ rml:reference "person.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:rolltyp ; rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/Yrkanderoll#{rolltyp}" ; rr:termType rr:IRI ] ] .
+
+<#Beslut> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='beslut')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:datum ; rr:objectMap [ rml:reference "datum" ; rr:datatype xsd:dateTime ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beslutstyp ; rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/BeslutsTyp#{beslutstyp}" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beslutsutfall ; rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/BeslutsUtfall#{beslutsutfall}" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beslutsfattare ; rr:objectMap [ rml:reference "beslutsfattare" ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:lagrum ; rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/BeslutsLagrum#{lagrum}" ; rr:termType rr:IRI ] ] .
+
+<#Ersattning> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='ersattning')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:ersattningstyp ; rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/ErsattningsTyp#{ersattningstyp}" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:ersattningstyp ; rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/ErsattningsTyp#{typ}" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:belopp ; rr:objectMap [ rml:reference "belopp.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:period ; rr:objectMap [ rml:reference "period.id" ; rr:termType rr:IRI ] ] .
+
+<#Krav> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='krav')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:kravstyp ; rr:objectMap [ rr:template "https://data.sfa.se/termer/1.0/KravTyp#{kravstyp}" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:belopp ; rr:objectMap [ rml:reference "belopp.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:period ; rr:objectMap [ rml:reference "period.id" ; rr:termType rr:IRI ] ] .
+
+<#Intyg> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='intyg')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:giltighetsperiod ; rr:objectMap [ rml:reference "giltighetsperiod.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:giltighetsperiod ; rr:objectMap [ rml:reference "['ffa:giltighetsperiod'].id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:institution ; rr:objectMap [ rml:reference "institution" ] ] ;
+  rr:predicateObjectMap [ rr:predicate dcterms:description ; rr:objectMap [ rml:reference "beskrivning" ] ] ;
+  rr:predicateObjectMap [ rr:predicate dcterms:date ; rr:objectMap [ rml:reference "utfardat_datum" ; rr:datatype xsd:dateTime ] ] .
+
+<#Belopp> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='belopp')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beloppsvarde ; rr:objectMap [ rml:reference "beloppsvarde" ; rr:datatype xsd:decimal ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beloppsvarde ; rr:objectMap [ rml:reference "varde['@value']" ; rr:datatype xsd:decimal ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:valuta ; rr:objectMap [ rml:reference "valuta" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:valuta ; rr:objectMap [ rml:reference "valuta['@id']" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:valuta ; rr:objectMap [ rml:reference "valuta['@value']" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beloppsperiod ; rr:objectMap [ rml:reference "beloppsperiod" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:skattestatus ; rr:objectMap [ rml:reference "skattestatus" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:skattestatus ; rr:objectMap [ rml:reference "skattestatus['@id']" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:skattestatus ; rr:objectMap [ rml:reference "skattestatus['@value']" ; rr:termType rr:IRI ] ] .
+
+<#BeloppNoType> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@.valuta || @['ffa:valuta'] || @.beloppsperiod || @.varde)]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beloppsvarde ; rr:objectMap [ rml:reference "beloppsvarde" ; rr:datatype xsd:decimal ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beloppsvarde ; rr:objectMap [ rml:reference "varde['@value']" ; rr:datatype xsd:decimal ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:valuta ; rr:objectMap [ rml:reference "valuta" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:valuta ; rr:objectMap [ rml:reference "['ffa:valuta']" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:valuta ; rr:objectMap [ rml:reference "valuta['@id']" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:valuta ; rr:objectMap [ rml:reference "valuta['@value']" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:beloppsperiod ; rr:objectMap [ rml:reference "beloppsperiod" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:skattestatus ; rr:objectMap [ rml:reference "skattestatus" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:skattestatus ; rr:objectMap [ rml:reference "skattestatus['@id']" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:skattestatus ; rr:objectMap [ rml:reference "skattestatus['@value']" ; rr:termType rr:IRI ] ] .
+
+<#Period> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='period')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:from ; rr:objectMap [ rml:reference "from" ; rr:datatype xsd:dateTime ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:tom ; rr:objectMap [ rml:reference "tom" ; rr:datatype xsd:dateTime ] ] .
+
+<#FysiskPerson> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='fysisk_person')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:personnummer ; rr:objectMap [ rml:reference "personnummer.varde" ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:personnummer ; rr:objectMap [ rml:reference "personnummer" ] ] .
+
+<#JuridiskPerson> a rr:TriplesMap ;
+  rml:logicalSource [
+    rml:source "framed.json" ;
+    rml:referenceFormulation ql:JSONPath ;
+    rml:iterator "$['@graph'][?(@['@type']=='juridisk_person')]" ;
+  ] ;
+  rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:orgnummer ; rr:objectMap [ rml:reference "orgnummer" ] ] .

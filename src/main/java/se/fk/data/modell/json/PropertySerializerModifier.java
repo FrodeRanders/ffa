@@ -48,7 +48,7 @@ public class PropertySerializerModifier extends ValueSerializerModifier {
                     log.trace("@Som property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
                     writer.assignSerializer(
                             new SomPropertySerializer(
-                                    som.typ()
+                                    som.roll()
                             )
                     );
                     return writers;

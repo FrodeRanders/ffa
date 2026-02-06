@@ -1,0 +1,6 @@
+{
+  "@context": "https://data.fk.se/kontext/ffa-1.0.jsonld",
+  "@embed": "@always",
+  "@explicit": false,
+  "@requireAll": false
+}

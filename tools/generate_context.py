@@ -7,6 +7,8 @@ from pathlib import Path
 DEFAULT_PREFIXES = {
     "dcterms": "http://purl.org/dc/terms/",
     "ffa": "https://data.sfa.se/termer/1.0/",
+    "iso4217": "urn:iso:std:iso:4217:",
+    "pii": "urn:pii:",
     "mimer": "https://data.sfa.se/mimer/1.0/",
     "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
@@ -78,16 +80,19 @@ def build_context(entries):
         uri = entry["uri"] or entry["name"]
         if not uri:
             continue
-        xsd_type = DATATYPE_TO_XSD.get(entry["datatype"])
-        if xsd_type:
-            context[term] = {"@id": uri, "@type": xsd_type}
+        if term == "valuta":
+            context[term] = {"@id": uri, "@type": "@id"}
         else:
-            context[term] = uri
+            xsd_type = DATATYPE_TO_XSD.get(entry["datatype"])
+            if xsd_type:
+                context[term] = {"@id": uri, "@type": xsd_type}
+            else:
+                context[term] = uri
 
     # keep a stable order for readability
     ordered = {"@context": {}}
     ordered["@context"].update({"id": context.pop("id")})
-    for key in ("dcterms", "ffa", "mimer", "rdf", "xsd"):
+    for key in ("dcterms", "ffa", "iso4217", "pii", "mimer", "rdf", "xsd"):
         ordered["@context"][key] = context.pop(key)
     for key in ("version", "typ", "varde"):
         ordered["@context"][key] = context.pop(key)
@@ -104,9 +109,9 @@ def build_context(entries):
                 "@id": belopp_id,
                 "@context": {
                     "varde": "rdf:value",
-                    "valuta": "ffa:valuta",
-                    "skattestatus": "ffa:skattestatus",
-                    "period": "ffa:beloppsperiod"
+                    "valuta": {"@id": "ffa:valuta", "@type": "@id"},
+                    "skattestatus": {"@id": "ffa:skattestatus", "@type": "@id"},
+                    "period": {"@id": "ffa:beloppsperiod", "@type": "@id"}
                 }
             }
 

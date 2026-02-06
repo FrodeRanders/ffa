@@ -15,7 +15,7 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
 
     public static final String MAGIC_WRAPPED_PROPERTY_NAME = "varde";
 
-    private final String typ;
+    private final String roll;
 
     // No-arg constructor for Jackson
     public SomPropertySerializer() {
@@ -23,8 +23,8 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
     }
 
     // Constructor for when we have annotation values
-    protected SomPropertySerializer(String typ) {
-        this.typ = typ;
+    protected SomPropertySerializer(String roll) {
+        this.roll = roll;
     }
 
     public void serializeWithType(
@@ -74,7 +74,7 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
         //--------------------------------------
         // For annotated properties like:
         //
-        //    @Som(typ="ffa:yrkande")
+        //    @Som(roll="ffa:yrkande")
         //    @JsonProperty("person")
         //    public FysiskPerson person;
         //
@@ -82,7 +82,7 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
         //
         //    "person": {
         //       "varde": "...",
-        //       "typ": "ffa:yrkande"
+        //       "roll": "ffa:yrkande"
         //    }
         //--------------------------------------
 
@@ -90,7 +90,7 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
 
         gen.writePOJOProperty(MAGIC_WRAPPED_PROPERTY_NAME, value);
 
-        gen.writeStringProperty("typ", !typ.isEmpty() ? typ : null);
+        gen.writeStringProperty("roll", !roll.isEmpty() ? roll : null);
 
         gen.writeEndObject();
     }
@@ -111,7 +111,7 @@ public class SomPropertySerializer extends ValueSerializer<Object> {
             }
             if (null != annotation) {
                 // Build a serializer instance configured with the annotation params
-                return new SomPropertySerializer(annotation.typ());
+                return new SomPropertySerializer(annotation.roll());
             }
         }
         // If there's no annotation, just return 'this' with empty defaults

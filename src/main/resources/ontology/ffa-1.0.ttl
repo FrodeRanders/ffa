@@ -1,0 +1,306 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ffa: <https://data.sfa.se/termer/1.0/> .
+@prefix mimer: <https://data.sfa.se/mimer/1.0/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix schema: <http://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ffa:Ontology a owl:Ontology .
+
+<https://data.sfa.se/termer/1.0/belopp> a owl:Class ;
+  rdfs:label "Belopp" .
+
+<https://data.sfa.se/termer/1.0/period> a owl:Class ;
+  rdfs:label "Period" .
+
+<https://data.sfa.se/termer/1.0/bedomd_arbetsformaga> a owl:Class ;
+  rdfs:label "BedomdArbetsformaga" .
+
+<https://data.sfa.se/termer/1.0/beslut> a owl:Class ;
+  rdfs:label "Beslut" .
+
+<https://data.sfa.se/termer/1.0/ersattning> a owl:Class ;
+  rdfs:label "Ersattning" .
+
+<https://data.sfa.se/termer/1.0/krav> a owl:Class ;
+  rdfs:label "Krav" .
+
+<https://data.sfa.se/termer/1.0/fysisk_person> a owl:Class ;
+  rdfs:label "FysiskPerson" .
+
+<https://data.sfa.se/termer/1.0/juridisk_person> a owl:Class ;
+  rdfs:label "JuridiskPerson" .
+
+<https://data.sfa.se/termer/1.0/intyg> a owl:Class ;
+  rdfs:label "Intyg" .
+
+<https://data.sfa.se/termer/1.0/ratten_till_period> a owl:Class ;
+  rdfs:label "RattenTillPeriod" .
+
+<https://data.sfa.se/termer/1.0/yrkan> a owl:Class ;
+  rdfs:label "Yrkan" .
+
+<https://data.sfa.se/termer/1.0/BeloppsPeriod> a owl:Class ;
+  rdfs:label "BeloppsPeriod" .
+
+<https://data.sfa.se/termer/1.0/BeloppsPeriod#PER_TIMME> a <https://data.sfa.se/termer/1.0/BeloppsPeriod> ;
+  rdfs:label "PER_TIMME" .
+
+<https://data.sfa.se/termer/1.0/BeloppsPeriod#PER_DAG> a <https://data.sfa.se/termer/1.0/BeloppsPeriod> ;
+  rdfs:label "PER_DAG" .
+
+<https://data.sfa.se/termer/1.0/BeloppsPeriod#PER_MAANAD> a <https://data.sfa.se/termer/1.0/BeloppsPeriod> ;
+  rdfs:label "PER_MAANAD" .
+
+<https://data.sfa.se/termer/1.0/BeloppsPeriod#PER_AAR> a <https://data.sfa.se/termer/1.0/BeloppsPeriod> ;
+  rdfs:label "PER_AAR" .
+
+<https://data.sfa.se/termer/1.0/Valuta> a owl:Class ;
+  rdfs:label "Valuta" .
+
+<https://data.sfa.se/termer/1.0/Valuta#SEK> a <https://data.sfa.se/termer/1.0/Valuta> ;
+  rdfs:label "SEK" .
+
+<https://data.sfa.se/termer/1.0/Valuta#EUR> a <https://data.sfa.se/termer/1.0/Valuta> ;
+  rdfs:label "EUR" .
+
+<https://data.sfa.se/termer/1.0/Skattestatus> a owl:Class ;
+  rdfs:label "Skattestatus" .
+
+<https://data.sfa.se/termer/1.0/Skattestatus#SKATTEFRI> a <https://data.sfa.se/termer/1.0/Skattestatus> ;
+  rdfs:label "SKATTEFRI" .
+
+<https://data.sfa.se/termer/1.0/Skattestatus#SKATTEPLIKTIG> a <https://data.sfa.se/termer/1.0/Skattestatus> ;
+  rdfs:label "SKATTEPLIKTIG" .
+
+<https://data.sfa.se/termer/1.0/ArbetsformagaOmfattning> a owl:Class ;
+  rdfs:label "ArbetsformagaOmfattning" .
+
+<https://data.sfa.se/termer/1.0/ArbetsformagaOmfattning#HEL> a <https://data.sfa.se/termer/1.0/ArbetsformagaOmfattning> ;
+  rdfs:label "HEL" .
+
+<https://data.sfa.se/termer/1.0/ArbetsformagaOmfattning#EN_ATTONDEL> a <https://data.sfa.se/termer/1.0/ArbetsformagaOmfattning> ;
+  rdfs:label "EN_ATTONDEL" .
+
+<https://data.sfa.se/termer/1.0/ArbetsformagaOmfattning#OCHSAAVIDARE> a <https://data.sfa.se/termer/1.0/ArbetsformagaOmfattning> ;
+  rdfs:label "OCHSAAVIDARE" .
+
+<https://data.sfa.se/termer/1.0/BeslutsTyp> a owl:Class ;
+  rdfs:label "BeslutsTyp" .
+
+<https://data.sfa.se/termer/1.0/BeslutsTyp#INTERRIMISTISK> a <https://data.sfa.se/termer/1.0/BeslutsTyp> ;
+  rdfs:label "INTERRIMISTISK" .
+
+<https://data.sfa.se/termer/1.0/BeslutsTyp#STALLNINGSTAGANDE> a <https://data.sfa.se/termer/1.0/BeslutsTyp> ;
+  rdfs:label "STALLNINGSTAGANDE" .
+
+<https://data.sfa.se/termer/1.0/BeslutsTyp#SLUTLIGT> a <https://data.sfa.se/termer/1.0/BeslutsTyp> ;
+  rdfs:label "SLUTLIGT" .
+
+<https://data.sfa.se/termer/1.0/BeslutsUtfall> a owl:Class ;
+  rdfs:label "BeslutsUtfall" .
+
+<https://data.sfa.se/termer/1.0/BeslutsUtfall#BEVILJAT> a <https://data.sfa.se/termer/1.0/BeslutsUtfall> ;
+  rdfs:label "BEVILJAT" .
+
+<https://data.sfa.se/termer/1.0/BeslutsUtfall#AVSLAG> a <https://data.sfa.se/termer/1.0/BeslutsUtfall> ;
+  rdfs:label "AVSLAG" .
+
+<https://data.sfa.se/termer/1.0/BeslutsUtfall#DELVIS_BEVILJANDE> a <https://data.sfa.se/termer/1.0/BeslutsUtfall> ;
+  rdfs:label "DELVIS_BEVILJANDE" .
+
+<https://data.sfa.se/termer/1.0/BeslutsUtfall#AVVISNING> a <https://data.sfa.se/termer/1.0/BeslutsUtfall> ;
+  rdfs:label "AVVISNING" .
+
+<https://data.sfa.se/termer/1.0/BeslutsUtfall#AVSKRIVNING> a <https://data.sfa.se/termer/1.0/BeslutsUtfall> ;
+  rdfs:label "AVSKRIVNING" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum> a owl:Class ;
+  rdfs:label "BeslutsLagrum" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#SFB_K112_P2a> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "SFB_K112_P2a" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#SFB_K112_P3> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "SFB_K112_P3" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#SFB_K112_P4> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "SFB_K112_P4" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#SFB_K113_P3_S1> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "SFB_K113_P3_S1" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#SFB_K113_P3_S2> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "SFB_K113_P3_S2" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#SFB_K113_P3_S3> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "SFB_K113_P3_S3" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#FL_P36> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "FL_P36" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#FL_P37> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "FL_P37" .
+
+<https://data.sfa.se/termer/1.0/BeslutsLagrum#FL_P38> a <https://data.sfa.se/termer/1.0/BeslutsLagrum> ;
+  rdfs:label "FL_P38" .
+
+<https://data.sfa.se/termer/1.0/ErsattningsTyp> a owl:Class ;
+  rdfs:label "ErsattningsTyp" .
+
+<https://data.sfa.se/termer/1.0/ErsattningsTyp#SJUKPENNING> a <https://data.sfa.se/termer/1.0/ErsattningsTyp> ;
+  rdfs:label "SJUKPENNING" .
+
+<https://data.sfa.se/termer/1.0/ErsattningsTyp#FORALDRAPENNING> a <https://data.sfa.se/termer/1.0/ErsattningsTyp> ;
+  rdfs:label "FORALDRAPENNING" .
+
+<https://data.sfa.se/termer/1.0/ErsattningsTyp#HUNDBIDRAG> a <https://data.sfa.se/termer/1.0/ErsattningsTyp> ;
+  rdfs:label "HUNDBIDRAG" .
+
+<https://data.sfa.se/termer/1.0/KravTyp> a owl:Class ;
+  rdfs:label "KravTyp" .
+
+<https://data.sfa.se/termer/1.0/KravTyp#NAGON> a <https://data.sfa.se/termer/1.0/KravTyp> ;
+  rdfs:label "NAGON" .
+
+<https://data.sfa.se/termer/1.0/RattenTillPeriodOmfattning> a owl:Class ;
+  rdfs:label "RattenTillPeriodOmfattning" .
+
+<https://data.sfa.se/termer/1.0/RattenTillPeriodOmfattning#HEL> a <https://data.sfa.se/termer/1.0/RattenTillPeriodOmfattning> ;
+  rdfs:label "HEL" .
+
+<https://data.sfa.se/termer/1.0/RattenTillPeriodOmfattning#EN_ATTONDEL> a <https://data.sfa.se/termer/1.0/RattenTillPeriodOmfattning> ;
+  rdfs:label "EN_ATTONDEL" .
+
+<https://data.sfa.se/termer/1.0/RattenTillPeriodOmfattning#OCHSAAVIDARE> a <https://data.sfa.se/termer/1.0/RattenTillPeriodOmfattning> ;
+  rdfs:label "OCHSAAVIDARE" .
+
+<https://data.sfa.se/termer/1.0/person> a owl:Class ;
+  rdfs:label "Person" ;
+  owl:unionOf ( <https://data.sfa.se/termer/1.0/fysisk_person> <https://data.sfa.se/termer/1.0/juridisk_person> ) .
+
+<https://data.sfa.se/termer/1.0/ProduceratResultat> a owl:Class ;
+  rdfs:label "ProduceratResultat" ;
+  owl:unionOf ( <https://data.sfa.se/termer/1.0/ersattning> <https://data.sfa.se/termer/1.0/krav> <https://data.sfa.se/termer/1.0/intyg> <https://data.sfa.se/termer/1.0/bedomd_arbetsformaga> <https://data.sfa.se/termer/1.0/ratten_till_period> ) .
+
+<http://purl.org/dc/terms/date> a owl:DatatypeProperty ;
+  rdfs:label "date" ;
+  rdfs:comment "En tidpunkt eller tidsperiod associerad med resursens livscykel, som skapande-, publicerings- eller ändringsdatum, ofta representerat i ISO 8601-format." ;
+  rdfs:range xsd:dateTime  .
+
+<http://purl.org/dc/terms/description> a owl:DatatypeProperty ;
+  rdfs:label "description" ;
+  rdfs:comment "En sammanfattning eller abstrakt som beskriver innehållet, syftet eller omfånget av resursen och ger insikt i dess huvudsakliga egenskaper." ;
+  rdfs:range xsd:string  .
+
+<https://data.sfa.se/termer/1.0/avslagsanledning> a owl:DatatypeProperty ;
+  rdfs:label "avslagsanledning" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/beslut> ;
+  rdfs:range xsd:string  .
+
+<https://data.sfa.se/termer/1.0/belopp> a owl:ObjectProperty ;
+  rdfs:label "belopp" ;
+  rdfs:range <https://data.sfa.se/termer/1.0/belopp>  .
+
+<https://data.sfa.se/termer/1.0/beloppsperiod> a owl:ObjectProperty ;
+  rdfs:label "beloppsperiod" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/belopp> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/BeloppsPeriod>  .
+
+<https://data.sfa.se/termer/1.0/beloppsvarde> a owl:DatatypeProperty ;
+  rdfs:label "beloppsvarde" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/belopp> ;
+  rdfs:range xsd:double  .
+
+<https://data.sfa.se/termer/1.0/beslut> a owl:ObjectProperty ;
+  rdfs:label "beslut" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/yrkan> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/beslut>  .
+
+<https://data.sfa.se/termer/1.0/beslutsfattare> a owl:DatatypeProperty ;
+  rdfs:label "beslutsfattare" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/beslut> ;
+  rdfs:range xsd:string  .
+
+<https://data.sfa.se/termer/1.0/beslutstyp> a owl:ObjectProperty ;
+  rdfs:label "beslutstyp" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/beslut> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/BeslutsTyp>  .
+
+<https://data.sfa.se/termer/1.0/beslutsutfall> a owl:ObjectProperty ;
+  rdfs:label "beslutsutfall" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/beslut> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/BeslutsUtfall>  .
+
+<https://data.sfa.se/termer/1.0/ersattningstyp> a owl:ObjectProperty ;
+  rdfs:label "ersattningstyp" ;
+  rdfs:range <https://data.sfa.se/termer/1.0/ErsattningsTyp>  .
+
+<https://data.sfa.se/termer/1.0/from> a owl:DatatypeProperty ;
+  rdfs:label "from" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/period> ;
+  rdfs:range xsd:dateTime  .
+
+<https://data.sfa.se/termer/1.0/institution> a owl:DatatypeProperty ;
+  rdfs:label "institution" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/intyg> ;
+  rdfs:range xsd:string  .
+
+<https://data.sfa.se/termer/1.0/kravstyp> a owl:ObjectProperty ;
+  rdfs:label "kravstyp" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/krav> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/KravTyp>  .
+
+<https://data.sfa.se/termer/1.0/lagrum> a owl:ObjectProperty ;
+  rdfs:label "lagrum" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/beslut> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/BeslutsLagrum>  .
+
+<https://data.sfa.se/termer/1.0/omfattning> a owl:ObjectProperty ;
+  rdfs:label "omfattning"  .
+
+<https://data.sfa.se/termer/1.0/organisation> a owl:DatatypeProperty ;
+  rdfs:label "organisation" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/beslut> ;
+  rdfs:range xsd:string  .
+
+<https://data.sfa.se/termer/1.0/organisationsnummer> a owl:DatatypeProperty ;
+  rdfs:label "orgnummer" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/juridisk_person> ;
+  rdfs:range xsd:string  .
+
+<https://data.sfa.se/termer/1.0/period> a owl:ObjectProperty ;
+  rdfs:label "period" ;
+  rdfs:range <https://data.sfa.se/termer/1.0/period>  .
+
+<https://data.sfa.se/termer/1.0/person> a owl:ObjectProperty ;
+  rdfs:label "person" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/yrkan> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/person>  .
+
+<https://data.sfa.se/termer/1.0/personnummer> a owl:DatatypeProperty ;
+  rdfs:label "personnummer" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/fysisk_person> ;
+  rdfs:range xsd:string  .
+
+<https://data.sfa.se/termer/1.0/producerade_resultat> a owl:ObjectProperty ;
+  rdfs:label "producerade_resultat" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/yrkan> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/ProduceratResultat>  .
+
+<https://data.sfa.se/termer/1.0/skattestatus> a owl:ObjectProperty ;
+  rdfs:label "skattestatus" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/belopp> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/Skattestatus>  .
+
+<https://data.sfa.se/termer/1.0/tom> a owl:DatatypeProperty ;
+  rdfs:label "tom" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/period> ;
+  rdfs:range xsd:dateTime  .
+
+<https://data.sfa.se/termer/1.0/valuta> a owl:ObjectProperty ;
+  rdfs:label "valuta" ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/belopp> ;
+  rdfs:range <https://data.sfa.se/termer/1.0/Valuta>  .

@@ -33,56 +33,6 @@ Vid oändrat objekt: om innehållet matchar sparad digest stegas versionen inte,
 Digest baseras på JCS‑kanonisering av JSON, vilket ger stabila checksummor och är kompatibelt
 med signering/verifiering. 
 
-## JSON-LD context for objektmodellen
-Det följer med ett JSON-LD context som mappar attributen i objektmodellen till deras URI:er.
-
-Path:
-- `src/main/resources/context/ffa-1.0.jsonld`
-- `src/main/resources/schema/ffa.graphqls` (source of truth)
-
-Conventions:
-- `id` mappas till `@id` (UUID  per instans).
-- `@type` anger kvalificerad Java class namn (används bl.a. för polymorphism).
-- `typ` är del av domänvokabuläret och har inget med `@type` at göra.
-- `varde` mappas mot `rdf:value` (som används med PII och Belopp).
-- `__attention` är metadata för pipeline och är avsiktligt inte beskriven i JSON-LD context.
-
-Observera:
-- Konsumenter av JSON-LD bör ignorera `__attention`. Det finns till för att underlätta post-processning i data pipeline.
-
-Regenerering av context:
-- `python3 tools/generate_context.py src/main/resources/schema/ffa.graphqls src/main/resources/context/ffa-1.0.jsonld`
-
-## Rådata → JSON-LD → selektiv graf 
-Den serialiserade JSON-strukturen är skräddarsydd för serialisering av processtillstånd
-med efterföljande deserialisering vid återläsning till processen. Detta betyder att vi
-månar om mappning mellan objektmodell och JSON. JSON-LD används endast som annotering 
-(metadata) för ett efterföljande steg som extraherar centrala delar till graf.
-
-### Flöde (översikt)
-1) Rådata: process-tillståndet serialiseras till JSON.
-2) Annotering: JSON kompletteras med `@context` (eller kopplas ihop med context vid bearbetning).
-3) Extraktion: en pipeline tolkar JSON-LD och plockar ut de entiteter/attribut som ska in i graf.
-
-### Exempel (pseudo-flöde)
-```text
-raw_json = read("yrkan.json")
-context  = read("ffa-1.0.jsonld")
-
-expanded = jsonld_expand(raw_json, context)
-
-# Välj ut bara det som ska bli sökbart:
-nodes = select(expanded, types=["se.fk.data.modell.v1.Yrkan",
-                                "se.fk.data.modell.v1.Ersattning",
-                                "se.fk.data.modell.v1.Beslut"])
-
-graph_store.upsert(nodes)
-```
-
-Nyckelpoängen är att grafen inte behöver innehålla all rådata. Underlag
-(t.ex. bedömningar, inkomstdetaljer) kan ligga kvar i rådatafilen, medan
-endast resultat/centrala fält extraheras och blir sökbara.
-
 ## Demonstration 
 
 Vi tar utgångspunkt i behoven hos ett team som utvecklar affärslogik med FFAs informations- och datamodell som grund
@@ -134,7 +84,7 @@ import ...
 @Context("https://data.fk.se/kontext/std/yrkan/1.0")
 public class Yrkan extends Livscykelhanterad {
 
-    @Som(typ = "ffa:yrkande")
+    @Som(roll = "ffa:yrkande")
     @JsonProperty("person")
     public Person person;
 
@@ -516,7 +466,7 @@ Låt oss titta på vad som händer med `se.fk.data.modell.v1.FysiskPerson#person
         "typ" : "pii:personnummer"
       }
     },
-    "typ" : "ffa:yrkande"
+    "roll" : "ffa:yrkande"
   },
   "producerade_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
@@ -607,7 +557,7 @@ och som därför expanderats till:
             "typ" : "pii:personnummer"
         }
     },
-    "typ" : "ffa:yrkande"
+    "roll" : "ffa:yrkande"
 },
 
 ```
@@ -785,7 +735,7 @@ flaggats med `__attention`-flaggan.
         "typ" : "pii:personnummer"
       }
     },
-    "typ" : "ffa:yrkande"
+    "roll" : "ffa:yrkande"
   },
   "producerade_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
@@ -907,7 +857,7 @@ Och så tittar vi på producerad JSON:
         "typ" : "pii:personnummer"
       }
     },
-    "typ" : "ffa:yrkande"
+    "roll" : "ffa:yrkande"
   },
   "producerade_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
@@ -993,7 +943,94 @@ Och så tittar vi på producerad JSON:
 }
 ```
 
-### JSON-LD expansion (i efterföljande separat steg, i vår data pipeline)
+## JSON-LD context for objektmodellen
+Det följer med ett JSON-LD context som mappar attributen i objektmodellen till deras URI:er.
+
+Path:
+- `src/main/resources/context/ffa-1.0.jsonld`
+- `src/main/resources/schema/ffa.graphqls` (source of truth)
+
+Conventions:
+- `id` mappas till `@id` (UUID  per instans).
+- `@type` anger kvalificerad Java class namn (används bl.a. för polymorphism).
+- `typ` är del av domänvokabuläret och har inget med `@type` at göra.
+- `varde` mappas mot `rdf:value` (som används med PII och Belopp).
+- `__attention` är metadata för pipeline och är avsiktligt inte beskriven i JSON-LD context.
+
+Observera:
+- Konsumenter av JSON-LD bör ignorera `__attention`. Det finns till för att underlätta post-processning i data pipeline.
+
+Regenerering av context:
+- `python3 tools/generate_context.py src/main/resources/schema/ffa.graphqls src/main/resources/context/ffa-1.0.jsonld`
+
+## Rådata → JSON-LD → selektiv graf
+Den serialiserade JSON-strukturen är skräddarsydd för serialisering av processtillstånd
+med efterföljande deserialisering vid återläsning till processen. Detta betyder att vi
+månar om mappning mellan objektmodell och JSON. JSON-LD används endast som annotering
+(metadata) för ett efterföljande steg som extraherar centrala delar till graf.
+
+### Flöde (översikt)
+1) Rådata: process-tillståndet serialiseras till JSON.
+2) Annotering: JSON kompletteras med `@context` (eller kopplas ihop med context vid bearbetning).
+3) Extraktion: en pipeline tolkar JSON-LD och plockar ut de entiteter/attribut som ska in i graf.
+
+### Exempel (pseudo-flöde)
+```text
+raw_json = read("yrkan.json")
+context  = read("ffa-1.0.jsonld")
+
+expanded = jsonld_expand(raw_json, context)
+
+# Välj ut bara det som ska bli sökbart:
+nodes = select(expanded, types=["se.fk.data.modell.v1.Yrkan",
+                                "se.fk.data.modell.v1.Ersattning",
+                                "se.fk.data.modell.v1.Beslut"])
+
+graph_store.upsert(nodes)
+```
+
+Nyckelpoängen är att grafen inte behöver innehålla all rådata. Underlag
+(t.ex. bedömningar, inkomstdetaljer) kan ligga kvar i rådatafilen, medan
+endast resultat/centrala fält extraheras och blir sökbara.
+
+## JSON-LD → RDF → Neo4j (RMLMapper-Java)
+En PoC-pipeline finns för att:
+1) expandera rå JSON till JSON-LD,
+2) rama in (framing) till stabil struktur,
+3) mappa med RML (RMLMapper-Java, externt jar) till RDF,
+4) generera import-underlag för Neo4j (n10s) eller Cypher.
+
+Körning:
+```bash
+tools/run-transform.sh src/main/resources/sample/raw-yrkan.json
+```
+
+Valfria flaggor:
+```bash
+tools/run-transform.sh src/main/resources/sample/raw-yrkan.json \
+  --context src/main/resources/context/ffa-1.0.jsonld \
+  --frame src/main/resources/frame/ffa-frame.jsonld \
+  --mapping src/main/resources/mapping/ffa.rml.ttl \
+  --out target/ffa-out.ttl \
+  --import neo4j|cypher|none \
+  --cypher-out target/ffa-out.cypher \
+  --neo4j-opts commitSize=5000,handleVocabUris=IGNORE
+```
+
+Default-resurser:
+- `src/main/resources/frame/ffa-frame.jsonld`
+- `src/main/resources/mapping/ffa.rml.ttl`
+- `src/main/resources/sample/raw-yrkan.json`
+
+Notera:
+- `tools/run-transform.sh` laddar ner RMLMapper-Java via `mvn dependency:copy` om
+  jar saknas och kör den externt (för att hålla huvudclasspath fri från Jackson 2).
+- Du kan styra jar-hämtning med:
+  - `RMLMAPPER_JAR` (pekning till egen jar)
+  - `RMLMAPPER_VERSION` (default: `7.3.3`)
+  - `RMLMAPPER_CLASSIFIER` (default: `r374-all`, sätt tom för "plain" jar)
+
+## JSON-LD expansion 
 Detta exempel visar JSON-LD expansion av rådata i en separat pipeline, som opererar på
 serialiserat processtillstånd (ovan):
 
@@ -1018,563 +1055,725 @@ eftersom denna inte ingår i organisationsspråket (FFA-modellen).
 ```
 ```json
 {
-    "@context": "file:///Users/froran/Projects/fk/ffa/src/main/resources/context/ffa-1.0.jsonld",
-    "@graph": [
+  "@context": "file:///Users/froran/Projects/fk/ffa/src/main/resources/context/ffa-1.0.jsonld",
+  "@graph": [
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/yrkan"
+      ],
+      "http://purl.org/dc/terms/description": [
         {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/yrkan"
-            ],
-            "https://data.sfa.se/termer/1.0/beslut": [
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/beslut"
-                    ],
-                    "@id": "019c1a42-ca0f-7544-a6aa-6f64e9468dac",
-                    "https://data.sfa.se/termer/1.0/version": [
-                        {
-                            "@value": 1,
-                            "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                        }
-                    ]
-                }
-            ],
-            "@id": "019c1a42-ca0f-7473-9dfd-082628a7cfdc",
-            "https://data.sfa.se/termer/1.0/person": [
-                {
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                        {
-                            "@type": [
-                                "https://data.sfa.se/termer/1.0/fysisk_person"
-                            ],
-                            "https://data.sfa.se/termer/1.0/personnummer": [
-                                {
-                                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                                        {
-                                            "@value": "19121212-1212",
-                                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                                        }
-                                    ],
-                                    "https://data.sfa.se/termer/1.0/typ": [
-                                        {
-                                            "@value": "pii:personnummer",
-                                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/typ": [
-                        {
-                            "@value": "ffa:yrkande",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ]
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/producerade_resultat": [
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/ratten_till_period"
-                    ],
-                    "https://data.sfa.se/termer/1.0/ersattningstyp": [
-                        {
-                            "@value": "HUNDBIDRAG",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ],
-                    "@id": "019c1a42-ca0f-705a-9018-a71498420734",
-                    "https://data.sfa.se/termer/1.0/omfattning": [
-                        {
-                            "@value": "HEL",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/version": [
-                        {
-                            "@value": 1,
-                            "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                        }
-                    ]
-                },
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/ersattning"
-                    ],
-                    "https://data.sfa.se/termer/1.0/belopp": [
-                        {
-                            "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                                {
-                                    "@value": 1000.0,
-                                    "@type": "http://www.w3.org/2001/XMLSchema#double"
-                                }
-                            ]
-                        }
-                    ],
-                    "@id": "019c1a42-ca0f-7275-8571-a9020c420a3e",
-                    "https://data.sfa.se/termer/1.0/period": [
-                        {
-                            "@type": [
-                                "https://data.sfa.se/termer/1.0/period"
-                            ],
-                            "https://data.sfa.se/termer/1.0/from": [
-                                {
-                                    "@value": "2026-02-01T00:00:00.000Z",
-                                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                                }
-                            ],
-                            "https://data.sfa.se/termer/1.0/tom": [
-                                {
-                                    "@value": "2026-02-01T00:00:00.000Z",
-                                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                                }
-                            ]
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/typ": [
-                        {
-                            "@value": "HUNDBIDRAG",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/version": [
-                        {
-                            "@value": 1,
-                            "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                        }
-                    ]
-                },
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/ersattning"
-                    ],
-                    "https://data.sfa.se/termer/1.0/belopp": [
-                        {
-                            "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                                {
-                                    "@value": 500.0,
-                                    "@type": "http://www.w3.org/2001/XMLSchema#double"
-                                }
-                            ]
-                        }
-                    ],
-                    "@id": "019c1a42-ca0f-7646-9c71-fb8fc5f6e419",
-                    "https://data.sfa.se/termer/1.0/period": [
-                        {
-                            "@type": [
-                                "https://data.sfa.se/termer/1.0/period"
-                            ],
-                            "https://data.sfa.se/termer/1.0/from": [
-                                {
-                                    "@value": "2026-02-01T00:00:00.000Z",
-                                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                                }
-                            ],
-                            "https://data.sfa.se/termer/1.0/tom": [
-                                {
-                                    "@value": "2026-02-01T00:00:00.000Z",
-                                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                                }
-                            ]
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/typ": [
-                        {
-                            "@value": "HUNDBIDRAG",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/version": [
-                        {
-                            "@value": 1,
-                            "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                        }
-                    ]
-                },
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/intyg"
-                    ],
-                    "https://data.sfa.se/termer/1.0/giltighetsperiod": [
-                        {
-                            "@type": [
-                                "https://data.sfa.se/termer/1.0/period"
-                            ],
-                            "https://data.sfa.se/termer/1.0/from": [
-                                {
-                                    "@value": "2026-02-01T00:00:00.000Z",
-                                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                                }
-                            ],
-                            "https://data.sfa.se/termer/1.0/tom": [
-                                {
-                                    "@value": "2026-02-01T00:00:00.000Z",
-                                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                                }
-                            ]
-                        }
-                    ],
-                    "@id": "019c1a42-ca0f-723e-98e0-ea3fc5d9b169",
-                    "https://data.sfa.se/termer/1.0/version": [
-                        {
-                            "@value": 1,
-                            "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                        }
-                    ]
-                },
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/ersattning"
-                    ],
-                    "https://data.sfa.se/termer/1.0/belopp": [
-                        {
-                            "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                                {
-                                    "@value": 100.0,
-                                    "@type": "http://www.w3.org/2001/XMLSchema#double"
-                                }
-                            ]
-                        }
-                    ],
-                    "@id": "019c1a42-ca21-77ec-a42b-423ad9258370",
-                    "https://data.sfa.se/termer/1.0/typ": [
-                        {
-                            "@value": "HUNDBIDRAG",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/version": [
-                        {
-                            "@value": 1,
-                            "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                        }
-                    ]
-                },
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/ersattning"
-                    ],
-                    "https://data.sfa.se/termer/1.0/belopp": [
-                        {
-                            "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                                {
-                                    "@value": 200.0,
-                                    "@type": "http://www.w3.org/2001/XMLSchema#double"
-                                }
-                            ]
-                        }
-                    ],
-                    "@id": "019c1a42-ca27-762c-bd39-efdb133b4512",
-                    "https://data.sfa.se/termer/1.0/typ": [
-                        {
-                            "@value": "HUNDBIDRAG",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/version": [
-                        {
-                            "@value": 1,
-                            "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                        }
-                    ]
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 3,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/beslut"
-            ],
-            "@id": "019c1a42-ca0f-7544-a6aa-6f64e9468dac",
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 1,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/fysisk_person"
-            ],
-            "https://data.sfa.se/termer/1.0/personnummer": [
-                {
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                        {
-                            "@value": "19121212-1212",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/typ": [
-                        {
-                            "@value": "pii:personnummer",
-                            "@type": "http://www.w3.org/2001/XMLSchema#string"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/ratten_till_period"
-            ],
-            "https://data.sfa.se/termer/1.0/ersattningstyp": [
-                {
-                    "@value": "HUNDBIDRAG",
-                    "@type": "http://www.w3.org/2001/XMLSchema#string"
-                }
-            ],
-            "@id": "019c1a42-ca0f-705a-9018-a71498420734",
-            "https://data.sfa.se/termer/1.0/omfattning": [
-                {
-                    "@value": "HEL",
-                    "@type": "http://www.w3.org/2001/XMLSchema#string"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 1,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/ersattning"
-            ],
-            "https://data.sfa.se/termer/1.0/belopp": [
-                {
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                        {
-                            "@value": 1000.0,
-                            "@type": "http://www.w3.org/2001/XMLSchema#double"
-                        }
-                    ]
-                }
-            ],
-            "@id": "019c1a42-ca0f-7275-8571-a9020c420a3e",
-            "https://data.sfa.se/termer/1.0/period": [
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/period"
-                    ],
-                    "https://data.sfa.se/termer/1.0/from": [
-                        {
-                            "@value": "2026-02-01T00:00:00.000Z",
-                            "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/tom": [
-                        {
-                            "@value": "2026-02-01T00:00:00.000Z",
-                            "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                        }
-                    ]
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/typ": [
-                {
-                    "@value": "HUNDBIDRAG",
-                    "@type": "http://www.w3.org/2001/XMLSchema#string"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 1,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/period"
-            ],
-            "https://data.sfa.se/termer/1.0/from": [
-                {
-                    "@value": "2026-02-01T00:00:00.000Z",
-                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/tom": [
-                {
-                    "@value": "2026-02-01T00:00:00.000Z",
-                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/ersattning"
-            ],
-            "https://data.sfa.se/termer/1.0/belopp": [
-                {
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                        {
-                            "@value": 500.0,
-                            "@type": "http://www.w3.org/2001/XMLSchema#double"
-                        }
-                    ]
-                }
-            ],
-            "@id": "019c1a42-ca0f-7646-9c71-fb8fc5f6e419",
-            "https://data.sfa.se/termer/1.0/period": [
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/period"
-                    ],
-                    "https://data.sfa.se/termer/1.0/from": [
-                        {
-                            "@value": "2026-02-01T00:00:00.000Z",
-                            "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/tom": [
-                        {
-                            "@value": "2026-02-01T00:00:00.000Z",
-                            "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                        }
-                    ]
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/typ": [
-                {
-                    "@value": "HUNDBIDRAG",
-                    "@type": "http://www.w3.org/2001/XMLSchema#string"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 1,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/period"
-            ],
-            "https://data.sfa.se/termer/1.0/from": [
-                {
-                    "@value": "2026-02-01T00:00:00.000Z",
-                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/tom": [
-                {
-                    "@value": "2026-02-01T00:00:00.000Z",
-                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/intyg"
-            ],
-            "https://data.sfa.se/termer/1.0/giltighetsperiod": [
-                {
-                    "@type": [
-                        "https://data.sfa.se/termer/1.0/period"
-                    ],
-                    "https://data.sfa.se/termer/1.0/from": [
-                        {
-                            "@value": "2026-02-01T00:00:00.000Z",
-                            "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                        }
-                    ],
-                    "https://data.sfa.se/termer/1.0/tom": [
-                        {
-                            "@value": "2026-02-01T00:00:00.000Z",
-                            "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                        }
-                    ]
-                }
-            ],
-            "@id": "019c1a42-ca0f-723e-98e0-ea3fc5d9b169",
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 1,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/period"
-            ],
-            "https://data.sfa.se/termer/1.0/from": [
-                {
-                    "@value": "2026-02-01T00:00:00.000Z",
-                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/tom": [
-                {
-                    "@value": "2026-02-01T00:00:00.000Z",
-                    "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/ersattning"
-            ],
-            "https://data.sfa.se/termer/1.0/belopp": [
-                {
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                        {
-                            "@value": 100.0,
-                            "@type": "http://www.w3.org/2001/XMLSchema#double"
-                        }
-                    ]
-                }
-            ],
-            "@id": "019c1a42-ca21-77ec-a42b-423ad9258370",
-            "https://data.sfa.se/termer/1.0/typ": [
-                {
-                    "@value": "HUNDBIDRAG",
-                    "@type": "http://www.w3.org/2001/XMLSchema#string"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 1,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
-        },
-        {
-            "@type": [
-                "https://data.sfa.se/termer/1.0/ersattning"
-            ],
-            "https://data.sfa.se/termer/1.0/belopp": [
-                {
-                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
-                        {
-                            "@value": 200.0,
-                            "@type": "http://www.w3.org/2001/XMLSchema#double"
-                        }
-                    ]
-                }
-            ],
-            "@id": "019c1a42-ca27-762c-bd39-efdb133b4512",
-            "https://data.sfa.se/termer/1.0/typ": [
-                {
-                    "@value": "HUNDBIDRAG",
-                    "@type": "http://www.w3.org/2001/XMLSchema#string"
-                }
-            ],
-            "https://data.sfa.se/termer/1.0/version": [
-                {
-                    "@value": 1,
-                    "@type": "http://www.w3.org/2001/XMLSchema#integer"
-                }
-            ]
+          "@value": "Hundutställning (inkl. bad, tork och fön)",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
         }
-    ]
-}
+      ],
+      "https://data.sfa.se/termer/1.0/beslut": [
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/beslut"
+          ],
+          "@id": "019c1a42-ca0f-7544-a6aa-6f64e9468dac",
+          "https://data.sfa.se/termer/1.0/version": [
+            {
+              "@value": 1,
+              "@type": "http://www.w3.org/2001/XMLSchema#integer"
+            }
+          ]
+        }
+      ],
+      "@id": "019c1a42-ca0f-7473-9dfd-082628a7cfdc",
+      "https://data.sfa.se/termer/1.0/person": [
+        {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+            {
+              "@type": [
+                "https://data.sfa.se/termer/1.0/fysisk_person"
+              ],
+              "https://data.sfa.se/termer/1.0/personnummer": [
+                {
+                  "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+                    {
+                      "@value": "19121212-1212",
+                      "@type": "http://www.w3.org/2001/XMLSchema#string"
+                    }
+                  ],
+                  "https://data.sfa.se/termer/1.0/typ": [
+                    {
+                      "@value": "pii:personnummer",
+                      "@type": "http://www.w3.org/2001/XMLSchema#string"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/roll": [
+            {
+              "@value": "ffa:yrkande",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ]
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/producerade_resultat": [
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/ratten_till_period"
+          ],
+          "https://data.sfa.se/termer/1.0/ersattningstyp": [
+            {
+              "@value": "HUNDBIDRAG",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "@id": "019c1a42-ca0f-705a-9018-a71498420734",
+          "https://data.sfa.se/termer/1.0/omfattning": [
+            {
+              "@value": "HEL",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/version": [
+            {
+              "@value": 1,
+              "@type": "http://www.w3.org/2001/XMLSchema#integer"
+            }
+          ]
+        },
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/ersattning"
+          ],
+          "https://data.sfa.se/termer/1.0/belopp": [
+            {
+              "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+                {
+                  "@value": 1000.0,
+                  "@type": "http://www.w3.org/2001/XMLSchema#double"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/valuta": [
+                {
+                  "@value": "iso4217:SEK",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/skattestatus": [
+                {
+                  "@value": "ffa:skattepliktig",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/beloppsperiod": [
+                {
+                  "@value": "ffa:per_dag",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ]
+            }
+          ],
+          "@id": "019c1a42-ca0f-7275-8571-a9020c420a3e",
+          "https://data.sfa.se/termer/1.0/period": [
+            {
+              "@type": [
+                "https://data.sfa.se/termer/1.0/period"
+              ],
+              "https://data.sfa.se/termer/1.0/from": [
+                {
+                  "@value": "2026-02-01T00:00:00.000Z",
+                  "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/tom": [
+                {
+                  "@value": "2026-02-01T00:00:00.000Z",
+                  "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+                }
+              ]
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/typ": [
+            {
+              "@value": "HUNDBIDRAG",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/version": [
+            {
+              "@value": 1,
+              "@type": "http://www.w3.org/2001/XMLSchema#integer"
+            }
+          ]
+        },
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/ersattning"
+          ],
+          "https://data.sfa.se/termer/1.0/belopp": [
+            {
+              "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+                {
+                  "@value": 500.0,
+                  "@type": "http://www.w3.org/2001/XMLSchema#double"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/valuta": [
+                {
+                  "@value": "iso4217:SEK",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/skattestatus": [
+                {
+                  "@value": "ffa:skattepliktig",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/beloppsperiod": [
+                {
+                  "@value": "ffa:per_dag",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ]
+            }
+          ],
+          "@id": "019c1a42-ca0f-7646-9c71-fb8fc5f6e419",
+          "https://data.sfa.se/termer/1.0/period": [
+            {
+              "@type": [
+                "https://data.sfa.se/termer/1.0/period"
+              ],
+              "https://data.sfa.se/termer/1.0/from": [
+                {
+                  "@value": "2026-02-01T00:00:00.000Z",
+                  "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/tom": [
+                {
+                  "@value": "2026-02-01T00:00:00.000Z",
+                  "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+                }
+              ]
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/typ": [
+            {
+              "@value": "HUNDBIDRAG",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/version": [
+            {
+              "@value": 1,
+              "@type": "http://www.w3.org/2001/XMLSchema#integer"
+            }
+          ]
+        },
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/intyg"
+          ],
+          "http://purl.org/dc/terms/description": [
+            {
+              "@value": "Hittepå",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/giltighetsperiod": [
+            {
+              "@type": [
+                "https://data.sfa.se/termer/1.0/period"
+              ],
+              "https://data.sfa.se/termer/1.0/from": [
+                {
+                  "@value": "2026-02-01T00:00:00.000Z",
+                  "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/tom": [
+                {
+                  "@value": "2026-02-01T00:00:00.000Z",
+                  "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+                }
+              ]
+            }
+          ],
+          "@id": "019c1a42-ca0f-723e-98e0-ea3fc5d9b169",
+          "https://data.sfa.se/termer/1.0/version": [
+            {
+              "@value": 1,
+              "@type": "http://www.w3.org/2001/XMLSchema#integer"
+            }
+          ]
+        },
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/ersattning"
+          ],
+          "https://data.sfa.se/termer/1.0/belopp": [
+            {
+              "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+                {
+                  "@value": 100.0,
+                  "@type": "http://www.w3.org/2001/XMLSchema#double"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/valuta": [
+                {
+                  "@value": "iso4217:SEK",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/skattestatus": [
+                {
+                  "@value": "ffa:skattepliktig",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/beloppsperiod": [
+                {
+                  "@value": "ffa:per_dag",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ]
+            }
+          ],
+          "@id": "019c1a42-ca21-77ec-a42b-423ad9258370",
+          "https://data.sfa.se/termer/1.0/typ": [
+            {
+              "@value": "HUNDBIDRAG",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/version": [
+            {
+              "@value": 1,
+              "@type": "http://www.w3.org/2001/XMLSchema#integer"
+            }
+          ]
+        },
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/ersattning"
+          ],
+          "https://data.sfa.se/termer/1.0/belopp": [
+            {
+              "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+                {
+                  "@value": 200.0,
+                  "@type": "http://www.w3.org/2001/XMLSchema#double"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/valuta": [
+                {
+                  "@value": "iso4217:SEK",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/skattestatus": [
+                {
+                  "@value": "ffa:skattepliktig",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ],
+              "https://data.sfa.se/termer/1.0/beloppsperiod": [
+                {
+                  "@value": "ffa:per_dag",
+                  "@type": "http://www.w3.org/2001/XMLSchema#string"
+                }
+              ]
+            }
+          ],
+          "@id": "019c1a42-ca27-762c-bd39-efdb133b4512",
+          "https://data.sfa.se/termer/1.0/typ": [
+            {
+              "@value": "HUNDBIDRAG",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/version": [
+            {
+              "@value": 1,
+              "@type": "http://www.w3.org/2001/XMLSchema#integer"
+            }
+          ]
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 3,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/beslut"
+      ],
+      "@id": "019c1a42-ca0f-7544-a6aa-6f64e9468dac",
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 1,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/fysisk_person"
+      ],
+      "https://data.sfa.se/termer/1.0/personnummer": [
+        {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+            {
+              "@value": "19121212-1212",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/typ": [
+            {
+              "@value": "pii:personnummer",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/ratten_till_period"
+      ],
+      "https://data.sfa.se/termer/1.0/ersattningstyp": [
+        {
+          "@value": "HUNDBIDRAG",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ],
+      "@id": "019c1a42-ca0f-705a-9018-a71498420734",
+      "https://data.sfa.se/termer/1.0/omfattning": [
+        {
+          "@value": "HEL",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 1,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/ersattning"
+      ],
+      "https://data.sfa.se/termer/1.0/belopp": [
+        {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+            {
+              "@value": 1000.0,
+              "@type": "http://www.w3.org/2001/XMLSchema#double"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/valuta": [
+            {
+              "@value": "iso4217:SEK",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/skattestatus": [
+            {
+              "@value": "ffa:skattepliktig",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/beloppsperiod": [
+            {
+              "@value": "ffa:per_dag",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ]
+        }
+      ],
+      "@id": "019c1a42-ca0f-7275-8571-a9020c420a3e",
+      "https://data.sfa.se/termer/1.0/period": [
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/period"
+          ],
+          "https://data.sfa.se/termer/1.0/from": [
+            {
+              "@value": "2026-02-01T00:00:00.000Z",
+              "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/tom": [
+            {
+              "@value": "2026-02-01T00:00:00.000Z",
+              "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+          ]
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/typ": [
+        {
+          "@value": "HUNDBIDRAG",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 1,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/period"
+      ],
+      "https://data.sfa.se/termer/1.0/from": [
+        {
+          "@value": "2026-02-01T00:00:00.000Z",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/tom": [
+        {
+          "@value": "2026-02-01T00:00:00.000Z",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/ersattning"
+      ],
+      "https://data.sfa.se/termer/1.0/belopp": [
+        {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+            {
+              "@value": 500.0,
+              "@type": "http://www.w3.org/2001/XMLSchema#double"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/valuta": [
+            {
+              "@value": "iso4217:SEK",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/skattestatus": [
+            {
+              "@value": "ffa:skattepliktig",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/beloppsperiod": [
+            {
+              "@value": "ffa:per_dag",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ]
+        }
+      ],
+      "@id": "019c1a42-ca0f-7646-9c71-fb8fc5f6e419",
+      "https://data.sfa.se/termer/1.0/period": [
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/period"
+          ],
+          "https://data.sfa.se/termer/1.0/from": [
+            {
+              "@value": "2026-02-01T00:00:00.000Z",
+              "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/tom": [
+            {
+              "@value": "2026-02-01T00:00:00.000Z",
+              "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+          ]
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/typ": [
+        {
+          "@value": "HUNDBIDRAG",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 1,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/period"
+      ],
+      "https://data.sfa.se/termer/1.0/from": [
+        {
+          "@value": "2026-02-01T00:00:00.000Z",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/tom": [
+        {
+          "@value": "2026-02-01T00:00:00.000Z",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/intyg"
+      ],
+      "http://purl.org/dc/terms/description": [
+        {
+          "@value": "Hittepå",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/giltighetsperiod": [
+        {
+          "@type": [
+            "https://data.sfa.se/termer/1.0/period"
+          ],
+          "https://data.sfa.se/termer/1.0/from": [
+            {
+              "@value": "2026-02-01T00:00:00.000Z",
+              "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/tom": [
+            {
+              "@value": "2026-02-01T00:00:00.000Z",
+              "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+          ]
+        }
+      ],
+      "@id": "019c1a42-ca0f-723e-98e0-ea3fc5d9b169",
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 1,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/period"
+      ],
+      "https://data.sfa.se/termer/1.0/from": [
+        {
+          "@value": "2026-02-01T00:00:00.000Z",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/tom": [
+        {
+          "@value": "2026-02-01T00:00:00.000Z",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/ersattning"
+      ],
+      "https://data.sfa.se/termer/1.0/belopp": [
+        {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+            {
+              "@value": 100.0,
+              "@type": "http://www.w3.org/2001/XMLSchema#double"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/valuta": [
+            {
+              "@value": "iso4217:SEK",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/skattestatus": [
+            {
+              "@value": "ffa:skattepliktig",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/beloppsperiod": [
+            {
+              "@value": "ffa:per_dag",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ]
+        }
+      ],
+      "@id": "019c1a42-ca21-77ec-a42b-423ad9258370",
+      "https://data.sfa.se/termer/1.0/typ": [
+        {
+          "@value": "HUNDBIDRAG",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 1,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    },
+    {
+      "@type": [
+        "https://data.sfa.se/termer/1.0/ersattning"
+      ],
+      "https://data.sfa.se/termer/1.0/belopp": [
+        {
+          "http://www.w3.org/1999/02/22-rdf-syntax-ns#value": [
+            {
+              "@value": 200.0,
+              "@type": "http://www.w3.org/2001/XMLSchema#double"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/valuta": [
+            {
+              "@value": "iso4217:SEK",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/skattestatus": [
+            {
+              "@value": "ffa:skattepliktig",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ],
+          "https://data.sfa.se/termer/1.0/beloppsperiod": [
+            {
+              "@value": "ffa:per_dag",
+              "@type": "http://www.w3.org/2001/XMLSchema#string"
+            }
+          ]
+        }
+      ],
+      "@id": "019c1a42-ca27-762c-bd39-efdb133b4512",
+      "https://data.sfa.se/termer/1.0/typ": [
+        {
+          "@value": "HUNDBIDRAG",
+          "@type": "http://www.w3.org/2001/XMLSchema#string"
+        }
+      ],
+      "https://data.sfa.se/termer/1.0/version": [
+        {
+          "@value": 1,
+          "@type": "http://www.w3.org/2001/XMLSchema#integer"
+        }
+      ]
+    }
+  ]
+}   
 ```
