@@ -2,9 +2,9 @@ package se.fk.mimer.migration;
 
 import tools.jackson.databind.node.ObjectNode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static se.fk.mimer.migration.MigrationEngine.*;
 
@@ -12,7 +12,15 @@ public final class MimerMigrations {
 
     public static final int CURRENT = 2;
 
+    /**
+     * Notera att de migreringar som finns här är fejkade och inte
+     * relevanta på riktigt i det skick de har här.
+     * @return
+     */
     public static List<Migration> all() {
+        List<Migration> migrations = new ArrayList<>();
+
+        // Illustrative first migration step
         Migration v0to1 = new Migration("kundbehov->yrkan", 0, 1, List.of(
                 // Run-once root updates: selector "$" matches root path "$"
                 new Rule("set @context", "$", (root, match, audit) -> {
@@ -34,6 +42,7 @@ public final class MimerMigrations {
                 normalizeInstantZToDate("normalize period.from", "$.producerade_resultat[*].period.from"),
                 normalizeInstantZToDate("normalize period.tom",  "$.producerade_resultat[*].period.tom")
         ));
+        migrations.add(v0to1);
 
         // Illustrative future step 1 -> 2
         Migration v1to2 = new Migration("example future changes", 1, 2, List.of(
@@ -54,7 +63,8 @@ public final class MimerMigrations {
                 dedupeArrayByKey("dedupe producerade_resultat by id",
                         "$.producerade_resultat", "id")
         ));
+        migrations.add(v1to2);
 
-        return List.of(v0to1, v1to2);
+        return migrations;
     }
 }

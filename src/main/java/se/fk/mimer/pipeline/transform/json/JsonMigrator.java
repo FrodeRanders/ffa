@@ -1,4 +1,4 @@
-package se.fk.mimer.pipeline.transform;
+package se.fk.mimer.pipeline.transform.json;
 
 import se.fk.mimer.migration.MigrationEngine;
 import se.fk.mimer.migration.MimerMigrations;
@@ -10,10 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-public final class RawJsonMigrator {
+public final class JsonMigrator {
     private final ObjectMapper mapper;
 
-    public RawJsonMigrator(ObjectMapper mapper) {
+    public JsonMigrator(ObjectMapper mapper) {
         this.mapper = mapper;
     }
 

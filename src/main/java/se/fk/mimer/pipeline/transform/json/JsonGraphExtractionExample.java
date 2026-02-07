@@ -1,4 +1,4 @@
-package se.fk.mimer.pipeline.transform;
+package se.fk.mimer.pipeline.transform.json;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -11,17 +11,15 @@ import java.util.List;
 
 /**
  * Example-only extractor that reads raw JSON and plucks central nodes.
- * This keeps the raw JSON format intact for round-trip deserialization,
- * while enabling selective graph ingestion.
  */
-public final class GraphExtractionExample {
+public final class JsonGraphExtractionExample {
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
-    private GraphExtractionExample() {}
+    private JsonGraphExtractionExample() {}
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
-            System.err.println("Usage: GraphExtractionExample <path-to-raw-json>");
+            System.err.println("Usage: JsonGraphExtractionExample <path-to-raw-json>");
             System.exit(2);
         }
 

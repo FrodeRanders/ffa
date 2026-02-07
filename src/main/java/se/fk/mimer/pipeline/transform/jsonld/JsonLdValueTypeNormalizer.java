@@ -1,11 +1,10 @@
-package se.fk.mimer.pipeline.transform;
+package se.fk.mimer.pipeline.transform.jsonld;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
 import java.util.Map;

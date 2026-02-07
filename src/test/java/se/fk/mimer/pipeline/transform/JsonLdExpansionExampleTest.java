@@ -4,6 +4,8 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
+import se.fk.mimer.pipeline.transform.jsonld.JsonLdExpansionExample;
+import se.fk.mimer.pipeline.transform.jsonld.JsonLdTypeMapper;
 
 import java.nio.file.Path;
 

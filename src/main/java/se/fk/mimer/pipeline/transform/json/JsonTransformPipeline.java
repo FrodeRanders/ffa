@@ -1,4 +1,4 @@
-package se.fk.mimer.pipeline.transform;
+package se.fk.mimer.pipeline.transform.json;
 
 import com.apicatalog.jsonld.JsonLd;
 import com.apicatalog.jsonld.JsonLdError;
@@ -7,6 +7,7 @@ import com.apicatalog.jsonld.JsonLdOptions;
 import com.apicatalog.jsonld.document.JsonDocument;
 import com.apicatalog.jsonld.loader.DocumentLoader;
 import com.apicatalog.jsonld.loader.DocumentLoaderOptions;
+import com.apicatalog.rdf.io.nquad.NQuadsWriter;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -19,6 +20,8 @@ import jakarta.json.JsonValue;
 import jakarta.json.JsonWriter;
 import jakarta.json.JsonWriterFactory;
 import jakarta.json.stream.JsonGenerator;
+import se.fk.mimer.pipeline.transform.jsonld.JsonLdTypeMapper;
+import se.fk.mimer.pipeline.transform.jsonld.JsonLdValueTypeNormalizer;
 import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -37,15 +40,16 @@ import java.util.Set;
  * PoC pipeline: raw JSON -> JSON-LD expansion -> optional framing -> RML -> RDF.
  * Optional output: Cypher for app-level import or n10s import helper.
  */
-public final class JsonLdTransformPipeline {
+public final class JsonTransformPipeline {
     private static final Path DEFAULT_CONTEXT = Path.of("src/main/resources/context/ffa-1.0.jsonld");
     private static final Path DEFAULT_FRAME = Path.of("src/main/resources/frame/ffa-frame.jsonld");
     private static final Path DEFAULT_SDL = Path.of("src/main/resources/schema/ffa.graphqls");
 
-    private JsonLdTransformPipeline() {}
+    private JsonTransformPipeline() {}
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
+
             usage();
             System.exit(2);
         }
@@ -54,7 +58,7 @@ public final class JsonLdTransformPipeline {
         Path rawJson = parsed.rawJson();
         Path context = parsed.context().orElse(DEFAULT_CONTEXT);
         Path frame = parsed.frame().orElse(DEFAULT_FRAME);
-        Path output = parsed.output().orElse(Path.of("target/ffa-out.ttl"));
+        Path output = parsed.output().orElse(Path.of("target/ffa-out.nq"));
         Path cypherOut = parsed.cypherOut().orElse(Path.of("target/ffa-out.cypher"));
 
         Path workDir = output.toAbsolutePath().getParent();
@@ -63,7 +67,7 @@ public final class JsonLdTransformPipeline {
         }
 
         if (parsed.migrate()) {
-            RawJsonMigrator.Result migrated = new RawJsonMigrator(new ObjectMapper())
+            JsonMigrator.Result migrated = new JsonMigrator(new ObjectMapper())
                     .migrateIfNeeded(rawJson, workDir != null ? workDir : Path.of("target"));
             rawJson = migrated.path();
         }
@@ -76,6 +80,10 @@ public final class JsonLdTransformPipeline {
 
         Path expandedFile = output.resolveSibling("expanded.json");
         writePrettyJson(expanded, expandedFile);
+
+        if (parsed.writeRdf()) {
+            writeRdfNQuads(expandedFile, output);
+        }
 
         JsonStructure framed = expanded;
         if (frame.toFile().exists()) {
@@ -90,15 +98,16 @@ public final class JsonLdTransformPipeline {
 
         switch (parsed.importMode()) {
             case NEO4J -> writeNeo4jImportHelper(output, parsed.neo4jOpts());
-            case CYPHER -> writeCypher(ensureGraphWrapped(framed), cypherOut);
+            case CYPHER -> writeCypher(ensureGraphWrapped(expanded), cypherOut);
             case NONE -> {}
         }
     }
 
     private static void usage() {
-        System.err.println("Usage: JsonLdTransformPipeline <raw-json> " +
+        System.err.println("Usage: JsonTransformPipeline <raw-json> " +
                 "[--context path] [--frame path] [--mapping path] [--out path] " +
-                "[--import neo4j|cypher|none] [--cypher-out path] [--neo4j-opts key=value,...] [--no-migrate]");
+                "[--import neo4j|cypher|none] [--cypher-out path] [--neo4j-opts key=value,...] " +
+                "[--no-migrate] [--no-rdf]");
     }
 
     private static JsonArray expandJsonLd(Path jsonFile, Path contextFile) throws Exception {
@@ -342,6 +351,16 @@ public final class JsonLdTransformPipeline {
         }
     }
 
+    private static void writeRdfNQuads(Path expandedFile, Path out) throws IOException, JsonLdError {
+        var dataset = JsonLd.toRdf(expandedFile.toUri().toString()).get();
+        try (var stream = Files.newOutputStream(out);
+             var outWriter = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
+            NQuadsWriter writer = new NQuadsWriter(outWriter);
+            writer.write(dataset);
+            outWriter.flush();
+        }
+    }
+
     private static void writeNeo4jImportHelper(Path rdfFile, Map<String, String> opts) throws IOException {
         Path out = rdfFile.resolveSibling("neo4j-import.cypher");
         String rdfUri = rdfFile.toAbsolutePath().toUri().toString();
@@ -351,11 +370,11 @@ public final class JsonLdTransformPipeline {
             options.putAll(opts);
         }
         String cypher = "CALL n10s.rdf.import.fetch(\"" + rdfUri +
-                "\",\"Turtle\"," + cypherMapLiteral(options) + ");\n";
+                "\",\"N-Quads\"," + cypherMapLiteral(options) + ");\n";
         Files.writeString(out, cypher, StandardCharsets.UTF_8);
     }
 
-    private static void writeCypher(JsonStructure framed, Path out) throws IOException {
+    private static int writeCypher(JsonStructure framed, Path out) throws IOException {
         JsonArray nodes = extractGraphNodes(framed);
         List<String> statements = new ArrayList<>();
         for (JsonValue value : nodes) {
@@ -390,6 +409,7 @@ public final class JsonLdTransformPipeline {
             }
         }
         Files.writeString(out, String.join("\n", statements), StandardCharsets.UTF_8);
+        return statements.size();
     }
 
     private static JsonArray extractGraphNodes(JsonStructure json) {
@@ -497,7 +517,13 @@ public final class JsonLdTransformPipeline {
                         list.add(literal);
                     }
                 }
-                yield list.isEmpty() ? null : list;
+                if (list.isEmpty()) {
+                    yield null;
+                }
+                if (list.size() == 1) {
+                    yield list.get(0);
+                }
+                yield list;
             }
             default -> null;
         };
@@ -612,7 +638,8 @@ public final class JsonLdTransformPipeline {
             Optional<Path> cypherOut,
             ImportMode importMode,
             Map<String, String> neo4jOpts,
-            boolean migrate
+            boolean migrate,
+            boolean writeRdf
     ) {
         static Args parse(String[] args) {
             Path rawJson = Path.of(args[0]);
@@ -624,6 +651,7 @@ public final class JsonLdTransformPipeline {
             ImportMode importMode = ImportMode.NEO4J;
             Map<String, String> neo4jOpts = new LinkedHashMap<>();
             boolean migrate = true;
+            boolean writeRdf = true;
 
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
@@ -632,14 +660,18 @@ public final class JsonLdTransformPipeline {
                     case "--frame" -> frame = Optional.of(Path.of(args[++i]));
                     case "--mapping" -> mapping = Optional.of(Path.of(args[++i]));
                     case "--out" -> output = Optional.of(Path.of(args[++i]));
-                    case "--cypher-out" -> cypherOut = Optional.of(Path.of(args[++i]));
+                    case "--cypher-out" -> {
+                        cypherOut = Optional.of(Path.of(args[++i]));
+                        importMode = ImportMode.CYPHER;
+                    }
                     case "--import" -> importMode = ImportMode.valueOf(args[++i].toUpperCase(Locale.ROOT));
                     case "--neo4j-opts" -> neo4jOpts.putAll(parseOptions(args[++i]));
                     case "--no-migrate" -> migrate = false;
+                    case "--no-rdf" -> writeRdf = false;
                     default -> throw new IllegalArgumentException("Unknown arg: " + arg);
                 }
             }
-            return new Args(rawJson, context, frame, mapping, output, cypherOut, importMode, neo4jOpts, migrate);
+            return new Args(rawJson, context, frame, mapping, output, cypherOut, importMode, neo4jOpts, migrate, writeRdf);
         }
     }
 

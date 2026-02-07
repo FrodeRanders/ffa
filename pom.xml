@@ -186,13 +186,23 @@
                 <version>3.5.1</version>
                 <executions>
                     <execution>
+                        <id>jsonld-transform</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>se.fk.mimer.pipeline.transform.json.JsonTransformPipeline</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>jsonld-expansion</id>
                         <phase>none</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>se.fk.mimer.receiver.JsonLdExpansionExample</mainClass>
+                            <mainClass>se.fk.mimer.pipeline.transform.jsonld.JsonLdExpansionExample</mainClass>
                         </configuration>
                     </execution>
                     <execution>
@@ -202,17 +212,7 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>se.fk.mimer.receiver.JsonLdGraphPackagingExample</mainClass>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>jsonld-transform</id>
-                        <phase>none</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>se.fk.mimer.receiver.JsonLdTransformPipeline</mainClass>
+                            <mainClass>se.fk.mimer.pipeline.transform.jsonld.JsonLdGraphPackagingExample</mainClass>
                         </configuration>
                     </execution>
                 </executions>

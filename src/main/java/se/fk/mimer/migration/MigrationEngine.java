@@ -10,6 +10,11 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Realiserar funktionalitet för transformationer av JSON, huvudsakligen
+ * med avsikt att hantera migreringssteg när vi laddar historiska JSON-
+ * objekt från ObjectStore.
+ */
 public final class MigrationEngine {
 
     private static final String SCHEMA_VERSION_FIELD = "mimer:schemaVersion";
