@@ -20,15 +20,14 @@ import java.util.List;
 import java.util.Map;
 
 import static java.time.temporal.ChronoUnit.DAYS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ApplikationLifecycleTest {
     private static final Logger log = LoggerFactory.getLogger(ApplikationLifecycleTest.class);
     private static final ObjectMapper JSON = JsonMapper.builder().build();
 
     @Test
-    void serialize_incrementsVersionAndSetsAttentionOnFirstSerialize() throws Exception {
+    void serialize_incrementsVersionAndSetsAttentionOnFirstSerialize() {
         log.info("*** Testcase *** Serialize new Yrkan and verify version increment plus __attention flag");
         MimerProxy proxy = MimerProxy.defaultInstance();
         YrkanOmHundbidrag yrkan = buildDemoYrkan();
@@ -56,7 +55,7 @@ public class ApplikationLifecycleTest {
     }
 
     @Test
-    void serializeDeserializeModify_stepsVersionAndFlagsAttention() throws Exception {
+    void serializeDeserializeModify_stepsVersionAndFlagsAttention() {
         log.info("*** Testcase *** Serialize, deserialize, modify, re-serialize and verify version/attention behavior");
         MimerProxy proxy = MimerProxy.defaultInstance();
         YrkanOmHundbidrag yrkan = buildDemoYrkan();
@@ -90,7 +89,7 @@ public class ApplikationLifecycleTest {
     }
 
     @Test
-    void serializeTwiceWithoutChanges_doesNotBumpVersionOrAttention() throws Exception {
+    void serializeTwiceWithoutChanges_doesNotBumpVersionOrAttention() {
         log.info("*** Testcase *** Serialize twice without changes and ensure version/attention stay stable");
         MimerProxy proxy = MimerProxy.defaultInstance();
         YrkanOmHundbidrag yrkan = buildDemoYrkan();
@@ -104,9 +103,9 @@ public class ApplikationLifecycleTest {
         assertEquals(1, yrkan.version);
         Map<String, Object> second = readJson(json2);
         assertEquals(1, asInt(second.get("version")));
-        assertEquals(false, second.containsKey("__attention"));
+        assertFalse(second.containsKey("__attention"));
         for (Map<String, Object> result : producedResults(second)) {
-            assertEquals(false, result.containsKey("__attention"));
+            assertFalse(result.containsKey("__attention"));
             assertEquals(1, asInt(result.get("version")));
         }
     }
@@ -144,7 +143,7 @@ public class ApplikationLifecycleTest {
         return yrkan;
     }
 
-    private static Map<String, Object> readJson(String json) throws Exception {
+    private static Map<String, Object> readJson(String json) {
         @SuppressWarnings("unchecked")
         Map<String, Object> root = JSON.readValue(json, Map.class);
         return root;
