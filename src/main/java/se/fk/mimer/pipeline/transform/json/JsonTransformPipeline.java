@@ -60,6 +60,9 @@ public final class JsonTransformPipeline {
         Path frame = parsed.frame().orElse(DEFAULT_FRAME);
         Path output = parsed.output().orElse(Path.of("target/ffa-out.nq"));
         Path cypherOut = parsed.cypherOut().orElse(Path.of("target/ffa-out.cypher"));
+        Map<String, String> prefixMap = loadPrefixMap(context);
+        Path mappingPath = parsed.mapping().orElseGet(JsonTransformPipeline::defaultMappingPath);
+        MappingConfig mapping = loadMapping(mappingPath, prefixMap);
 
         Path workDir = output.toAbsolutePath().getParent();
         if (workDir != null) {
@@ -98,7 +101,7 @@ public final class JsonTransformPipeline {
 
         switch (parsed.importMode()) {
             case NEO4J -> writeNeo4jImportHelper(output, parsed.neo4jOpts());
-            case CYPHER -> writeCypher(ensureGraphWrapped(expanded), cypherOut);
+            case CYPHER -> writeCypher(ensureGraphWrapped(expanded), cypherOut, prefixMap, mapping);
             case NONE -> {}
         }
     }
@@ -108,6 +111,11 @@ public final class JsonTransformPipeline {
                 "[--context path] [--frame path] [--mapping path] [--out path] " +
                 "[--import neo4j|cypher|none] [--cypher-out path] [--neo4j-opts key=value,...] " +
                 "[--no-migrate] [--no-rdf]");
+    }
+
+    private static Path defaultMappingPath() {
+        Path path = Path.of("src/main/resources/mapping/graph-mapping.json");
+        return path.toFile().exists() ? path : null;
     }
 
     private static JsonArray expandJsonLd(Path jsonFile, Path contextFile) throws Exception {
@@ -342,6 +350,43 @@ public final class JsonTransformPipeline {
         }
     }
 
+    private static Map<String, String> loadPrefixMap(Path contextFile) {
+        if (contextFile == null || !contextFile.toFile().exists()) {
+            return Map.of();
+        }
+        try (var stream = Files.newInputStream(contextFile)) {
+            JsonObject root = Json.createReader(stream).readObject();
+            JsonValue ctxValue = root.get("@context");
+            if (ctxValue == null || ctxValue.getValueType() != JsonValue.ValueType.OBJECT) {
+                return Map.of();
+            }
+            JsonObject context = ctxValue.asJsonObject();
+            Map<String, String> prefixes = new LinkedHashMap<>();
+            for (Map.Entry<String, JsonValue> entry : context.entrySet()) {
+                String key = entry.getKey();
+                JsonValue val = entry.getValue();
+                if (val.getValueType() == JsonValue.ValueType.STRING) {
+                    String iri = ((JsonString) val).getString();
+                    if (iri.contains(":")) {
+                        prefixes.put(key, iri);
+                    }
+                } else if (val.getValueType() == JsonValue.ValueType.OBJECT) {
+                    JsonObject obj = val.asJsonObject();
+                    JsonValue id = obj.get("@id");
+                    if (id != null && id.getValueType() == JsonValue.ValueType.STRING) {
+                        String iri = ((JsonString) id).getString();
+                        if (iri.contains(":")) {
+                            prefixes.put(key, iri);
+                        }
+                    }
+                }
+            }
+            return prefixes;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read context file: " + contextFile, e);
+        }
+    }
+
     private static void writePrettyJson(JsonStructure json, Path out) throws IOException {
         Map<String, Object> config = Map.of(JsonGenerator.PRETTY_PRINTING, true);
         JsonWriterFactory factory = Json.createWriterFactory(config);
@@ -374,37 +419,42 @@ public final class JsonTransformPipeline {
         Files.writeString(out, cypher, StandardCharsets.UTF_8);
     }
 
-    private static int writeCypher(JsonStructure framed, Path out) throws IOException {
-        JsonArray nodes = extractGraphNodes(framed);
+    private static int writeCypher(
+            JsonStructure framed,
+            Path out,
+            Map<String, String> prefixMap,
+            MappingConfig mapping
+    ) throws IOException {
+        Map<String, JsonObject> nodesById = new LinkedHashMap<>();
+        collectNodes(framed, nodesById, mapping, prefixMap, null);
+
+        Map<String, List<String>> labelsById = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonObject> entry : nodesById.entrySet()) {
+            labelsById.put(entry.getKey(), typeLabels(entry.getValue(), prefixMap));
+        }
+
         List<String> statements = new ArrayList<>();
-        for (JsonValue value : nodes) {
-            if (value.getValueType() != JsonValue.ValueType.OBJECT) {
-                continue;
-            }
-            JsonObject node = value.asJsonObject();
-            String id = nodeId(node).orElse(null);
-            if (id == null) {
-                continue;
-            }
-            List<String> labels = typeLabels(node);
-            Map<String, Object> props = literalProperties(node);
+        for (Map.Entry<String, JsonObject> entry : nodesById.entrySet()) {
+            String id = entry.getKey();
+            JsonObject node = entry.getValue();
+
+            List<String> labels = labelsById.getOrDefault(id, List.of());
+            Map<String, Object> props = literalProperties(node, prefixMap, mapping);
 
             StringBuilder stmt = new StringBuilder();
-            stmt.append("MERGE (n:Resource {id: ").append(cypherValue(id)).append("})\n");
-            if (!labels.isEmpty()) {
-                stmt.append("SET n:");
-                stmt.append(String.join(":", labels));
-                stmt.append("\n");
-            }
+            String labelSet = labelsToCypher(labels);
+            stmt.append("MERGE (n:").append(labelSet).append(" {id: ")
+                    .append(cypherValue(id)).append("})\n");
             if (!props.isEmpty()) {
                 stmt.append("SET n += ").append(cypherMap(props)).append("\n");
             }
             statements.add(stmt.toString());
 
-            for (Relationship rel : relationships(node)) {
-                String relStmt = "MERGE (m:Resource {id: " + cypherValue(rel.targetId()) + "})\n" +
-                        "MERGE (n:Resource {id: " + cypherValue(id) + "})\n" +
-                        "MERGE (n)-[:" + rel.type() + "]->(m)\n";
+            for (Relationship rel : relationships(node, id, prefixMap, mapping, nodesById)) {
+                String targetLabels = labelsToCypher(labelsById.getOrDefault(rel.targetId(), List.of()));
+                String relStmt = "MERGE (m:" + targetLabels + " {id: " + cypherValue(rel.targetId()) + "})\n" +
+                        "MERGE (n {id: " + cypherValue(id) + "})\n" +
+                        "MERGE (n)-[:" + backtick(rel.type()) + "]->(m)\n";
                 statements.add(relStmt);
             }
         }
@@ -433,41 +483,50 @@ public final class JsonTransformPipeline {
         return Optional.of(((JsonString) id).getString());
     }
 
-    private static List<String> typeLabels(JsonObject node) {
+    private static List<String> typeLabels(JsonObject node, Map<String, String> prefixMap) {
         List<String> labels = new ArrayList<>();
         JsonValue type = node.get("@type");
         if (type == null) {
             return labels;
         }
         if (type.getValueType() == JsonValue.ValueType.STRING) {
-            labels.add(labelFromIri(((JsonString) type).getString()));
+            labels.add(labelFromIri(((JsonString) type).getString(), prefixMap));
         } else if (type.getValueType() == JsonValue.ValueType.ARRAY) {
             for (JsonValue v : node.getJsonArray("@type")) {
                 if (v.getValueType() == JsonValue.ValueType.STRING) {
-                    labels.add(labelFromIri(((JsonString) v).getString()));
+                    labels.add(labelFromIri(((JsonString) v).getString(), prefixMap));
                 }
             }
         }
         return labels;
     }
 
-    private static Map<String, Object> literalProperties(JsonObject node) {
+    private static Map<String, Object> literalProperties(
+            JsonObject node,
+            Map<String, String> prefixMap,
+            MappingConfig mapping
+    ) {
         Map<String, Object> props = new LinkedHashMap<>();
         for (Map.Entry<String, JsonValue> entry : node.entrySet()) {
             String key = entry.getKey();
             if (key.startsWith("@")) {
                 continue;
             }
-            JsonValue value = entry.getValue();
-            Object literal = coerceLiteral(value);
-            if (literal != null) {
-                props.put(propertyKey(key), literal);
+            if (mapping.shouldPromote(key)) {
+                continue;
             }
+            collectProperties(props, key, entry.getValue(), prefixMap);
         }
         return props;
     }
 
-    private static List<Relationship> relationships(JsonObject node) {
+    private static List<Relationship> relationships(
+            JsonObject node,
+            String parentId,
+            Map<String, String> prefixMap,
+            MappingConfig mapping,
+            Map<String, JsonObject> nodesById
+    ) {
         List<Relationship> rels = new ArrayList<>();
         for (Map.Entry<String, JsonValue> entry : node.entrySet()) {
             String key = entry.getKey();
@@ -475,24 +534,133 @@ public final class JsonTransformPipeline {
                 continue;
             }
             JsonValue value = entry.getValue();
-            rels.addAll(extractRelationships(key, value));
+            if (mapping.shouldFlatten(key)) {
+                continue;
+            }
+            if (mapping.shouldPromote(key)) {
+                rels.addAll(extractPromotedRelationships(key, value, parentId, prefixMap, nodesById));
+                continue;
+            }
+            rels.addAll(extractRelationships(key, value, prefixMap));
         }
         return rels;
     }
 
-    private static List<Relationship> extractRelationships(String predicate, JsonValue value) {
+    private static List<Relationship> extractRelationships(String predicate, JsonValue value, Map<String, String> prefixMap) {
         List<Relationship> rels = new ArrayList<>();
         if (value.getValueType() == JsonValue.ValueType.OBJECT) {
             JsonObject obj = value.asJsonObject();
             if (obj.containsKey("@id")) {
-                nodeId(obj).ifPresent(id -> rels.add(new Relationship(relType(predicate), id)));
+                nodeId(obj).ifPresent(id -> rels.add(new Relationship(relType(predicate, prefixMap), id)));
             }
         } else if (value.getValueType() == JsonValue.ValueType.ARRAY) {
             for (JsonValue item : value.asJsonArray()) {
-                rels.addAll(extractRelationships(predicate, item));
+                rels.addAll(extractRelationships(predicate, item, prefixMap));
             }
         }
         return rels;
+    }
+
+    private static List<Relationship> extractPromotedRelationships(
+            String predicate,
+            JsonValue value,
+            String parentId,
+            Map<String, String> prefixMap,
+            Map<String, JsonObject> nodesById
+    ) {
+        List<Relationship> rels = new ArrayList<>();
+        if (parentId == null) {
+            return rels;
+        }
+        if (value.getValueType() == JsonValue.ValueType.OBJECT) {
+            JsonObject obj = value.asJsonObject();
+            String targetId = ensurePromotedNode(obj, predicate, parentId, 0, prefixMap, nodesById);
+            if (targetId != null) {
+                rels.add(new Relationship(relType(predicate, prefixMap), targetId));
+            }
+        } else if (value.getValueType() == JsonValue.ValueType.ARRAY) {
+            int idx = 0;
+            for (JsonValue item : value.asJsonArray()) {
+                if (item.getValueType() == JsonValue.ValueType.OBJECT) {
+                    String targetId = ensurePromotedNode(item.asJsonObject(), predicate, parentId, idx, prefixMap, nodesById);
+                    if (targetId != null) {
+                        rels.add(new Relationship(relType(predicate, prefixMap), targetId));
+                    }
+                }
+                idx++;
+            }
+        }
+        return rels;
+    }
+
+    private static void collectProperties(Map<String, Object> props, String predicateIri, JsonValue value, Map<String, String> prefixMap) {
+        String prefix = propertyKey(predicateIri, prefixMap);
+        collectPropertiesWithPrefix(props, prefix, value, false);
+    }
+
+    private static void collectPropertiesWithPrefix(
+            Map<String, Object> props,
+            String prefix,
+            JsonValue value,
+            boolean allowIdLiteral
+    ) {
+        switch (value.getValueType()) {
+            case ARRAY -> {
+                for (JsonValue item : value.asJsonArray()) {
+                    collectPropertiesWithPrefix(props, prefix, item, allowIdLiteral);
+                }
+            }
+            case OBJECT -> {
+                JsonObject obj = value.asJsonObject();
+                if (obj.containsKey("@id")) {
+                    JsonValue idValue = obj.get("@id");
+                    if (allowIdLiteral && idValue.getValueType() == JsonValue.ValueType.STRING) {
+                        addProp(props, prefix, ((JsonString) idValue).getString());
+                    } else if (!allowIdLiteral) {
+                        return;
+                    }
+                }
+                if (obj.containsKey("@value")) {
+                    Object literal = coerceLiteral(obj);
+                    if (literal != null) {
+                        addProp(props, prefix, literal);
+                    }
+                    return;
+                }
+                for (Map.Entry<String, JsonValue> entry : obj.entrySet()) {
+                    String key = entry.getKey();
+                    if (key.startsWith("@")) {
+                        continue;
+                    }
+                    String nestedPrefix = prefix + "." + propertyKey(key, null);
+                    collectPropertiesWithPrefix(props, nestedPrefix, entry.getValue(), true);
+                }
+            }
+            default -> {
+                Object literal = coerceLiteral(value);
+                if (literal != null) {
+                    addProp(props, prefix, literal);
+                }
+            }
+        }
+    }
+
+    private static void addProp(Map<String, Object> props, String key, Object value) {
+        Object existing = props.get(key);
+        if (existing == null) {
+            props.put(key, value);
+            return;
+        }
+        if (existing instanceof List<?> list) {
+            @SuppressWarnings("unchecked")
+            List<Object> mutable = (List<Object>) list;
+            mutable.add(value);
+            return;
+        }
+        List<Object> list = new ArrayList<>();
+        list.add(existing);
+        list.add(value);
+        props.put(key, list);
     }
 
     private static Object coerceLiteral(JsonValue value) {
@@ -581,17 +749,127 @@ public final class JsonTransformPipeline {
         return input.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    private static String labelFromIri(String iri) {
-        return sanitizeLabel(localName(iri));
+    private static String labelFromIri(String iri, Map<String, String> prefixMap) {
+        return sanitizeLabelForCypher(compactIri(iri, prefixMap));
     }
 
-    private static String propertyKey(String iri) {
-        String local = localName(iri);
-        return local.replace('-', '_');
+    private static String propertyKey(String iri, Map<String, String> prefixMap) {
+        String compact = compactIri(iri, prefixMap);
+        return compact.replace('-', '_');
     }
 
-    private static String relType(String iri) {
-        return sanitizeLabel(localName(iri)).toUpperCase(Locale.ROOT);
+    private static String relType(String iri, Map<String, String> prefixMap) {
+        return sanitizeLabelForCypher(compactIri(iri, prefixMap));
+    }
+
+    private static String compactIri(String iri, Map<String, String> prefixMap) {
+        if (prefixMap != null) {
+            for (Map.Entry<String, String> entry : prefixMap.entrySet()) {
+                String prefix = entry.getKey();
+                String ns = entry.getValue();
+                if (iri.startsWith(ns)) {
+                    return prefix + ":" + iri.substring(ns.length());
+                }
+            }
+        }
+        return localName(iri);
+    }
+
+    private static void collectNodes(
+            JsonValue value,
+            Map<String, JsonObject> nodesById,
+            MappingConfig mapping,
+            Map<String, String> prefixMap,
+            String currentId
+    ) {
+        if (value == null) {
+            return;
+        }
+        switch (value.getValueType()) {
+            case ARRAY -> {
+                for (JsonValue item : value.asJsonArray()) {
+                    collectNodes(item, nodesById, mapping, prefixMap, currentId);
+                }
+            }
+            case OBJECT -> {
+                JsonObject obj = value.asJsonObject();
+                String objId = nodeId(obj).orElse(null);
+                String nextId = objId != null ? objId : currentId;
+                if (objId != null) {
+                    nodesById.putIfAbsent(objId, obj);
+                }
+                for (Map.Entry<String, JsonValue> entry : obj.entrySet()) {
+                    String key = entry.getKey();
+                    if (key.startsWith("@")) {
+                        continue;
+                    }
+                    if (mapping.shouldPromote(key)) {
+                        ensurePromotedNodes(entry.getValue(), key, nextId, prefixMap, nodesById);
+                    }
+                    collectNodes(entry.getValue(), nodesById, mapping, prefixMap, nextId);
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    private static void ensurePromotedNodes(
+            JsonValue value,
+            String predicate,
+            String parentId,
+            Map<String, String> prefixMap,
+            Map<String, JsonObject> nodesById
+    ) {
+        if (parentId == null || value == null) {
+            return;
+        }
+        if (value.getValueType() == JsonValue.ValueType.OBJECT) {
+            ensurePromotedNode(value.asJsonObject(), predicate, parentId, 0, prefixMap, nodesById);
+        } else if (value.getValueType() == JsonValue.ValueType.ARRAY) {
+            int idx = 0;
+            for (JsonValue item : value.asJsonArray()) {
+                if (item.getValueType() == JsonValue.ValueType.OBJECT) {
+                    ensurePromotedNode(item.asJsonObject(), predicate, parentId, idx, prefixMap, nodesById);
+                }
+                idx++;
+            }
+        }
+    }
+
+    private static String ensurePromotedNode(
+            JsonObject obj,
+            String predicate,
+            String parentId,
+            int index,
+            Map<String, String> prefixMap,
+            Map<String, JsonObject> nodesById
+    ) {
+        if (obj == null) {
+            return null;
+        }
+        String existingId = nodeId(obj).orElse(null);
+        if (existingId != null) {
+            nodesById.putIfAbsent(existingId, obj);
+            return existingId;
+        }
+        String suffix = compactIri(predicate, prefixMap);
+        String mintedId = parentId + ":" + suffix + (index > 0 ? ":" + index : "");
+        if (nodesById.containsKey(mintedId)) {
+            return mintedId;
+        }
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        boolean hasType = obj.containsKey("@type");
+        for (Map.Entry<String, JsonValue> entry : obj.entrySet()) {
+            builder.add(entry.getKey(), entry.getValue());
+        }
+        builder.add("@id", mintedId);
+        if (!hasType) {
+            builder.add("@type", predicate);
+        }
+        JsonObject promoted = builder.build();
+        nodesById.put(mintedId, promoted);
+        return mintedId;
     }
 
     private static String localName(String iri) {
@@ -606,12 +884,14 @@ public final class JsonTransformPipeline {
         return iri;
     }
 
-    private static String sanitizeLabel(String label) {
+    private static String sanitizeLabelForCypher(String label) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < label.length(); i++) {
             char c = label.charAt(i);
-            if (Character.isLetterOrDigit(c) || c == '_') {
+            if (Character.isLetterOrDigit(c) || c == '_' || c == ':') {
                 sb.append(c);
+            } else if (c == '`') {
+                sb.append('_');
             } else {
                 sb.append('_');
             }
@@ -623,6 +903,83 @@ public final class JsonTransformPipeline {
             sb.insert(0, 'N');
         }
         return sb.toString();
+    }
+
+    private static String backtick(String label) {
+        return "`" + label + "`";
+    }
+
+    private static String labelsToCypher(List<String> labels) {
+        if (labels == null || labels.isEmpty()) {
+            return backtick("Resource");
+        }
+        return labels.stream().map(JsonTransformPipeline::backtick)
+                .collect(java.util.stream.Collectors.joining(":"));
+    }
+
+    private record MappingConfig(Set<String> flatten, Set<String> promote) {
+        boolean shouldFlatten(String predicateIri) {
+            return flatten.contains(predicateIri);
+        }
+
+        boolean shouldPromote(String predicateIri) {
+            return promote.contains(predicateIri);
+        }
+    }
+
+    private static MappingConfig loadMapping(Path mappingPath, Map<String, String> prefixMap) {
+        Set<String> defaultFlatten = Set.of(
+                normalizePredicate("ffa:belopp", prefixMap),
+                normalizePredicate("ffa:period", prefixMap),
+                normalizePredicate("ffa:giltighetsperiod", prefixMap)
+        );
+        if (mappingPath == null || !mappingPath.toFile().exists()) {
+            return new MappingConfig(defaultFlatten, Set.of());
+        }
+        try (var stream = Files.newInputStream(mappingPath)) {
+            JsonObject root = Json.createReader(stream).readObject();
+            Set<String> flatten = readPredicateSet(root, "flatten", prefixMap);
+            Set<String> promote = readPredicateSet(root, "promote", prefixMap);
+            return new MappingConfig(
+                    flatten.isEmpty() ? defaultFlatten : flatten,
+                    promote
+            );
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read mapping file: " + mappingPath, e);
+        }
+    }
+
+    private static Set<String> readPredicateSet(JsonObject root, String key, Map<String, String> prefixMap) {
+        JsonValue val = root.get(key);
+        if (val == null || val.getValueType() != JsonValue.ValueType.ARRAY) {
+            return Set.of();
+        }
+        Set<String> result = new java.util.LinkedHashSet<>();
+        for (JsonValue item : val.asJsonArray()) {
+            if (item.getValueType() == JsonValue.ValueType.STRING) {
+                result.add(normalizePredicate(((JsonString) item).getString(), prefixMap));
+            }
+        }
+        return result;
+    }
+
+    private static String normalizePredicate(String value, Map<String, String> prefixMap) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+        if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("urn:")) {
+            return value;
+        }
+        int colon = value.indexOf(':');
+        if (colon > 0 && prefixMap != null) {
+            String prefix = value.substring(0, colon);
+            String local = value.substring(colon + 1);
+            String ns = prefixMap.get(prefix);
+            if (ns != null) {
+                return ns + local;
+            }
+        }
+        return value;
     }
 
     private record Relationship(String type, String targetId) {}

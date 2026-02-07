@@ -11,7 +11,7 @@ import tools.jackson.databind.annotation.JsonTypeIdResolver;
         visible = true
 )
 @JsonTypeIdResolver(ProduceratResultatTypeIdResolver.class)
-public class ProduceratResultat extends Livscykelhanterad {
+public abstract class ProduceratResultat extends Livscykelhanterad {
 
     public ProduceratResultat() {} // Required for deserialization
 

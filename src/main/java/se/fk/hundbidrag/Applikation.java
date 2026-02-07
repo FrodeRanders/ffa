@@ -43,7 +43,7 @@ public class Applikation {
             rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
             rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
 
-            yrkan.addProduceradeResultat(rattenTillPeriod);
+            yrkan.addProduceratResultat(rattenTillPeriod);
         }
 
         // Efter beräkning...
@@ -53,7 +53,7 @@ public class Applikation {
             ersattning.belopp = 1000.0;
             ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            yrkan.addProduceradeResultat(ersattning);
+            yrkan.addProduceratResultat(ersattning);
         }
         {
             Ersattning ersattning = new Ersattning();
@@ -61,7 +61,7 @@ public class Applikation {
             ersattning.belopp = 500.0;
             ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            yrkan.addProduceradeResultat(ersattning);
+            yrkan.addProduceratResultat(ersattning);
         }
 
         // I samband med beslut, så utfärdar vi ett "Hittepå"-intyg
@@ -70,7 +70,7 @@ public class Applikation {
             intyg.beskrivning = "Hittepå";
             intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            yrkan.addProduceradeResultat(intyg);
+            yrkan.addProduceratResultat(intyg);
         }
         {
             Beslut beslut = new Beslut();
@@ -103,7 +103,7 @@ public class Applikation {
                 ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
                 ersattning.belopp = 100.0;
 
-                aaterlaestYrkan.addProduceradeResultat(ersattning);
+                aaterlaestYrkan.addProduceratResultat(ersattning);
             }
 
             // Re-serialize to JSON
@@ -117,7 +117,7 @@ public class Applikation {
                 ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
                 ersattning.belopp = 200.0;
 
-                aaterlaestYrkan.addProduceradeResultat(ersattning);
+                aaterlaestYrkan.addProduceratResultat(ersattning);
             }
 
             // Re-re-serialize to JSON

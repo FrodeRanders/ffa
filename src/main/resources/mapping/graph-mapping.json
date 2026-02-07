@@ -1,0 +1,8 @@
+{
+  "flatten": [
+    "ffa:belopp",
+    "ffa:period",
+    "ffa:giltighetsperiod"
+  ],
+  "promote": []
+}

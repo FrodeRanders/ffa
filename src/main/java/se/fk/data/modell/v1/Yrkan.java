@@ -39,8 +39,8 @@ public class Yrkan extends Livscykelhanterad {
     @JsonProperty("beslut")
     public Beslut beslut;
 
-    @JsonProperty("producerade_resultat")
-    public Collection<ProduceratResultat> produceradeResultat = new ArrayList<>();
+    @JsonProperty("producerat_resultat")
+    public Collection<ProduceratResultat> produceratResultat = new ArrayList<>();
 
     public Yrkan() {} // Required for deserialization
 
@@ -60,8 +60,8 @@ public class Yrkan extends Livscykelhanterad {
     }
 
     @JsonIgnore
-    public void addProduceradeResultat(ProduceratResultat produceratResultat) {
-        this.produceradeResultat.add(produceratResultat);
+    public void addProduceratResultat(ProduceratResultat produceratResultat) {
+        this.produceratResultat.add(produceratResultat);
     }
 
     @Override
@@ -74,8 +74,8 @@ public class Yrkan extends Livscykelhanterad {
         if (null != beslut) {
             sb.append(beslut);
         }
-        sb.append(", producerade-resultat=[");
-        for (ProduceratResultat pr : produceradeResultat) {
+        sb.append(", producerat-resultat=[");
+        for (ProduceratResultat pr : produceratResultat) {
             sb.append(pr);
             sb.append(", ");
         }

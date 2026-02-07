@@ -72,7 +72,7 @@ public class ApplikationLifecycleTest {
         Ersattning nyErsattning = new Ersattning();
         nyErsattning.typ = Ersattning.Typ.HUNDBIDRAG;
         nyErsattning.belopp = 999.0;
-        roundTripped.addProduceradeResultat(nyErsattning);
+        roundTripped.addProduceratResultat(nyErsattning);
 
         String json2 = proxy.serializePretty(roundTripped);
 
@@ -118,24 +118,24 @@ public class ApplikationLifecycleTest {
         RattenTillPeriod rattenTillPeriod = new RattenTillPeriod();
         rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
         rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
-        yrkan.addProduceradeResultat(rattenTillPeriod);
+        yrkan.addProduceratResultat(rattenTillPeriod);
 
         Ersattning ersattning = new Ersattning();
         ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
         ersattning.belopp = 1000.0;
         ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkan.addProduceradeResultat(ersattning);
+        yrkan.addProduceratResultat(ersattning);
 
         Ersattning ersattning2 = new Ersattning();
         ersattning2.typ = Ersattning.Typ.HUNDBIDRAG;
         ersattning2.belopp = 500.0;
         ersattning2.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkan.addProduceradeResultat(ersattning2);
+        yrkan.addProduceratResultat(ersattning2);
 
         Intyg intyg = new Intyg();
         intyg.beskrivning = "Hittepå";
         intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkan.addProduceradeResultat(intyg);
+        yrkan.addProduceratResultat(intyg);
 
         Beslut beslut = new Beslut();
         beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
@@ -166,7 +166,7 @@ public class ApplikationLifecycleTest {
 
     private static List<Map<String, Object>> producedResults(Map<String, Object> root) {
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> results = (List<Map<String, Object>>) root.get("producerade_resultat");
+        List<Map<String, Object>> results = (List<Map<String, Object>>) root.get("producerat_resultat");
         return results == null ? List.of() : results;
     }
 
