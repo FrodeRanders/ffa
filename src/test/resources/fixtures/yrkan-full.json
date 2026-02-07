@@ -22,7 +22,7 @@
     },
     "roll" : "ffa:yrkande"
   },
-  "producerade_resultat" : [ {
+  "producerat_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",
     "@type": "se.fk.data.modell.v1.RattenTillPeriod",
     "ersattningstyp" : "HUNDBIDRAG",

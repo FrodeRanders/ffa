@@ -28,8 +28,8 @@
   rr:predicateObjectMap [ rr:predicate dcterms:description ; rr:objectMap [ rml:reference "description" ] ] ;
   rr:predicateObjectMap [ rr:predicate ffa:person ; rr:objectMap [ rml:reference "person.id" ; rr:termType rr:IRI ] ] ;
   rr:predicateObjectMap [ rr:predicate ffa:beslut ; rr:objectMap [ rml:reference "beslut.id" ; rr:termType rr:IRI ] ] ;
-  rr:predicateObjectMap [ rr:predicate ffa:producerade_resultat ; rr:objectMap [ rml:reference "producerade_resultat.id" ; rr:termType rr:IRI ] ] ;
-  rr:predicateObjectMap [ rr:predicate ffa:producerade_resultat ; rr:objectMap [ rml:reference "producerade_resultat[*].id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:producerat_resultat ; rr:objectMap [ rml:reference "producerat_resultat.id" ; rr:termType rr:IRI ] ] ;
+  rr:predicateObjectMap [ rr:predicate ffa:producerat_resultat ; rr:objectMap [ rml:reference "producerat_resultat[*].id" ; rr:termType rr:IRI ] ] ;
   rr:predicateObjectMap [ rr:predicate ffa:roll ; rr:objectMap [ rml:reference "roll.id" ; rr:termType rr:IRI ] ] ;
   rr:predicateObjectMap [ rr:predicate ffa:roll ; rr:objectMap [ rml:reference "roll[*].id" ; rr:termType rr:IRI ] ] .
 

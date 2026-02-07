@@ -365,7 +365,7 @@ enum Attributes @attributeRegistry {
     kravstyp             @attribute(datatype: STRING, name: "ffa:kravstyp", uri: "https://data.sfa.se/termer/1.0/kravstyp")
     beloppsperiod        @attribute(datatype: STRING, name: "ffa:beloppsperiod", uri: "https://data.sfa.se/termer/1.0/beloppsperiod")
 
-    producerade_resultat @attribute(datatype: RECORD, name: "ffa:producerade_resultat", uri: "https://data.sfa.se/termer/1.0/producerade_resultat")
+    producerat_resultat @attribute(datatype: RECORD, name: "ffa:producerat_resultat", uri: "https://data.sfa.se/termer/1.0/producerat_resultat")
     belopp               @attribute(datatype: RECORD, name: "ffa:belopp", uri: "https://data.sfa.se/termer/1.0/belopp")
     beslut               @attribute(datatype: RECORD, name: "ffa:beslut", uri: "https://data.sfa.se/termer/1.0/beslut")
     ersattning           @attribute(datatype: RECORD, name: "ffa:ersattning", uri: "https://data.sfa.se/termer/1.0/ersattning")
@@ -520,7 +520,7 @@ type Yrkan @record(attribute: yrkan) @template {
     person : Person
     beskrivning : String @use(attribute: description)
     beslut : Beslut
-    producerade_resultat : [ProduceratResultat]
+    producerat_resultat : [ProduceratResultat]
 }
 
 ##############  Query related ####################################

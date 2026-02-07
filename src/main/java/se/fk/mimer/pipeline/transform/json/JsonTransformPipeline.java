@@ -448,14 +448,14 @@ public final class JsonTransformPipeline {
             if (!props.isEmpty()) {
                 stmt.append("SET n += ").append(cypherMap(props)).append("\n");
             }
-            statements.add(stmt.toString());
+            statements.add(stmt.toString().trim() + ";\n");
 
             for (Relationship rel : relationships(node, id, prefixMap, mapping, nodesById)) {
                 String targetLabels = labelsToCypher(labelsById.getOrDefault(rel.targetId(), List.of()));
                 String relStmt = "MERGE (m:" + targetLabels + " {id: " + cypherValue(rel.targetId()) + "})\n" +
                         "MERGE (n {id: " + cypherValue(id) + "})\n" +
                         "MERGE (n)-[:" + backtick(rel.type()) + "]->(m)\n";
-                statements.add(relStmt);
+                statements.add(relStmt.trim() + ";\n");
             }
         }
         Files.writeString(out, String.join("\n", statements), StandardCharsets.UTF_8);
@@ -793,9 +793,13 @@ public final class JsonTransformPipeline {
             }
             case OBJECT -> {
                 JsonObject obj = value.asJsonObject();
+                if (obj.containsKey("@graph") && obj.get("@graph").getValueType() == JsonValue.ValueType.ARRAY) {
+                    collectNodes(obj.get("@graph"), nodesById, mapping, prefixMap, currentId);
+                    return;
+                }
                 String objId = nodeId(obj).orElse(null);
                 String nextId = objId != null ? objId : currentId;
-                if (objId != null) {
+                if (objId != null && obj.containsKey("@type")) {
                     nodesById.putIfAbsent(objId, obj);
                 }
                 for (Map.Entry<String, JsonValue> entry : obj.entrySet()) {
@@ -803,8 +807,12 @@ public final class JsonTransformPipeline {
                     if (key.startsWith("@")) {
                         continue;
                     }
+                    if (mapping.shouldFlatten(key)) {
+                        continue;
+                    }
                     if (mapping.shouldPromote(key)) {
                         ensurePromotedNodes(entry.getValue(), key, nextId, prefixMap, nodesById);
+                        continue;
                     }
                     collectNodes(entry.getValue(), nodesById, mapping, prefixMap, nextId);
                 }

@@ -266,7 +266,7 @@
       "@id": "https://data.sfa.se/termer/1.0/personnummer",
       "@type": "xsd:string"
     },
-    "producerade_resultat": "https://data.sfa.se/termer/1.0/producerade_resultat",
+    "producerat_resultat": "https://data.sfa.se/termer/1.0/producerat_resultat",
     "provenance": {
       "@id": "http://purl.org/dc/terms/provenance",
       "@type": "xsd:string"
