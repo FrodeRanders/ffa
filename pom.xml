@@ -18,7 +18,8 @@
         <maven.surefire.version>3.2.5</maven.surefire.version>
         <guid-gen.version>5.2.0</guid-gen.version>
         <jackson.version>3.0.3</jackson.version>
-        <jackson2.version>2.17.2</jackson2.version>
+        <jackson.annotations.version>2.20</jackson.annotations.version>
+        <jayway-version>3.0.0-SNAPSHOT</jayway-version> <!-- see comment below -->
         <titanium-jcs.version>2.0.0</titanium-jcs.version>
         <bcprov.version>1.79</bcprov.version>
         <bcpkix.version>1.79</bcpkix.version>
@@ -32,21 +33,22 @@
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-        <!--<dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson2.version}</version>
-        </dependency>-->
-        <!--<dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson2.version}</version>
-        </dependency>-->
-        <!--<dependency>
+
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>${jackson2.version}</version>
-        </dependency>-->
+            <version>${jackson.annotations.version}</version>
+        </dependency>
+
+        <!-- While we wait for an official release of Jayway that uses Jackson 3,
+             a fork was made at https://github.com/FrodeRanders/JsonPath.git
+             that produces a 3.0.0-SNAPSHOT build w/o Jackson 2. -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>${jayway-version}</version>
+            <scope>compile</scope>
+        </dependency>
 
         <dependency>
             <groupId>com.apicatalog</groupId>

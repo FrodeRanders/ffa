@@ -3,7 +3,10 @@ package se.fk.mimer.klient;
 import se.fk.data.modell.json.DeserializationSnooper;
 import se.fk.data.modell.json.DigestUtils;
 import se.fk.data.modell.json.SignatureUtils;
+import se.fk.mimer.migration.MigrationEngine;
+import se.fk.mimer.migration.MimerMigrations;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -23,6 +26,8 @@ public final class MimerProxy {
 
     private static final ObjectMapper DEFAULT_MAPPER = buildMapper();
     private static final MimerProxy DEFAULT_INSTANCE = new MimerProxy(DEFAULT_MAPPER);
+
+    private static final MigrationEngine migrationEngine = new MigrationEngine();
 
     private final ObjectMapper mapper;
 
@@ -385,7 +390,15 @@ public final class MimerProxy {
             ObjectMapper mapper,
             Class<T> type
     ) throws JacksonException {
-        return mapper.readValue(jsonBytes, type);
+        // Possibly migrate historic JSON to current format
+        JsonNode root = mapper.readTree(jsonBytes);
+        MigrationEngine.Result result = migrationEngine.applyUpToCurrent(root, MimerMigrations.all(), MimerMigrations.CURRENT);
+
+        // Log audit information (currently just dump to STDOUT)
+        result.audit.forEach(System.out::println);
+
+        // Bind after migration
+        return mapper.treeToValue(result.root, type);
     }
 
     public <T> T deserialize(
@@ -400,7 +413,15 @@ public final class MimerProxy {
             ObjectMapper mapper,
             Class<T> type
     ) throws JacksonException {
-        return mapper.readValue(json, type);
+        // Possibly migrate historic JSON to current format
+        JsonNode root = mapper.readTree(json);
+        MigrationEngine.Result result = migrationEngine.applyUpToCurrent(root, MimerMigrations.all(), MimerMigrations.CURRENT);
+
+        // Log audit information (currently just dump to STDOUT)
+        result.audit.forEach(System.out::println);
+
+        // Bind after migration
+        return mapper.treeToValue(result.root, type);
     }
 
     public <T> T deserialize(
