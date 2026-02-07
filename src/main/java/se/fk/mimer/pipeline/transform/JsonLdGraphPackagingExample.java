@@ -1,4 +1,4 @@
-package se.fk.mimer.receiver;
+package se.fk.mimer.pipeline.transform;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonWriter;

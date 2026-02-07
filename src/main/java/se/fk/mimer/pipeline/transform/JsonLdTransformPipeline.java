@@ -1,4 +1,4 @@
-package se.fk.mimer.receiver;
+package se.fk.mimer.pipeline.transform;
 
 import com.apicatalog.jsonld.JsonLd;
 import com.apicatalog.jsonld.JsonLdError;
@@ -19,6 +19,7 @@ import jakarta.json.JsonValue;
 import jakarta.json.JsonWriter;
 import jakarta.json.JsonWriterFactory;
 import jakarta.json.stream.JsonGenerator;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -56,16 +57,22 @@ public final class JsonLdTransformPipeline {
         Path output = parsed.output().orElse(Path.of("target/ffa-out.ttl"));
         Path cypherOut = parsed.cypherOut().orElse(Path.of("target/ffa-out.cypher"));
 
+        Path workDir = output.toAbsolutePath().getParent();
+        if (workDir != null) {
+            Files.createDirectories(workDir);
+        }
+
+        if (parsed.migrate()) {
+            RawJsonMigrator.Result migrated = new RawJsonMigrator(new ObjectMapper())
+                    .migrateIfNeeded(rawJson, workDir != null ? workDir : Path.of("target"));
+            rawJson = migrated.path();
+        }
+
         JsonArray expanded = expandJsonLd(rawJson, context);
         if (DEFAULT_SDL.toFile().exists()) {
             expanded = JsonLdTypeMapper.replaceTypes(expanded, DEFAULT_SDL);
         }
         expanded = JsonLdValueTypeNormalizer.ensureStringTypes(expanded);
-
-        Path workDir = output.toAbsolutePath().getParent();
-        if (workDir != null) {
-            Files.createDirectories(workDir);
-        }
 
         Path expandedFile = output.resolveSibling("expanded.json");
         writePrettyJson(expanded, expandedFile);
@@ -91,7 +98,7 @@ public final class JsonLdTransformPipeline {
     private static void usage() {
         System.err.println("Usage: JsonLdTransformPipeline <raw-json> " +
                 "[--context path] [--frame path] [--mapping path] [--out path] " +
-                "[--import neo4j|cypher|none] [--cypher-out path] [--neo4j-opts key=value,...]");
+                "[--import neo4j|cypher|none] [--cypher-out path] [--neo4j-opts key=value,...] [--no-migrate]");
     }
 
     private static JsonArray expandJsonLd(Path jsonFile, Path contextFile) throws Exception {
@@ -604,7 +611,8 @@ public final class JsonLdTransformPipeline {
             Optional<Path> output,
             Optional<Path> cypherOut,
             ImportMode importMode,
-            Map<String, String> neo4jOpts
+            Map<String, String> neo4jOpts,
+            boolean migrate
     ) {
         static Args parse(String[] args) {
             Path rawJson = Path.of(args[0]);
@@ -615,6 +623,7 @@ public final class JsonLdTransformPipeline {
             Optional<Path> cypherOut = Optional.empty();
             ImportMode importMode = ImportMode.NEO4J;
             Map<String, String> neo4jOpts = new LinkedHashMap<>();
+            boolean migrate = true;
 
             for (int i = 1; i < args.length; i++) {
                 String arg = args[i];
@@ -626,10 +635,11 @@ public final class JsonLdTransformPipeline {
                     case "--cypher-out" -> cypherOut = Optional.of(Path.of(args[++i]));
                     case "--import" -> importMode = ImportMode.valueOf(args[++i].toUpperCase(Locale.ROOT));
                     case "--neo4j-opts" -> neo4jOpts.putAll(parseOptions(args[++i]));
+                    case "--no-migrate" -> migrate = false;
                     default -> throw new IllegalArgumentException("Unknown arg: " + arg);
                 }
             }
-            return new Args(rawJson, context, frame, mapping, output, cypherOut, importMode, neo4jOpts);
+            return new Args(rawJson, context, frame, mapping, output, cypherOut, importMode, neo4jOpts, migrate);
         }
     }
 

@@ -1,4 +1,4 @@
-package se.fk.mimer.receiver;
+package se.fk.mimer.pipeline.transform;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;

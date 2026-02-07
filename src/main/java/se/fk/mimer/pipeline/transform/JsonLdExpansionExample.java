@@ -1,4 +1,4 @@
-package se.fk.mimer.receiver;
+package se.fk.mimer.pipeline.transform;
 
 import com.apicatalog.jsonld.JsonLd;
 import com.apicatalog.jsonld.JsonLdError;
