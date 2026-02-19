@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class JsonLdExpansionExampleTest {
     @Test
     void expandsWithContextAndFindsKnownTerms() throws Exception {
-        Path rawJson = Path.of("src/test/resources/fixtures/yrkan-full.json");
+        Path rawJson = Path.of("src/test/resources/fixtures/yrkande-full.json");
         Path context = Path.of("src/main/resources/context/ffa-1.0.jsonld");
 
         JsonArray expanded = JsonLdExpansionExample.expandWithLocalContext(rawJson, context);

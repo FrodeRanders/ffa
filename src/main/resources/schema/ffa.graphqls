@@ -376,7 +376,7 @@ enum Attributes @attributeRegistry {
     period               @attribute(datatype: RECORD, name: "ffa:period", uri: "https://data.sfa.se/termer/1.0/period")
     ratten_till_period   @attribute(datatype: RECORD, name: "ffa:ratten_till_period", uri: "https://data.sfa.se/termer/1.0/ratten_till_period")
     bedomd_arbetsformaga @attribute(datatype: RECORD, name: "ffa:bedomd_arbetsformaga", uri: "https://data.sfa.se/termer/1.0/bedomd_arbetsformaga")
-    yrkan                @attribute(datatype: RECORD, name: "ffa:yrkan", uri: "https://data.sfa.se/termer/1.0/yrkan")
+    yrkande              @attribute(datatype: RECORD, name: "ffa:yrkande", uri: "https://data.sfa.se/termer/1.0/yrkande")
     person               @attribute(datatype: RECORD, name: "ffa:person", uri: "https://data.sfa.se/termer/1.0/person")
 
     raw_payload          @attribute(datatype: DATA,   name: "ffa:raw_payload", uri: "https://data.sfa.se/termer/1.0/raw_payload")
@@ -516,7 +516,7 @@ type RattenTillPeriod @record(attribute: ratten_till_period) {
 
 union ProduceratResultat = Ersattning | Krav | Intyg | BedomdArbetsformaga | RattenTillPeriod
 
-type Yrkan @record(attribute: yrkan) @template {
+type Yrkande @record(attribute: yrkande) @template {
     person : Person
     beskrivning : String @use(attribute: description)
     beslut : Beslut
@@ -547,9 +547,9 @@ input Filter {
 
 ##############  Queries ###########################################
 type Query {
-    yrkan(id : UnitIdentification!) : Yrkan
-    yrkanRaw(id : YrkanIdentification!) : Bytes
-    yrkanden(filter: Filter!) : [Yrkan]
+    yrkande(id : UnitIdentification!) : Yrkande
+    yrkandeRaw(id : YrkanIdentification!) : Bytes
+    yrkanden(filter: Filter!) : [Yrkande]
     yrkandenRaw(filter: Filter!) : Bytes
 
     unitRaw(id : UnitIdentification!) : Bytes

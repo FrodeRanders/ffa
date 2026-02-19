@@ -345,6 +345,6 @@
       "@id": "https://data.sfa.se/termer/1.0/valuta",
       "@type": "@id"
     },
-    "yrkan": "https://data.sfa.se/termer/1.0/yrkan"
+    "yrkande": "https://data.sfa.se/termer/1.0/yrkande"
   }
 }

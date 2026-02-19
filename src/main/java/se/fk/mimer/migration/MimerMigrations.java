@@ -21,17 +21,17 @@ public final class MimerMigrations {
         List<Migration> migrations = new ArrayList<>();
 
         // Illustrative first migration step
-        Migration v0to1 = new Migration("kundbehov->yrkan", 0, 1, List.of(
+        Migration v0to1 = new Migration("kundbehov->yrkande", 0, 1, List.of(
                 // Run-once root updates: selector "$" matches root path "$"
                 new Rule("set @context", "$", (root, match, audit) -> {
                     if (root instanceof ObjectNode obj) {
-                        obj.put("@context", "https://data.fk.se/kontext/hundbidrag/yrkan/1.0");
+                        obj.put("@context", "https://data.fk.se/kontext/hundbidrag/yrkande/1.0");
                         audit.add(new AuditEntry("set @context", "$", match.matchedPath, "/@context", "set", "updated @context"));
                     }
                 }),
                 new Rule("set @type", "$", (root, match, audit) -> {
                     if (root instanceof ObjectNode obj) {
-                        obj.put("@type", "se.fk.hundbidrag.modell.Yrkan");
+                        obj.put("@type", "se.fk.hundbidrag.modell.Yrkande");
                         audit.add(new AuditEntry("set @type", "$", match.matchedPath, "/@type", "set", "updated @type"));
                     }
                 }),

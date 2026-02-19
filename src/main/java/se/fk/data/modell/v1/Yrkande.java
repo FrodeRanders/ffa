@@ -21,15 +21,15 @@ import java.util.Collection;
  *   @Accessors(chain = true, fluent = true)
  *
  * Use:
- *   Yrkan y = new Yrkan("id-123")
+ *   Yrkande y = new Yrkande("id-123")
  *       .person(insuredPerson)
  *       .beskrivning("abc def ghi ...");
  * ----------------------------------------------------
  */
 
-@Context("https://data.fk.se/kontext/std/yrkan/1.0")
-public class Yrkan extends Livscykelhanterad {
-    @Som(roll = "ffa:yrkande")
+@Context("https://data.fk.se/kontext/std/yrkande/1.0")
+public class Yrkande extends Livscykelhanterad {
+    @Som(roll = "ffa:yrkanden")
     @JsonProperty("person")
     public Person person;
 
@@ -42,9 +42,9 @@ public class Yrkan extends Livscykelhanterad {
     @JsonProperty("producerat_resultat")
     public Collection<ProduceratResultat> produceratResultat = new ArrayList<>();
 
-    public Yrkan() {} // Required for deserialization
+    public Yrkande() {} // Required for deserialization
 
-    public Yrkan(String beskrivning) {
+    public Yrkande(String beskrivning) {
         super(null);
         this.beskrivning = beskrivning;
     }
@@ -66,7 +66,7 @@ public class Yrkan extends Livscykelhanterad {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Yrkan{");
+        StringBuilder sb = new StringBuilder("Yrkande{");
         sb.append(super.toString());
         sb.append(", beskrivning='").append(beskrivning).append('\'');
         sb.append(", person=").append(person);

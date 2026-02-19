@@ -39,8 +39,8 @@ ffa:Ontology a owl:Ontology .
 <https://data.sfa.se/termer/1.0/ratten_till_period> a owl:Class ;
   rdfs:label "RattenTillPeriod" .
 
-<https://data.sfa.se/termer/1.0/yrkan> a owl:Class ;
-  rdfs:label "Yrkan" .
+<https://data.sfa.se/termer/1.0/yrkande> a owl:Class ;
+  rdfs:label "Yrkande" .
 
 <https://data.sfa.se/termer/1.0/BeloppsPeriod> a owl:Class ;
   rdfs:label "BeloppsPeriod" .
@@ -216,7 +216,7 @@ ffa:Ontology a owl:Ontology .
 
 <https://data.sfa.se/termer/1.0/beslut> a owl:ObjectProperty ;
   rdfs:label "beslut" ;
-  rdfs:domain <https://data.sfa.se/termer/1.0/yrkan> ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/yrkande> ;
   rdfs:range <https://data.sfa.se/termer/1.0/beslut>  .
 
 <https://data.sfa.se/termer/1.0/beslutsfattare> a owl:DatatypeProperty ;
@@ -277,7 +277,7 @@ ffa:Ontology a owl:Ontology .
 
 <https://data.sfa.se/termer/1.0/person> a owl:ObjectProperty ;
   rdfs:label "person" ;
-  rdfs:domain <https://data.sfa.se/termer/1.0/yrkan> ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/yrkande> ;
   rdfs:range <https://data.sfa.se/termer/1.0/person>  .
 
 <https://data.sfa.se/termer/1.0/personnummer> a owl:DatatypeProperty ;
@@ -287,7 +287,7 @@ ffa:Ontology a owl:Ontology .
 
 <https://data.sfa.se/termer/1.0/producerat_resultat> a owl:ObjectProperty ;
   rdfs:label "producerat_resultat" ;
-  rdfs:domain <https://data.sfa.se/termer/1.0/yrkan> ;
+  rdfs:domain <https://data.sfa.se/termer/1.0/yrkande> ;
   rdfs:range <https://data.sfa.se/termer/1.0/ProduceratResultat>  .
 
 <https://data.sfa.se/termer/1.0/skattestatus> a owl:ObjectProperty ;

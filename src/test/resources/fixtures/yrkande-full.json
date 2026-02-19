@@ -1,6 +1,6 @@
 {
-  "@context" : "https://data.fk.se/kontext/hundbidrag/yrkan/1.0",
-  "@type": "se.fk.hundbidrag.modell.Yrkan",
+  "@context" : "https://data.fk.se/kontext/hundbidrag/yrkande/1.0",
+  "@type": "se.fk.hundbidrag.modell.Yrkande",
   "__attention" : true,
   "beskrivning" : "Hundutställning (inkl. bad, tork och fön)",
   "beslut" : {
@@ -20,7 +20,7 @@
         "typ" : "pii:personnummer"
       }
     },
-    "roll" : "ffa:yrkande"
+    "roll" : "ffa:yrkanden"
   },
   "producerat_resultat" : [ {
     "@context" : "https://data.fk.se/kontext/std/ratten-till-period/1.0",

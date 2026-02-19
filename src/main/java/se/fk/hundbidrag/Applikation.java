@@ -4,7 +4,7 @@ import com.fasterxml.uuid.Generators;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.fk.data.modell.v1.*;
-import se.fk.hundbidrag.modell.YrkanOmHundbidrag;
+import se.fk.hundbidrag.modell.YrkandeOmHundbidrag;
 import se.fk.mimer.klient.MimerProxy;
 import tools.jackson.core.JacksonException;
 
@@ -29,12 +29,12 @@ public class Applikation {
         // Använd FFAs objektmodell för affärslogik i specifik förmånskontext
         // -------------------------------------------------------------------
 
-        // Efter etablering av yrkan och i samband med initiering av handläggningsflöde
-        YrkanOmHundbidrag yrkan = new YrkanOmHundbidrag("Hundutställning (inkl. bad)","Collie");
+        // Efter etablering av yrkande och i samband med initiering av handläggningsflöde
+        YrkandeOmHundbidrag yrkande = new YrkandeOmHundbidrag("Hundutställning (inkl. bad)","Collie");
         {
             FysiskPerson person = new FysiskPerson("19121212-1212");
 
-            yrkan.setPerson(person);
+            yrkande.setPerson(person);
         }
 
         // Efter bedömning av rätten till...
@@ -43,7 +43,7 @@ public class Applikation {
             rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
             rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
 
-            yrkan.addProduceratResultat(rattenTillPeriod);
+            yrkande.addProduceratResultat(rattenTillPeriod);
         }
 
         // Efter beräkning...
@@ -53,7 +53,7 @@ public class Applikation {
             ersattning.belopp = 1000.0;
             ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            yrkan.addProduceratResultat(ersattning);
+            yrkande.addProduceratResultat(ersattning);
         }
         {
             Ersattning ersattning = new Ersattning();
@@ -61,7 +61,7 @@ public class Applikation {
             ersattning.belopp = 500.0;
             ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            yrkan.addProduceratResultat(ersattning);
+            yrkande.addProduceratResultat(ersattning);
         }
 
         // I samband med beslut, så utfärdar vi ett "Hittepå"-intyg
@@ -70,13 +70,13 @@ public class Applikation {
             intyg.beskrivning = "Hittepå";
             intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
 
-            yrkan.addProduceratResultat(intyg);
+            yrkande.addProduceratResultat(intyg);
         }
         {
             Beslut beslut = new Beslut();
             beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
 
-            yrkan.setBeslut(beslut);
+            yrkande.setBeslut(beslut);
         }
 
         // -------------------------------------------------------------------
@@ -89,39 +89,39 @@ public class Applikation {
             MimerProxy proxy = MimerProxy.defaultInstance();
 
             // Initial serialize to JSON
-            String jsonLD = proxy.serializePretty(yrkan);
+            String jsonLD = proxy.serializePretty(yrkande);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Subsequent deserialize from JSON
-            YrkanOmHundbidrag aaterlaestYrkan = proxy.deserialize(jsonLD, YrkanOmHundbidrag.class);
-            log.debug("JSON -> Object:\n{}", aaterlaestYrkan);
+            YrkandeOmHundbidrag aaterlaestYrkande = proxy.deserialize(jsonLD, YrkandeOmHundbidrag.class);
+            log.debug("JSON -> Object:\n{}", aaterlaestYrkande);
 
             // Modify deserialized objects (in order to exercise lifecycle handling/versioning)
-            aaterlaestYrkan.beskrivning = "Hundutställning (inkl. bad och tork)";
+            aaterlaestYrkande.beskrivning = "Hundutställning (inkl. bad och tork)";
             {
                 Ersattning ersattning = new Ersattning();
                 ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
                 ersattning.belopp = 100.0;
 
-                aaterlaestYrkan.addProduceratResultat(ersattning);
+                aaterlaestYrkande.addProduceratResultat(ersattning);
             }
 
             // Re-serialize to JSON
-            jsonLD = proxy.serializePretty(aaterlaestYrkan);
+            jsonLD = proxy.serializePretty(aaterlaestYrkande);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
             // Re-modify, operating on same objects (no serializing+deserializing involved)
-            aaterlaestYrkan.beskrivning = "Hundutställning (inkl. bad, tork och fön)";
+            aaterlaestYrkande.beskrivning = "Hundutställning (inkl. bad, tork och fön)";
             {
                 Ersattning ersattning = new Ersattning();
                 ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
                 ersattning.belopp = 200.0;
 
-                aaterlaestYrkan.addProduceratResultat(ersattning);
+                aaterlaestYrkande.addProduceratResultat(ersattning);
             }
 
             // Re-re-serialize to JSON
-            jsonLD = proxy.serializePretty(aaterlaestYrkan);
+            jsonLD = proxy.serializePretty(aaterlaestYrkande);
             log.debug("Object -> JSON:\n{}", jsonLD);
 
       } catch (JacksonException e) {

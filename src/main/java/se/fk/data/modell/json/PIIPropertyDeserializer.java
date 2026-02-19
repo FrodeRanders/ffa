@@ -28,7 +28,7 @@ public class PIIPropertyDeserializer extends ValueDeserializer<Object> {
         /*
          * This is triggered when a bean stores instances of specialised classes
          * instead of the base class, e.g. having an abstract 'Person' in
-         * Yrkan but assigning FysiskPerson or JuridiskPerson as value.
+         * Yrkande but assigning FysiskPerson or JuridiskPerson as value.
          *
          * During deserialisation, Jackson discovers this fact; it will need
          * information about what exact class to instantiate and that information

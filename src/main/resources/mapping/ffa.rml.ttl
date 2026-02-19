@@ -22,7 +22,7 @@
   rml:logicalSource [
     rml:source "framed.json" ;
     rml:referenceFormulation ql:JSONPath ;
-    rml:iterator "$['@graph'][?(@['@type']=='yrkan')]" ;
+    rml:iterator "$['@graph'][?(@['@type']=='yrkande')]" ;
   ] ;
   rr:subjectMap [ rml:reference "id" ; rr:termType rr:IRI ] ;
   rr:predicateObjectMap [ rr:predicate dcterms:description ; rr:objectMap [ rml:reference "description" ] ] ;

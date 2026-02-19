@@ -38,7 +38,7 @@ public class PIIPropertySerializer extends ValueSerializer<Object> {
         /*
          * This is triggered when a bean stores instances of specialised classes
          * instead of the base class, e.g. having an abstract 'Person' in
-         * Yrkan but assigning FysiskPerson or JuridiskPerson as value.
+         * Yrkande but assigning FysiskPerson or JuridiskPerson as value.
          *
          * During serialisation, Jackson discovers this fact and correctly
          * understands that this will be a problem upon deserialisation, since

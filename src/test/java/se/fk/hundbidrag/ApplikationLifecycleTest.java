@@ -9,7 +9,7 @@ import se.fk.data.modell.v1.FysiskPerson;
 import se.fk.data.modell.v1.Intyg;
 import se.fk.data.modell.v1.Period;
 import se.fk.data.modell.v1.RattenTillPeriod;
-import se.fk.hundbidrag.modell.YrkanOmHundbidrag;
+import se.fk.hundbidrag.modell.YrkandeOmHundbidrag;
 import se.fk.mimer.klient.MimerProxy;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -28,15 +28,15 @@ public class ApplikationLifecycleTest {
 
     @Test
     void serialize_incrementsVersionAndSetsAttentionOnFirstSerialize() {
-        log.info("*** Testcase *** Serialize new Yrkan and verify version increment plus __attention flag");
+        log.info("*** Testcase *** Serialize new Yrkande and verify version increment plus __attention flag");
         MimerProxy proxy = MimerProxy.defaultInstance();
-        YrkanOmHundbidrag yrkan = buildDemoYrkan();
+        YrkandeOmHundbidrag yrkande = buildDemoYrkande();
 
-        assertEquals(0, yrkan.version);
+        assertEquals(0, yrkande.version);
 
-        String json = proxy.serializePretty(yrkan);
+        String json = proxy.serializePretty(yrkande);
 
-        assertEquals(1, yrkan.version);
+        assertEquals(1, yrkande.version);
         Map<String, Object> root = readJson(json);
         assertEquals(1, asInt(root.get("version")));
         assertEquals(Boolean.TRUE, root.get("__attention"));
@@ -58,12 +58,12 @@ public class ApplikationLifecycleTest {
     void serializeDeserializeModify_stepsVersionAndFlagsAttention() {
         log.info("*** Testcase *** Serialize, deserialize, modify, re-serialize and verify version/attention behavior");
         MimerProxy proxy = MimerProxy.defaultInstance();
-        YrkanOmHundbidrag yrkan = buildDemoYrkan();
+        YrkandeOmHundbidrag yrkande = buildDemoYrkande();
 
-        String json1 = proxy.serializePretty(yrkan);
-        assertEquals(1, yrkan.version);
+        String json1 = proxy.serializePretty(yrkande);
+        assertEquals(1, yrkande.version);
 
-        YrkanOmHundbidrag roundTripped = proxy.deserialize(json1, YrkanOmHundbidrag.class);
+        YrkandeOmHundbidrag roundTripped = proxy.deserialize(json1, YrkandeOmHundbidrag.class);
         assertEquals(1, roundTripped.version);
         assertEquals("Hundutställning (inkl. bad)", roundTripped.beskrivning);
 
@@ -92,15 +92,15 @@ public class ApplikationLifecycleTest {
     void serializeTwiceWithoutChanges_doesNotBumpVersionOrAttention() {
         log.info("*** Testcase *** Serialize twice without changes and ensure version/attention stay stable");
         MimerProxy proxy = MimerProxy.defaultInstance();
-        YrkanOmHundbidrag yrkan = buildDemoYrkan();
+        YrkandeOmHundbidrag yrkande = buildDemoYrkande();
 
-        String json1 = proxy.serializePretty(yrkan);
-        assertEquals(1, yrkan.version);
+        String json1 = proxy.serializePretty(yrkande);
+        assertEquals(1, yrkande.version);
         Map<String, Object> first = readJson(json1);
         assertEquals(Boolean.TRUE, first.get("__attention"));
 
-        String json2 = proxy.serializePretty(yrkan);
-        assertEquals(1, yrkan.version);
+        String json2 = proxy.serializePretty(yrkande);
+        assertEquals(1, yrkande.version);
         Map<String, Object> second = readJson(json2);
         assertEquals(1, asInt(second.get("version")));
         assertFalse(second.containsKey("__attention"));
@@ -110,37 +110,37 @@ public class ApplikationLifecycleTest {
         }
     }
 
-    private static YrkanOmHundbidrag buildDemoYrkan() {
-        YrkanOmHundbidrag yrkan = new YrkanOmHundbidrag("Hundutställning (inkl. bad)", "Collie");
-        yrkan.setPerson(new FysiskPerson("19121212-1212"));
+    private static YrkandeOmHundbidrag buildDemoYrkande() {
+        YrkandeOmHundbidrag yrkande = new YrkandeOmHundbidrag("Hundutställning (inkl. bad)", "Collie");
+        yrkande.setPerson(new FysiskPerson("19121212-1212"));
 
         RattenTillPeriod rattenTillPeriod = new RattenTillPeriod();
         rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
         rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
-        yrkan.addProduceratResultat(rattenTillPeriod);
+        yrkande.addProduceratResultat(rattenTillPeriod);
 
         Ersattning ersattning = new Ersattning();
         ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
         ersattning.belopp = 1000.0;
         ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkan.addProduceratResultat(ersattning);
+        yrkande.addProduceratResultat(ersattning);
 
         Ersattning ersattning2 = new Ersattning();
         ersattning2.typ = Ersattning.Typ.HUNDBIDRAG;
         ersattning2.belopp = 500.0;
         ersattning2.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkan.addProduceratResultat(ersattning2);
+        yrkande.addProduceratResultat(ersattning2);
 
         Intyg intyg = new Intyg();
         intyg.beskrivning = "Hittepå";
         intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkan.addProduceratResultat(intyg);
+        yrkande.addProduceratResultat(intyg);
 
         Beslut beslut = new Beslut();
         beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
-        yrkan.setBeslut(beslut);
+        yrkande.setBeslut(beslut);
 
-        return yrkan;
+        return yrkande;
     }
 
     private static Map<String, Object> readJson(String json) {
