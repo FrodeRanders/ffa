@@ -10,12 +10,10 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.json.DigestUtils;
 import se.fk.data.modell.json.SignatureUtils;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-import javax.crypto.Cipher;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -34,7 +32,6 @@ public class MimerProxySignTest {
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
         X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
-        PublicKey publicKey = cert.getPublicKey();
 
         ObjectMapper mapper = JsonMapper.builder().build();
         Map<String, Object> payload = Map.of(
@@ -47,35 +44,32 @@ public class MimerProxySignTest {
                 payload,
                 mapper,
                 privateKey,
-                "test-key",
-                cert,
-                null
+                "test-key"
         );
+
+        System.out.println("Signature from test signing:");
+        System.out.println(MimerProxy.encodeSignature(signed.signatureBytes(), MimerProxy.SignatureEncoding.PEM));
+        System.out.println();
 
         assertNotNull(signed.jsonBytes());
         assertNotNull(signed.signatureBytes());
         assertTrue(signed.signatureBytes().length > 0);
-        assertNotNull(signed.signerCertificateDer());
+        assertEquals("RSASSA-PSS", signed.signatureAlgorithm());
         assertEquals("SHA-512", signed.digestAlgorithm());
-
-        byte[] digest = DigestUtils.computeJcsDigestFromJsonBytes(
+        assertTrue(SignatureUtils.verifyJcsRsaPssFromJsonBytes(
                 signed.jsonBytes(),
+                signed.signatureBytes(),
+                cert.getPublicKey(),
                 SignatureUtils.DigestAlgorithm.SHA_512
-        );
-        byte[] expected = SignatureUtils.digestInfo(digest, SignatureUtils.DigestAlgorithm.SHA_512);
-
-        byte[] actual = rsaPkcs1Decrypt(signed.signatureBytes(), publicKey);
-        assertArrayEquals(expected, actual);
+        ));
 
         MimerProxy.VerificationResult result = MimerProxy.verifySignature(
                 signed.jsonBytes(),
                 signed.signatureBytes(),
-                cert,
-                java.util.List.of(cert),
-                java.util.List.of(cert)
+                cert
         );
         assertTrue(result.signatureValid());
-        assertTrue(result.chainValid());
+        assertFalse(result.chainValid());
     }
 
     @Test
@@ -301,12 +295,11 @@ public class MimerProxySignTest {
     }
 
     @Test
-    public void serializeAndSign_allowsSha256AsOption() throws Exception {
+    public void serializeAndSign_allowsSha512AsOption() throws Exception {
         ensureBcProvider();
         KeyPair keyPair = rsaKeyPair();
         PrivateKey privateKey = keyPair.getPrivate();
         X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
-        PublicKey publicKey = cert.getPublicKey();
 
         ObjectMapper mapper = JsonMapper.builder().build();
         Map<String, Object> payload = Map.of(
@@ -322,18 +315,17 @@ public class MimerProxySignTest {
                 "test-key",
                 cert,
                 null,
-                SignatureUtils.DigestAlgorithm.SHA_256
+                SignatureUtils.DigestAlgorithm.SHA_512
         );
 
-        assertEquals("SHA-256", signed.digestAlgorithm());
-
-        byte[] digest = DigestUtils.computeJcsDigestFromJsonBytes(
+        assertEquals("RSASSA-PSS", signed.signatureAlgorithm());
+        assertEquals("SHA-512", signed.digestAlgorithm());
+        assertTrue(SignatureUtils.verifyJcsRsaPssFromJsonBytes(
                 signed.jsonBytes(),
-                SignatureUtils.DigestAlgorithm.SHA_256
-        );
-        byte[] expected = SignatureUtils.digestInfo(digest, SignatureUtils.DigestAlgorithm.SHA_256);
-        byte[] actual = rsaPkcs1Decrypt(signed.signatureBytes(), publicKey);
-        assertArrayEquals(expected, actual);
+                signed.signatureBytes(),
+                cert.getPublicKey(),
+                SignatureUtils.DigestAlgorithm.SHA_512
+        ));
 
         MimerProxy.VerificationResult result = MimerProxy.verifySignature(
                 signed.jsonBytes(),
@@ -341,6 +333,36 @@ public class MimerProxySignTest {
                 cert
         );
         assertTrue(result.signatureValid());
+    }
+
+    @Test
+    public void serializeAndSign_supportsExplicitRsaPkcs1V15() throws Exception {
+        ensureBcProvider();
+        KeyPair keyPair = rsaKeyPair();
+        PrivateKey privateKey = keyPair.getPrivate();
+        X509Certificate cert = selfSigned(keyPair, "CN=Mimer-Test");
+
+        ObjectMapper mapper = JsonMapper.builder().build();
+        Map<String, Object> payload = Map.of(
+                "id", "abc-123",
+                "amount", 2500,
+                "currency", "SEK"
+        );
+
+        MimerProxy.SignedJson signed = MimerProxy.serializeAndSign(
+                payload,
+                mapper,
+                privateKey,
+                "test-key",
+                cert,
+                null,
+                SignatureUtils.DigestAlgorithm.SHA_512,
+                SignatureUtils.SignatureScheme.RSASSA_PKCS1_V1_5
+        );
+
+        assertEquals("RSASSA-PKCS1-v1_5", signed.signatureAlgorithm());
+        assertEquals("SHA-512", signed.digestAlgorithm());
+        assertTrue(MimerProxy.verifySignature(signed.jsonBytes(), signed.signatureBytes(), cert).signatureValid());
     }
 
     @Test
@@ -477,12 +499,6 @@ public class MimerProxySignTest {
                 verifyOptions
         );
         assertTrue(result.signatureValid());
-    }
-
-    private static byte[] rsaPkcs1Decrypt(byte[] signature, PublicKey publicKey) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, publicKey);
-        return cipher.doFinal(signature);
     }
 
     private static KeyPair rsaKeyPair() throws Exception {

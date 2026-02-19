@@ -21,7 +21,7 @@ import static se.fk.data.modell.json.Modifiers.getModules;
 
 public final class MimerProxy {
     private static final SignatureUtils.DigestAlgorithm DEFAULT_DIGEST_ALGORITHM = SignatureUtils.DigestAlgorithm.SHA_512;
-    private static final SignatureUtils.SignatureScheme DEFAULT_SIGNATURE_SCHEME = SignatureUtils.SignatureScheme.RSASSA_PKCS1_V1_5;
+    private static final SignatureUtils.SignatureScheme DEFAULT_SIGNATURE_SCHEME = SignatureUtils.SignatureScheme.RSASSA_PSS;
     private static final String DEFAULT_CANONICALIZATION = "JCS";
 
     private static final ObjectMapper DEFAULT_MAPPER = buildMapper();

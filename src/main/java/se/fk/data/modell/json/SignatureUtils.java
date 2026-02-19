@@ -172,7 +172,7 @@ public final class SignatureUtils {
             DigestAlgorithm digestAlgorithm
     ) {
         SignatureScheme effectiveScheme = signatureScheme == null
-                ? SignatureScheme.RSASSA_PKCS1_V1_5
+                ? SignatureScheme.RSASSA_PSS
                 : signatureScheme;
         DigestAlgorithm effectiveDigest = digestAlgorithm == null ? DigestAlgorithm.SHA_512 : digestAlgorithm;
         return switch (effectiveScheme) {
