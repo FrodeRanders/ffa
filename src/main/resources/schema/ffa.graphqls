@@ -59,6 +59,7 @@ are used to define units.
 directive @use(attribute: Attributes!) on FIELD_DEFINITION
 directive @template(name: String) on OBJECT
 directive @record(attribute: Attributes!) on OBJECT
+directive @ipto(operation: String!) on FIELD_DEFINITION
 
 ##############  basic data types ############################
 enum DataTypes @datatypeRegistry {
@@ -225,7 +226,7 @@ enum Attributes @attributeRegistry {
     "This property is intended to be used with non-literal values. This property is an inverse property of Replaces."
     isReplacedBy @attribute(datatype: STRING, array: true,
         name: "dcterms:isReplacedBy", uri: "http://purl.org/dc/terms/isReplacedBy",
-        description: "A related resource that supplants, displaces, or supersedes by the described resource.")
+        description: "A related resource that supplants, displaces, or supersedes the described resource.")
 
     "This property is intended to be used with non-literal values. This property is an inverse property of Requires."
     isRequiredBy @attribute(datatype: STRING, array: true,
@@ -365,7 +366,7 @@ enum Attributes @attributeRegistry {
     kravstyp             @attribute(datatype: STRING, name: "ffa:kravstyp", uri: "https://data.sfa.se/termer/1.0/kravstyp")
     beloppsperiod        @attribute(datatype: STRING, name: "ffa:beloppsperiod", uri: "https://data.sfa.se/termer/1.0/beloppsperiod")
 
-    producerat_resultat @attribute(datatype: RECORD, name: "ffa:producerat_resultat", uri: "https://data.sfa.se/termer/1.0/producerat_resultat")
+    producerade_resultat @attribute(datatype: RECORD, name: "ffa:producerade_resultat", uri: "https://data.sfa.se/termer/1.0/producerade_resultat")
     belopp               @attribute(datatype: RECORD, name: "ffa:belopp", uri: "https://data.sfa.se/termer/1.0/belopp")
     beslut               @attribute(datatype: RECORD, name: "ffa:beslut", uri: "https://data.sfa.se/termer/1.0/beslut")
     ersattning           @attribute(datatype: RECORD, name: "ffa:ersattning", uri: "https://data.sfa.se/termer/1.0/ersattning")
@@ -520,24 +521,21 @@ type Yrkande @record(attribute: yrkande) @template {
     person : Person
     beskrivning : String @use(attribute: description)
     beslut : Beslut
-    producerat_resultat : [ProduceratResultat]
+    producerade_resultat : [ProduceratResultat]
 }
 
 ##############  Query related ####################################
 
-# För FFA-specifik hantering av objekt (i ljus av FFAs objektmodell ovan)
-input YrkandeIdentifikation {
-    tenantId : Int!
-    corrId : String!
-}
-
-# För generell hantering av objekt (oberoende av FFA)
-input UnitIdentifikation {
+input UnitIdentification {
     tenantId : Int!
     unitId : Long!
 }
 
-# Gemensamt för sökuttryck
+input YrkandeIdentification {
+    tenantId : Int!
+    corrId : String!
+}
+
 input Filter {
     tenantId: Int!
     where: String
@@ -549,22 +547,18 @@ input Filter {
 
 ##############  Queries ###########################################
 type Query {
-    # FFA-specifik hantering av objekt (i ljus av FFAs objektmodell ovan)
-    yrkande(id : UnitIdentifikation!) : Yrkande
-    yrkandeRaw(id : YrkandeIdentifikation!) : Bytes
+    yrkande(id : UnitIdentification!) : Yrkande
+    yrkandeRaw(id : YrkandeIdentification!) : Bytes
     yrkanden(filter: Filter!) : [Yrkande]
     yrkandenRaw(filter: Filter!) : Bytes
 
-    # Generell hantering av objekt (oberoende av FFA)
-    unitRaw(id : UnitIdentifikation!) : Bytes
+    unitRaw(id : UnitIdentification!) : Bytes
     unitsRaw(filter: Filter!) : Bytes
 }
 
 ##############  Mutations ###########################################
 type Mutation {
-    # FFA-specifik hantering av objekt (i ljus av FFAs objektmodell ovan)
-    lagraYrkandeRaw(tenantId : Int!, data : Bytes!) : Bytes
+    lagraYrkandeRaw(tenantId : Int!, data : Bytes!) : Bytes @ipto(operation: "CUSTOM")
 
-    # Generell hantering av objekt (oberoende av FFA)
-    lagraUnitRaw(data : Bytes!) : Bytes
+    lagraUnitRaw(data : Bytes!) : Bytes @ipto(operation: "STORE_RAW_UNIT")
 }
