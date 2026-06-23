@@ -11,19 +11,19 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <log4j.version>2.25.3</log4j.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <log4j.version>2.26.0</log4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
         <junit.version>4.13.2</junit.version>
         <junit.jupiter.version>5.11.3</junit.jupiter.version>
         <maven.surefire.version>3.2.5</maven.surefire.version>
         <guid-gen.version>5.2.0</guid-gen.version>
-        <jackson.version>3.0.3</jackson.version>
-        <jackson.annotations.version>2.20</jackson.annotations.version>
+        <jackson.version>3.2.0</jackson.version>
+        <jackson.annotations.version>2.22</jackson.annotations.version>
         <jayway-version>3.0.0-SNAPSHOT</jayway-version> <!-- see comment below -->
         <titanium-jcs.version>2.0.0</titanium-jcs.version>
-        <bcprov.version>1.79</bcprov.version>
-        <bcpkix.version>1.79</bcpkix.version>
-        <titanium-jsonld.version>1.6.0</titanium-jsonld.version>
+        <bcprov.version>1.81.1</bcprov.version>
+        <bcpkix.version>1.81.1</bcpkix.version>
+        <titanium-jsonld.version>1.7.0</titanium-jsonld.version>
         <jakarta-json.version>2.0.1</jakarta-json.version>
     </properties>
 

@@ -525,16 +525,19 @@ type Yrkande @record(attribute: yrkande) @template {
 
 ##############  Query related ####################################
 
-input UnitIdentification {
-    tenantId : Int!
-    unitId : Long!
-}
-
-input YrkanIdentification {
+# För FFA-specifik hantering av objekt (i ljus av FFAs objektmodell ovan)
+input YrkandeIdentifikation {
     tenantId : Int!
     corrId : String!
 }
 
+# För generell hantering av objekt (oberoende av FFA)
+input UnitIdentifikation {
+    tenantId : Int!
+    unitId : Long!
+}
+
+# Gemensamt för sökuttryck
 input Filter {
     tenantId: Int!
     where: String
@@ -544,21 +547,24 @@ input Filter {
     orderDirection: String
 }
 
-
 ##############  Queries ###########################################
 type Query {
-    yrkande(id : UnitIdentification!) : Yrkande
-    yrkandeRaw(id : YrkanIdentification!) : Bytes
+    # FFA-specifik hantering av objekt (i ljus av FFAs objektmodell ovan)
+    yrkande(id : UnitIdentifikation!) : Yrkande
+    yrkandeRaw(id : YrkandeIdentifikation!) : Bytes
     yrkanden(filter: Filter!) : [Yrkande]
     yrkandenRaw(filter: Filter!) : Bytes
 
-    unitRaw(id : UnitIdentification!) : Bytes
+    # Generell hantering av objekt (oberoende av FFA)
+    unitRaw(id : UnitIdentifikation!) : Bytes
     unitsRaw(filter: Filter!) : Bytes
 }
 
 ##############  Mutations ###########################################
 type Mutation {
-    lagraYrkanRaw(tenantId : Int!, data : Bytes!) : Bytes
+    # FFA-specifik hantering av objekt (i ljus av FFAs objektmodell ovan)
+    lagraYrkandeRaw(tenantId : Int!, data : Bytes!) : Bytes
 
+    # Generell hantering av objekt (oberoende av FFA)
     lagraUnitRaw(data : Bytes!) : Bytes
 }

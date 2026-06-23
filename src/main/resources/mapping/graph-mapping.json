@@ -1,4 +1,10 @@
 {
+  "_comment": [
+    "Livscykelhanterade objekt blir i utgångspunkten noder i producerad graf, ",
+    "Vi kan välja hur vi vill hantera inbäddade objekt (i livscykelhanterade objekt). ",
+    "'flatten' anger att inbäddade objekt just skall bäddas in i övergripande nod som attribut. ",
+    "'promote' anger att vi istället vill hantera inbäddade objekt som egna noder i grafen."
+  ],
   "flatten": [
     "ffa:belopp",
     "ffa:period",

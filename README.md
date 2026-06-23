@@ -994,43 +994,6 @@ Nyckelpoängen är att grafen inte behöver innehålla all rådata. Underlag
 (t.ex. bedömningar, inkomstdetaljer) kan ligga kvar i rådatafilen, medan
 endast resultat/centrala fält extraheras och blir sökbara.
 
-## JSON-LD → RDF → Neo4j (RMLMapper-Java)
-En PoC-pipeline finns för att:
-1) expandera rå JSON till JSON-LD,
-2) rama in (framing) till stabil struktur,
-3) mappa med RML (RMLMapper-Java, externt jar) till RDF,
-4) generera import-underlag för Neo4j (n10s) eller Cypher.
-
-Körning:
-```bash
-tools/run-transform.sh src/main/resources/sample/raw-yrkande.json
-```
-
-Valfria flaggor:
-```bash
-tools/run-transform.sh src/main/resources/sample/raw-yrkande.json \
-  --context src/main/resources/context/ffa-1.0.jsonld \
-  --frame src/main/resources/frame/ffa-frame.jsonld \
-  --mapping src/main/resources/mapping/ffa.rml.ttl \
-  --out target/ffa-out.ttl \
-  --import neo4j|cypher|none \
-  --cypher-out target/ffa-out.cypher \
-  --neo4j-opts commitSize=5000,handleVocabUris=IGNORE
-```
-
-Default-resurser:
-- `src/main/resources/frame/ffa-frame.jsonld`
-- `src/main/resources/mapping/ffa.rml.ttl`
-- `src/main/resources/sample/raw-yrkande.json`
-
-Notera:
-- `tools/run-transform.sh` laddar ner RMLMapper-Java via `mvn dependency:copy` om
-  jar saknas och kör den externt (för att hålla huvudclasspath fri från Jackson 2).
-- Du kan styra jar-hämtning med:
-  - `RMLMAPPER_JAR` (pekning till egen jar)
-  - `RMLMAPPER_VERSION` (default: `7.3.3`)
-  - `RMLMAPPER_CLASSIFIER` (default: `r374-all`, sätt tom för "plain" jar)
-
 ## JSON-LD expansion 
 Detta exempel visar JSON-LD expansion av rådata i en separat pipeline, som opererar på
 serialiserat processtillstånd (ovan):
