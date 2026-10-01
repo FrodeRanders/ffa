@@ -42,7 +42,8 @@ class ModulgransTest {
 
     @Test
     void internDatahanteringArInteExporterad() throws Exception {
-        for (String type : new String[]{"se.fk.mimer.runtime.ModellCodec", "se.fk.mimer.runtime.Dokumentlager", "se.fk.data.modell.internal.LifecycleState"}) {
+        for (String type : new String[]{"se.fk.mimer.runtime.ModellCodec", "se.fk.mimer.runtime.Dokumentlager",
+                "se.fk.data.modell.internal.LifecycleState", "se.fk.mimer.migration.MigrationEngine"}) {
             var result = compile(type + " value;");
             assertNotEquals(0, result.exit());
             assertTrue(result.output().contains("does not export"), result.output());
@@ -54,6 +55,9 @@ class ModulgransTest {
         var json = compile("tools.jackson.databind.ObjectMapper mapper;");
         assertNotEquals(0, json.exit());
         assertTrue(json.output().contains("does not read"), json.output());
+        var jsonPath = compile("com.jayway.jsonpath.JsonPath path;");
+        assertNotEquals(0, jsonPath.exit());
+        assertTrue(jsonPath.output().contains("does not read"), jsonPath.output());
         var metadata = compile("void run(se.fk.data.modell.v1.Yrkande y) { y.version = 99; y.stepVersion(); }");
         assertNotEquals(0, metadata.exit());
     }

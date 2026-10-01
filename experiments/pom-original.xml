@@ -19,7 +19,7 @@
         <guid-gen.version>5.2.0</guid-gen.version>
         <jackson.version>3.2.3</jackson.version>
         <jackson.annotations.version>2.22</jackson.annotations.version>
-        <jayway-version>3.0.0-SNAPSHOT</jayway-version> <!-- see comment below -->
+        <jayway-version>3.0.0</jayway-version>
         <titanium-jcs.version>2.0.0</titanium-jcs.version>
         <bcprov.version>1.86</bcprov.version>
         <bcpkix.version>1.86</bcpkix.version>
@@ -41,9 +41,7 @@
             <version>${jackson.annotations.version}</version>
         </dependency>
 
-        <!-- While we wait for an official release of Jayway that uses Jackson 3,
-             a fork was made at https://github.com/FrodeRanders/JsonPath.git
-             that produces a 3.0.0-SNAPSHOT build w/o Jackson 2. -->
+        <!-- Officiell JsonPath med Jackson 3-providers (tools.jackson). -->
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>

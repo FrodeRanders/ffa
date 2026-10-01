@@ -99,11 +99,34 @@ beskriver JSON-formatet. Ett rent formatbyte behöver inte öka objektversionern
 `__attention` markerar nya eller ändrade objekt i den skrivna representationen;
 förmånskoden hanterar inte flaggan.
 
-Den enda migreringen i huvudexemplet byter det äldre namnet
-`producerade_resultat` till `producerat_resultat`. Dokument utan formatversion
-räknas som format 0; nya dokument skrivs som format 1. Okända formatversioner och
-tvetydiga fältnamn avvisas. Migrering ändrar inte det ursprungliga signerade
-dokumentet i lagret. Nästa lagring skriver den aktuella representationen.
+Migreringsmotorn är en central komponent i `ffa-core` och använder officiella
+JsonPath 3.0.0 med Jackson 3-providers. Den arbetar på ett JSON-träd före
+`treeToValue`, så historiska representationer behöver inte passa dagens
+Java-klasser. Förmånen ser endast det färdigmigrerade och validerade objektet.
+
+Den körbara demon lägger ett signerat dokument i format 0 i lagret och läser
+det genom två ackumulerade steg:
+
+1. **0 → 1:** byt `producerade_resultat` till `producerat_resultat` och gör
+   ett enstaka resultat till en lista.
+2. **1 → 2:** byt `belopp.summa` till `belopp.varde` i varje resultat.
+
+Stegen registreras i [MimerMigrations](ffa-core/src/main/java/se/fk/mimer/migration/MimerMigrations.java).
+Vid nästa formatändring läggs ett nytt steg till och `CURRENT` höjs; tidigare
+steg behålls. Ett dokument i format 1 kör bara steg 1 → 2, medan ett dokument
+i aktuellt format inte migreras. Dokument utan formatversion räknas som format 0.
+Varje steg består av namngivna JSONPath-regler och kan kombinera flera urval och
+transformationer. Egna mutatorer kan uttrycka mer komplexa ändringar.
+
+Motorn kontrollerar kedjan före körning och avvisar saknade, tvetydiga eller
+ogiltiga steg och okända formatversioner. Efter varje lyckat steg uppdateras
+formatversionen och en granskningspost skapas; regelposter anger träffad sökväg
+och utförd ändring. Granskningslistan returneras av motorn men lagras inte separat
+i denna PoC. Om en regel misslyckas avbryts läsningen och arbetsdokumentet kasseras.
+
+Migrering ändrar aldrig den ursprungliga signerade representationen i lagret.
+Demon visar också nästa lagring: då skrivs format 2 med en ny signatur.
+Objektens innehållsversioner behålls när endast JSON-formatet har ändrats.
 
 ## Den separata grafdemonstrationen
 

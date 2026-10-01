@@ -3,8 +3,8 @@ package se.fk.mimer.migration;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.*;
-import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.json.Jackson3JsonNodeJsonProvider;
+import com.jayway.jsonpath.spi.mapper.Jackson3MappingProvider;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -19,12 +19,12 @@ public final class MigrationEngine {
 
     private static final String SCHEMA_VERSION_FIELD = "mimer:schemaVersion";
 
-    // Configure Jayway to use Jackson JsonNode
+    // Officiella JsonPath använder här Jackson 3:s JsonNode, från tools.jackson.
     private static final Configuration JSONPATH_CONF =
             Configuration.builder()
-                    .jsonProvider(new JacksonJsonNodeJsonProvider())
-                    .mappingProvider(new JacksonMappingProvider())
-                    // SUPPRESS_EXCEPTIONS => "missing path" => empty matches rather than throwing
+                    .jsonProvider(new Jackson3JsonNodeJsonProvider())
+                    .mappingProvider(new Jackson3MappingProvider())
+                    // Saknade sökvägar ger tomma träfflistor så att regeln kan hoppas över.
                     .options(Option.AS_PATH_LIST, Option.SUPPRESS_EXCEPTIONS)
                     .build();
 
@@ -108,14 +108,14 @@ public final class MigrationEngine {
         }
     }
 
+    /** Dokument utan formatversion tillhör format 0; okända värden får inte gissas bort. */
     public static int readSchemaVersion(JsonNode root) {
-        JsonNode v = root.get(SCHEMA_VERSION_FIELD);
-        if (v == null || v.isNull()) return 0;
-        if (v.isInt() || v.isLong()) return v.asInt();
-        if (v.isString()) {
-            try { return Integer.parseInt(v.asString().trim()); } catch (Exception ignored) {}
+        JsonNode version = root.get(SCHEMA_VERSION_FIELD);
+        if (version == null) return 0;
+        if (!version.isInt() || version.intValue() < 0) {
+            throw new IllegalArgumentException("Ogiltig formatversion: " + version);
         }
-        return 0;
+        return version.intValue();
     }
 
     public static void writeSchemaVersion(JsonNode root, int version) {
@@ -123,59 +123,56 @@ public final class MigrationEngine {
     }
 
     /**
-     * Apply only relevant migrations, in order (up to current schema version).
-     * @param root
-     * @param migrations
-     * @param currentVersion
-     * @return
+     * Migrerar JSON-trädet före bindning till Java. Varje registrerat steg ökar formatversionen
+     * med ett. Hela kedjan kontrolleras innan någon regel får ändra arbetsdokumentet.
+     * Trädet är en arbetskopia; ett signerat original får aldrig lämnas hit för ändring.
      */
     public Result applyUpToCurrent(JsonNode root, List<Migration> migrations, final int currentVersion) {
-        Objects.requireNonNull(root, "root");
+        if (!(root instanceof ObjectNode)) {
+            throw new IllegalArgumentException("Ett lagrat dokument måste vara ett JSON-objekt");
+        }
+        int version = readSchemaVersion(root);
+        if (currentVersion < 0 || version > currentVersion) {
+            throw new IllegalArgumentException("Okänd formatversion: " + version);
+        }
 
-        // ensure sorted by fromVersion (defensive copy in case list is immutable)
-        List<Migration> ordered = new ArrayList<>(migrations);
-        ordered.sort(Comparator.comparingInt(m -> m.fromVersion));
+        Map<Integer, Migration> steps = new HashMap<>();
+        for (Migration migration : migrations) {
+            if (migration.fromVersion < 0 || migration.toVersion != migration.fromVersion + 1
+                    || migration.toVersion > currentVersion) {
+                throw new IllegalArgumentException("Ogiltigt migreringssteg: " + migration.name);
+            }
+            if (steps.putIfAbsent(migration.fromVersion, migration) != null) {
+                throw new IllegalArgumentException("Tvetydiga steg från format " + migration.fromVersion);
+            }
+        }
+        for (int v = version; v < currentVersion; v++) {
+            if (!steps.containsKey(v)) {
+                throw new IllegalArgumentException("Migreringssteg saknas från format " + v);
+            }
+        }
 
         List<AuditEntry> audit = new ArrayList<>();
-        int version = readSchemaVersion(root);
-
-        // parse once for JSONPath selections; note: selections will see mutations since root is mutated in-place
+        // Samma JsonNode-träd används av alla regler: senare urval ser tidigare ändringar.
         DocumentContext ctx = JsonPath.using(JSONPATH_CONF).parse(root);
-
         while (version < currentVersion) {
-            final int v = version;
-            Migration next = ordered.stream()
-                    .filter(m -> m.fromVersion == v)
-                    .findFirst()
-                    .orElse(null);
-
-            if (next == null) {
-                // no migration step defined; stop rather than guessing
-                audit.add(new AuditEntry("engine", "$", "$", "/" + SCHEMA_VERSION_FIELD,
-                        "halt", "No migration defined from version " + version));
-                break;
-            }
-
+            Migration next = steps.get(version);
             for (Rule rule : next.rules) {
-                @SuppressWarnings("unchecked")
                 List<String> paths = ctx.read(rule.jsonPath, List.class);
-                if (paths == null || paths.isEmpty()) continue;
-
                 for (String matchedPath : paths) {
                     String pointer = jaywayPathToPointer(matchedPath);
-                    JsonNode value = root.at(pointer);
-                    Match match = new Match(rule.name, rule.jsonPath, matchedPath, pointer, value);
+                    Match match = new Match(rule.name, rule.jsonPath, matchedPath, pointer, root.at(pointer));
                     rule.mutator.apply(root, match, audit);
                 }
             }
 
+            // Ett misslyckat steg får inte stämplas som genomfört.
             version = next.toVersion;
             writeSchemaVersion(root, version);
             audit.add(new AuditEntry(next.name, "$", "$", "/" + SCHEMA_VERSION_FIELD,
-                    "set", "Upgraded to version " + version));
+                    "set", "Migrerat till format " + version));
         }
-
-        return new Result(root, audit);
+        return new Result(root, List.copyOf(audit));
     }
 
     public Result applyAll(JsonNode root, List<Migration> migrations) {
@@ -307,6 +304,10 @@ public final class MigrationEngine {
             if (pr.parent instanceof ObjectNode obj) {
                 JsonNode oldValue = obj.get(pr.lastToken);
                 if (oldValue == null) return;
+                if (newFieldName.equals(pr.lastToken)) return;
+                if (obj.has(newFieldName)) {
+                    throw new IllegalArgumentException("Tvetydigt namnbyte: " + match.pointer + " -> " + newFieldName);
+                }
                 obj.set(newFieldName, oldValue);
                 obj.remove(pr.lastToken);
                 audit.add(new AuditEntry(name, jsonPathSelect, match.matchedPath, match.pointer,

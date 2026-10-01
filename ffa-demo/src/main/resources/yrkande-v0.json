@@ -1,15 +1,15 @@
 {
   "@context": "https://data.fk.se/kontext/std/yrkande/1.0",
-  "@type": "se.fk.data.modell.v1.Yrkande",
+  "@type": "se.fk.hundbidrag.modell.YrkandeOmHundbidrag",
   "id": "yrkande-historiskt", "version": 3,
-  "beskrivning": "Äldre yrkande",
+  "beskrivning": "Äldre yrkande", "ras": "Collie",
   "person": {"roll": "ffa:yrkanden", "varde": {
     "@type": "se.fk.data.modell.v1.FysiskPerson",
     "personnummer": {"varde": "19121212-1212", "typ": "pii:personnummer"}
   }},
-  "producerade_resultat": [{
+  "producerade_resultat": {
     "@type": "se.fk.data.modell.v1.Ersattning",
     "id": "ersattning-historisk", "version": 2, "typ": "HUNDBIDRAG",
     "belopp": {"summa": 1000.0, "valuta": "iso4217:SEK", "skattestatus": "ffa:skattepliktig", "period": "ffa:per_dag"}
-  }]
+  }
 }

@@ -17,6 +17,7 @@
         <maven.compiler.release>25</maven.compiler.release>
         <jackson.version>3.2.3</jackson.version>
         <jackson.annotations.version>2.22</jackson.annotations.version>
+        <jsonpath.version>3.0.0</jsonpath.version>
         <titanium-jcs.version>2.0.0</titanium-jcs.version>
         <guid-gen.version>5.2.0</guid-gen.version>
         <slf4j.version>2.0.20</slf4j.version>
@@ -25,6 +26,10 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.jayway.jsonpath</groupId><artifactId>json-path</artifactId>
+                <version>${jsonpath.version}</version>
+            </dependency>
             <dependency>
                 <groupId>tools.jackson.core</groupId><artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>

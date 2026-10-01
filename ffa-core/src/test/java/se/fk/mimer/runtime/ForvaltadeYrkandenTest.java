@@ -67,7 +67,7 @@ class ForvaltadeYrkandenTest {
         assertEquals(1, saved.getVersion());
         assertEquals(1, saved.beslut.getVersion());
         assertEquals(1, saved.produceratResultat.iterator().next().getVersion());
-        assertEquals(1, JSON.readTree(store.las(saved.getId()).json()).path("mimer:schemaVersion").intValue());
+        assertEquals(se.fk.mimer.migration.MimerMigrations.CURRENT, JSON.readTree(store.las(saved.getId()).json()).path("mimer:schemaVersion").intValue());
 
         saved = repo.las(saved.getId());
         ((Ersattning) saved.produceratResultat.iterator().next()).belopp = 1200;
@@ -156,7 +156,7 @@ class ForvaltadeYrkandenTest {
         var saved = repo.lagra(loaded);
         assertEquals(3, saved.getVersion());
         var current = JSON.readTree(store.las(saved.getId()).json());
-        assertEquals(1, current.path("mimer:schemaVersion").intValue());
+        assertEquals(se.fk.mimer.migration.MimerMigrations.CURRENT, current.path("mimer:schemaVersion").intValue());
         assertFalse(current.has("producerade_resultat"));
         assertTrue(current.has("producerat_resultat"));
     }
@@ -180,6 +180,24 @@ class ForvaltadeYrkandenTest {
     void tvetydigMigreringAvvisas() {
         var root = (tools.jackson.databind.node.ObjectNode) JSON.readTree("{\"producerade_resultat\": [], \"producerat_resultat\": []}");
         assertThrows(IllegalArgumentException.class, () -> se.fk.mimer.migration.MimerMigrations.migrate(root));
+    }
+
+    @Test
+    void signaturenVerifierasInnanMigreringsreglernaKors() throws Exception {
+        byte[] historic;
+        try (var input = getClass().getResourceAsStream("/fixtures/yrkande-v0.json")) {
+            historic = input.readAllBytes();
+        }
+        byte[] signature = SignatureUtils.sign(historic, KEYS.getPrivate());
+        var altered = (tools.jackson.databind.node.ObjectNode) JSON.readTree(historic);
+        // Migreringen skulle avvisa det tvetydiga namnbytet, men signaturfelet ska upptäckas först.
+        altered.putArray("producerat_resultat");
+        var store = new Minneslager();
+        store.lagra("yrkande-historiskt", new LagratDokument(JSON.writeValueAsBytes(altered), signature));
+
+        var error = assertThrows(IllegalStateException.class, () -> repository(store).las("yrkande-historiskt"));
+
+        assertEquals("Dokumentets signatur är ogiltig", error.getMessage());
     }
 
     @Test

@@ -1,6 +1,7 @@
 /** FFA:s objektmodell och förvaltade gräns för datahantering. */
 module se.fk.ffa.core {
     requires tools.jackson.databind;
+    requires json.path;
     requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.uuid;
     requires org.slf4j;
@@ -13,6 +14,7 @@ module se.fk.ffa.core {
 
     // Endast uppstart/infrastruktur får konfigurera lagring och nycklar.
     exports se.fk.mimer.runtime to se.fk.ffa.demo;
+    exports se.fk.data.modell.utils to se.fk.ffa.demo;
     opens se.fk.data.modell.adapters to tools.jackson.databind;
     opens se.fk.data.modell.json to tools.jackson.databind;
     opens se.fk.data.modell.v1 to tools.jackson.databind;

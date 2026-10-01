@@ -4,6 +4,8 @@ import se.fk.hundbidrag.Applikation;
 import se.fk.hundbidrag.modell.YrkandeOmHundbidrag;
 import se.fk.mimer.runtime.ForvaltadeYrkanden;
 import se.fk.mimer.runtime.Minneslager;
+import se.fk.mimer.runtime.LagratDokument;
+import se.fk.data.modell.utils.SignatureUtils;
 
 import java.nio.file.Files;
 
@@ -23,6 +25,22 @@ public final class Demo {
         var lager = new Minneslager();
         var yrkanden = new ForvaltadeYrkanden<>(YrkandeOmHundbidrag.class, lager,
                 nycklar.getPrivate(), nycklar.getPublic());
+
+        // Infrastrukturens historiska underlag signeras innan det läggs i demolagret.
+        byte[] historiskt;
+        try (var input = Demo.class.getResourceAsStream("/yrkande-v0.json")) {
+            historiskt = input.readAllBytes();
+        }
+        lager.lagra("yrkande-historiskt", new LagratDokument(historiskt,
+                SignatureUtils.sign(historiskt, nycklar.getPrivate())));
+
+        // Samma läsgräns som förmånen använder: originalet verifieras och JSON migreras före bindning.
+        var migrerat = yrkanden.las("yrkande-historiskt");
+        System.out.printf("Historiskt yrkande läst genom format 0 → 1 → 2 före Java-bindning. Objektversion: %d.%n",
+                migrerat.getVersion());
+
+        // Först nästa lagring ersätter det historiska underlaget med aktuellt, nysignerat format.
+        yrkanden.lagra(migrerat);
 
         // Förmånen ser objektmodellen och kan handlägga utan transport- eller nyckelkunskap.
         var yrkande = new Applikation(yrkanden).handlagg();
