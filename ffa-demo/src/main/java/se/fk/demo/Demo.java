@@ -24,7 +24,7 @@ public final class Demo {
         var yrkanden = new ForvaltadeYrkanden<>(YrkandeOmHundbidrag.class, lager,
                 nycklar.getPrivate(), nycklar.getPublic());
 
-        // Förmånen får objektgränsen och kan därmed handlägga utan transport- eller nyckelkunskap.
+        // Förmånen ser objektmodellen och kan handlägga utan transport- eller nyckelkunskap.
         var yrkande = new Applikation(yrkanden).handlagg();
         System.out.printf("Lagring och återläsning klara. Yrkande: version %d, ersättning: version %d, beslut: version %d.%n",
                 yrkande.getVersion(), yrkande.produceratResultat.iterator().next().getVersion(), yrkande.beslut.getVersion());
@@ -33,7 +33,7 @@ public final class Demo {
         if (ut.toAbsolutePath().getParent() != null)
             Files.createDirectories(ut.toAbsolutePath().getParent());
 
-        // Endast infrastrukturen exporterar representationen till grafdemonstrationen.
+        // Endast infrastrukturen exporterar representationen till efterföljande grafdemonstration.
         yrkanden.las(yrkande.getId()); // kontrollera det lagrade dokumentet före export
         Files.write(ut, lager.las(yrkande.getId()).json());
         System.out.println("Verifierat underlag för separat grafprojektion: " + ut);
