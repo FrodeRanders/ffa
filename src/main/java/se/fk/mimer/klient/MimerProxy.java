@@ -1,8 +1,8 @@
 package se.fk.mimer.klient;
 
 import se.fk.data.modell.json.DeserializationSnooper;
-import se.fk.data.modell.json.DigestUtils;
-import se.fk.data.modell.json.SignatureUtils;
+import se.fk.data.modell.utils.DigestUtils;
+import se.fk.data.modell.utils.SignatureUtils;
 import se.fk.mimer.migration.MigrationEngine;
 import se.fk.mimer.migration.MimerMigrations;
 import tools.jackson.core.JacksonException;

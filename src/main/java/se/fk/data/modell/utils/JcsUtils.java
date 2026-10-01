@@ -1,4 +1,4 @@
-package se.fk.data.modell.json;
+package se.fk.data.modell.utils;
 
 import com.apicatalog.jcs.Jcs;
 import com.apicatalog.tree.io.NativeAdapter;

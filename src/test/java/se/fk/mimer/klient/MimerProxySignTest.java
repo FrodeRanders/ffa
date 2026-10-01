@@ -10,7 +10,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.json.SignatureUtils;
+import se.fk.data.modell.utils.SignatureUtils;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -357,10 +357,10 @@ public class MimerProxySignTest {
                 cert,
                 null,
                 SignatureUtils.DigestAlgorithm.SHA_512,
-                SignatureUtils.SignatureScheme.RSASSA_PKCS1_V1_5
+                SignatureUtils.SignatureScheme.RSASSA_PSS
         );
 
-        assertEquals("RSASSA-PKCS1-v1_5", signed.signatureAlgorithm());
+        assertEquals("RSASSA-PSS", signed.signatureAlgorithm());
         assertEquals("SHA-512", signed.digestAlgorithm());
         assertTrue(MimerProxy.verifySignature(signed.jsonBytes(), signed.signatureBytes(), cert).signatureValid());
     }

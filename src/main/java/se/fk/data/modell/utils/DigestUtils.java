@@ -1,4 +1,4 @@
-package se.fk.data.modell.json;
+package se.fk.data.modell.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +57,7 @@ public class DigestUtils {
     /* ----------- The rest of this class handles various visualisation of digests ----------- */
 
     private static final char[] HEX = "0123456789abcdef".toCharArray();
-    // Light→dark ramp for ASCII bar
+    // Light-to-dark ramp for ASCII bar
     private static final char[] RAMP = " .:-=+*#%@".toCharArray();
 
     /** Hex string, grouped every {@code group} bytes (2*group hex chars) with {@code sep} between groups. */

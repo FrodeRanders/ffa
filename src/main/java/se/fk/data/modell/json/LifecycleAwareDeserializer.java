@@ -2,6 +2,7 @@ package se.fk.data.modell.json;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.fk.data.modell.utils.DigestUtils;
 import se.fk.data.modell.v1.Livscykelhanterad;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
