@@ -21,7 +21,7 @@ public final class MimerMigrations {
         List<Migration> migrations = new ArrayList<>();
 
         // Illustrative first migration step
-        Migration v0to1 = new Migration("kundbehov->yrkande", 0, 1, List.of(
+        migrations.add(new Migration("kundbehov->yrkande", 0, 1, List.of(
                 // Run-once root updates: selector "$" matches root path "$"
                 new Rule("set @context", "$", (root, match, audit) -> {
                     if (root instanceof ObjectNode obj) {
@@ -41,11 +41,10 @@ public final class MimerMigrations {
                 normalizeInstantZToDate("normalize beslut.datum", "$.beslut.datum"),
                 normalizeInstantZToDate("normalize period.from", "$.producerade_resultat[*].period.from"),
                 normalizeInstantZToDate("normalize period.tom",  "$.producerade_resultat[*].period.tom")
-        ));
-        migrations.add(v0to1);
+        )));
 
         // Illustrative future step 1 -> 2
-        Migration v1to2 = new Migration("example future changes", 1, 2, List.of(
+        migrations.add(new Migration("example future changes", 1, 2, List.of(
                 // Ensure a default field exists
                 setDefaultStringIfMissing("default person.land", "$.person", "land", "SE"),
 
@@ -62,8 +61,7 @@ public final class MimerMigrations {
                 // Dedupe results by id if you ever get duplicates
                 dedupeArrayByKey("dedupe producerade_resultat by id",
                         "$.producerade_resultat", "id")
-        ));
-        migrations.add(v1to2);
+        )));
 
         return migrations;
     }
