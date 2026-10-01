@@ -1,0 +1,81 @@
+package se.fk.data.modell.adapters;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import se.fk.data.modell.v1.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindContext;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.jsontype.impl.TypeIdResolverBase;
+
+import java.util.Map;
+
+import java.util.concurrent.ConcurrentHashMap;
+
+/** Binder producerade resultat till de undertyper som den gemensamma modellen stöder. */
+public class ProduceratResultatTypeIdResolver extends TypeIdResolverBase {
+
+    private static final Map<String, Class<?>> ID_TO_CLASS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, String> CLASS_TO_ID = new ConcurrentHashMap<>();
+
+    private JavaType baseType;
+
+    @Override
+    public void init(JavaType baseType) {
+        super.init(baseType);
+        this.baseType = baseType;
+
+        // Alla stödda resultattyper registreras centralt.
+        register(Ersattning.class);
+        register(Intyg.class);
+        register(Krav.class);
+        register(RattenTillPeriod.class);
+        register(BedomdArbetsformaga.class);
+    }
+
+    @Override
+    public String idFromValue(DatabindContext ctxt, Object value) throws JacksonException {
+        return idFromValueAndType(ctxt, value, value.getClass());
+    }
+
+    @Override
+    public String idFromValueAndType(DatabindContext ctxt, Object value, Class<?> suggestedType) throws JacksonException {
+        String id = CLASS_TO_ID.get(suggestedType);
+        if (id == null) {
+            throw new IllegalStateException(
+                    "No @type registered for subtype " + suggestedType.getName()
+            );
+        }
+        return id;
+    }
+
+    private static void register(Class<?> subtype) {
+        String id = subtype.getName();
+
+        Class<?> old = ID_TO_CLASS.putIfAbsent(id, subtype);
+        if (old != null && !old.equals(subtype)) {
+            throw new IllegalStateException(
+                    "Duplicate @type value '" + id +
+                            "' for " + subtype.getName() + " and " + old.getName()
+            );
+        }
+
+        CLASS_TO_ID.putIfAbsent(subtype, id);
+    }
+
+    @Override
+    public JavaType typeFromId(DatabindContext context, String id) {
+        Class<?> subtype = ID_TO_CLASS.get(id);
+        if (subtype == null) {
+            throw new IllegalArgumentException(
+                    "Unknown @type '" + id + "' for base type " +
+                            (baseType != null ? baseType.toString() : "<unknown>")
+            );
+        }
+        return context.constructType(subtype);
+    }
+
+    @Override
+    public JsonTypeInfo.Id getMechanism() {
+        return JsonTypeInfo.Id.CUSTOM;
+    }
+}

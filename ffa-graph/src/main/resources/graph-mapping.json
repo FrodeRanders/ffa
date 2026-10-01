@@ -1,0 +1,6 @@
+{
+  "se.fk.data.modell.v1.Yrkande": {"label": "Yrkande", "properties": ["beskrivning"]},
+  "se.fk.hundbidrag.modell.YrkandeOmHundbidrag": {"label": "Yrkande", "properties": ["beskrivning"]},
+  "se.fk.data.modell.v1.Beslut": {"label": "Beslut", "properties": ["datum", "typ", "utfall", "organisation"]},
+  "se.fk.data.modell.v1.Ersattning": {"label": "Ersattning", "properties": ["typ", "belopp", "period"]}
+}

@@ -1,0 +1,70 @@
+package se.fk.data.modell.json;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.fk.data.modell.annotations.Belopp;
+import se.fk.data.modell.annotations.PII;
+import se.fk.data.modell.annotations.Som;
+import tools.jackson.databind.BeanDescription;
+import tools.jackson.databind.SerializationConfig;
+import tools.jackson.databind.introspect.AnnotatedMember;
+import tools.jackson.databind.ser.BeanPropertyWriter;
+import tools.jackson.databind.ser.ValueSerializerModifier;
+
+import java.util.ArrayList;
+
+import java.util.List;
+
+/** Väljer specialiserad JSON-representation utifrån modellens fältannoteringar. */
+public class PropertySerializerModifier extends ValueSerializerModifier {
+    private static final Logger log = LoggerFactory.getLogger(PropertySerializerModifier.class);
+
+    @Override
+    public List<BeanPropertyWriter> changeProperties(
+            SerializationConfig config,
+            BeanDescription.Supplier beanDesc,
+            List<BeanPropertyWriter> beanProperties
+    ) {
+        List<BeanPropertyWriter> writers = new ArrayList<>(beanProperties);
+
+        for (BeanPropertyWriter writer : writers) {
+            AnnotatedMember member = writer.getMember();
+            if (member != null) {
+                // Representationerna väljs från modellens centralt definierade annoteringar.
+                PII pii = member.getAnnotation(PII.class);
+                if (null != pii) {
+                    log.trace("@PII property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    writer.assignSerializer(
+                            new PIIPropertySerializer(
+                                    pii.typ()
+                            )
+                    );
+                    return writers;
+                }
+
+                Som som = member.getAnnotation(Som.class);
+                if (null != som) {
+                    log.trace("@Som property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    writer.assignSerializer(
+                            new SomPropertySerializer(
+                                    som.roll()
+                            )
+                    );
+                    return writers;
+                }
+
+                Belopp belopp = member.getAnnotation(Belopp.class);
+                if (null != belopp) {
+                    log.trace("@Belopp property {}#{}", beanDesc.getBeanClass().getCanonicalName(), member.getName());
+                    writer.assignSerializer(
+                            new BeloppPropertySerializer(
+                                    belopp.valuta(), belopp.skattestatus(), belopp.period()
+                            )
+                    );
+                    return writers;
+                }
+            }
+        }
+        return writers;
+    }
+}
