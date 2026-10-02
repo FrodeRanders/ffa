@@ -9,8 +9,8 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * En projektion, inte ett nytt lagringsformat. Valda livscykelobjekt blir noder;
- * deras inbäddning blir relationer. Endast centralt valda egenskaper blir sökbara.
+ * En projektion, där valda livscykelobjekt blir noder och deras inbäddning
+ * blir relationer. Endast centralt valda egenskaper blir sökbara.
  */
 public final class Grafprojektion {
     private static final ObjectMapper JSON = JsonMapper.builder().build();
@@ -63,6 +63,7 @@ public final class Grafprojektion {
             JsonNode rule = mapping.get(type);
             if (rule == null)
                 throw new IllegalArgumentException("Ingen grafmappning för " + type);
+
             String id = node.path("id").asString();
             if (id.isBlank() || !ids.add(id))
                 throw new IllegalArgumentException("Tom eller dubblerad nodidentitet: " + id);

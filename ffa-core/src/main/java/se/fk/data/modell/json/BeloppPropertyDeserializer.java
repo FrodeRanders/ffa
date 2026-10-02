@@ -7,7 +7,7 @@ import tools.jackson.core.JsonParser;
 import tools.jackson.databind.*;
 import tools.jackson.databind.jsontype.TypeDeserializer;
 
-/** Läser beloppsvärdet ur omslaget och binder det till fältets deklarerade Java-typ. */
+/** Läser beloppsvärdet ur omslaget (i JSON-mening) och binder det till fältets deklarerade Java-typ. */
 public class BeloppPropertyDeserializer extends ValueDeserializer<Object> {
     private static final Logger log = LoggerFactory.getLogger(BeloppPropertyDeserializer.class);
 

@@ -17,9 +17,10 @@ public record Dataleverans(UUID id, String korrelationsId, String objektId,
     public Dataleverans {
         Objects.requireNonNull(id);
         Objects.requireNonNull(skapad);
+        Objects.requireNonNull(dokument);
+
         // PostgreSQL lagrar mikrosekunder; samma tidsvärde ska användas även vid replay.
         skapad = skapad.truncatedTo(java.time.temporal.ChronoUnit.MICROS);
-        Objects.requireNonNull(dokument);
         if (korrelationsId == null || korrelationsId.isBlank() || objektId == null || objektId.isBlank())
             throw new IllegalArgumentException("Korrelations-id och objekt-id måste anges");
         if (forvantadVersion < 0 || objektVersion < forvantadVersion)

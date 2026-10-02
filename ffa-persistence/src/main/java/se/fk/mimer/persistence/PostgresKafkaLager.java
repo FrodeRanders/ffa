@@ -19,7 +19,9 @@ public final class PostgresKafkaLager implements Dokumentlager {
 
     public PostgresKafkaLager(String url, String user, String password, String topic,
                              Leveranslage lage, Leveranspublicerare publicerare) {
-        if (topic == null || topic.isBlank()) throw new IllegalArgumentException("Förmånstopic måste anges");
+        if (topic == null || topic.isBlank())
+            throw new IllegalArgumentException("Förmånstopic måste anges");
+
         dataSource.setURL(url);
         dataSource.setUser(user);
         dataSource.setPassword(password);
@@ -32,7 +34,8 @@ public final class PostgresKafkaLager implements Dokumentlager {
     /** Idempotent schemainitiering för den lokala utvecklingsdatabasen. */
     public void initiera() {
         try (var input = getClass().getResourceAsStream("/cache.sql");
-             var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+             var connection = dataSource.getConnection();
+             var statement = connection.createStatement()) {
             statement.execute(new String(input.readAllBytes(), StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new IllegalStateException("PostgreSQL-cachen kunde inte initieras", e);
@@ -111,13 +114,16 @@ public final class PostgresKafkaLager implements Dokumentlager {
                 if (lage == Leveranslage.KAFKA_FORST) {
                     if (vantande(connection, delivery.korrelationsId()) != 0)
                         throw new IllegalStateException("Processen har väntande leveranser; återförsök dem först");
+
                     publicerare.publicera(topic, delivery);
                     acknowledged = true;
                 }
                 skriv(connection, delivery, acknowledged);
                 connection.commit();
             } catch (Exception e) {
-                try { connection.rollback(); } catch (SQLException rollback) { e.addSuppressed(rollback); }
+                try { connection.rollback(); }
+                catch (SQLException rollback) { e.addSuppressed(rollback); }
+
                 throw new Leveransfel(delivery.id(), acknowledged, e);
             }
         } catch (SQLException e) { throw new Leveransfel(delivery.id(), acknowledged, e); }
@@ -174,6 +180,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
                                 sent++;
                             } catch (RuntimeException e) {
                                 uppdatera(connection, delivery.id(), false, e.toString());
+
                                 // Bevara tidigare kvitton och felinformationen; nästa leverans får inte passera den felande.
                                 connection.commit();
                                 throw new Leveransfel(delivery.id(), false, e);

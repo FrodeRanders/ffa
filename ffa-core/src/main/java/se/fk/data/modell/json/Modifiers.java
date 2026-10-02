@@ -28,9 +28,9 @@ public class Modifiers {
                     .setDeserializerModifier(new PropertyDeserializerModifier());
 
     private static JsonMapper setupCanonicalMapper() {
-        // Separat mapper utan livscykelkrokar: beräkning av en kontrollsumma får inte
+        // Separat mapper utan livscykel-hooks: beräkning av en kontrollsumma får inte
         // i sin tur ändra versionen eller starta en ny livscykelserialisering.
-        // Thus, the ORDER_MAP_ENTRIES_BY_KEYS below.
+        // Därav följer användningen av ORDER_MAP_ENTRIES_BY_KEYS nedan.
         //
         JsonMapper canonicalMapper = JsonMapper.builder()
                 .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
