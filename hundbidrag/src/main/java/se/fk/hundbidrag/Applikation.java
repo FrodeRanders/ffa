@@ -18,21 +18,30 @@ public final class Applikation {
 
     /** Visar en första handläggning och en senare ändring med samma objekt-API. */
     public YrkandeOmHundbidrag handlagg() {
+        return handlagg(java.util.UUID.randomUUID().toString());
+    }
+
+    public YrkandeOmHundbidrag handlagg(String processId) {
         YrkandeOmHundbidrag yrkande = new YrkandeOmHundbidrag("Hundutställning", "Collie");
         yrkande.setPerson(new FysiskPerson("19121212-1212"));
         yrkande.addProduceratResultat(beraknaErsattning(1000.0));
         yrkande.setBeslut(fattaBeslut());
 
         // Fortsätt med det returnerade tillståndet, vars versioner den gemensamma gränsen äger.
-        yrkande = yrkanden.lagra(yrkande);
+        yrkande = yrkanden.lagra(processId, yrkande);
 
+        return fortsattHandlaggning(processId);
+    }
+
+    /** En senare processaktivitet känner process-id, inte lagrings- eller transportformat. */
+    public YrkandeOmHundbidrag fortsattHandlaggning(String processId) {
         // Fortsatt handläggning efter återläsning: ändra det befintliga resultatet.
-        yrkande = yrkanden.las(yrkande.getId());
+        var yrkande = yrkanden.lasProcess(processId);
         Ersattning ersattning = (Ersattning) yrkande.produceratResultat.iterator().next();
         ersattning.belopp = 1200.0;
         yrkande.beskrivning = "Hundutställning inklusive bad";
 
-        return yrkanden.lagra(yrkande);
+        return yrkanden.lagra(processId, yrkande);
     }
 
     // Fasta belopp och datum gör exemplet reproducerbart; verklig beräkning hör hemma här.

@@ -183,6 +183,28 @@ class ForvaltadeYrkandenTest {
     }
 
     @Test
+    void processlasningGerSenasteTillstandOchLeveranslasningBevararHistoriken() {
+        var store = new Minneslager();
+        var repo = repository(store);
+        var original = yrkande();
+        assertThrows(IllegalArgumentException.class, () -> repo.lagra(" ", original));
+        assertEquals(0, original.getVersion());
+
+        var first = repo.lagra("process-17", original);
+        var firstDelivery = store.lasProcess("process-17");
+        first.beskrivning = "Uppdaterat processtillstånd";
+        var second = repo.lagra("process-17", first);
+        var secondDelivery = store.lasProcess("process-17");
+
+        assertNotEquals(firstDelivery.id(), secondDelivery.id());
+        assertEquals(7, firstDelivery.id().version());
+        assertEquals(7, secondDelivery.id().version());
+        assertEquals(1, repo.lasLeverans(firstDelivery.id().toString()).getVersion());
+        assertEquals(second.getVersion(), repo.lasProcess("process-17").getVersion());
+        assertEquals("Uppdaterat processtillstånd", repo.lasProcess("process-17").beskrivning);
+    }
+
+    @Test
     void signaturenVerifierasInnanMigreringsreglernaKors() throws Exception {
         byte[] historic;
         try (var input = getClass().getResourceAsStream("/fixtures/yrkande-v0.json")) {

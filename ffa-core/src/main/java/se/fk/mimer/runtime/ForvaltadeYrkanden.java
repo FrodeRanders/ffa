@@ -52,10 +52,32 @@ public final class ForvaltadeYrkanden<T extends Yrkande> implements Yrkanden<T> 
 
     /**
      * Förbereder ett nytt lagrat tillstånd utan att ändra det inlämnade objektet.
-     * Versionskontrollen gäller denna instans; flera klienter kräver atomiskt stöd i lagret.
+     * Versionskontrollen här kompletteras av den beständiga adapterns transaktionskontroll.
      */
     @Override
     public synchronized T lagra(T yrkande) {
+        // Bakåtkompatibel bekvämlighet för äldre exempel; processmotorn anger ett eget id.
+        return lagra(yrkande.getId(), yrkande);
+    }
+
+    @Override
+    public synchronized T lasProcess(String korrelationsId) {
+        var leverans = lager.lasProcess(korrelationsId);
+        if (leverans == null) throw new NoSuchElementException("Process saknas: " + korrelationsId);
+        return lasVerifierat(leverans.objektId(), leverans.dokument());
+    }
+
+    @Override
+    public synchronized T lasLeverans(String dataleveransId) {
+        var leverans = lager.lasLeverans(java.util.UUID.fromString(dataleveransId));
+        if (leverans == null) throw new NoSuchElementException("Dataleverans saknas: " + dataleveransId);
+        return lasVerifierat(leverans.objektId(), leverans.dokument());
+    }
+
+    @Override
+    public synchronized T lagra(String korrelationsId, T yrkande) {
+        if (korrelationsId == null || korrelationsId.isBlank())
+            throw new IllegalArgumentException("Korrelations-id måste anges");
         Modellvalidering.kontrollera(yrkande);
 
         // Jämför med det verifierade tillståndet, så att ett äldre objekt inte skriver över ett nyare.
@@ -78,7 +100,8 @@ public final class ForvaltadeYrkanden<T extends Yrkande> implements Yrkanden<T> 
         T lagrat = lasVerifierat(kopia.getId(), dokument);
 
         // Returnera det nya objekttillståndet först när lagringsadaptern har lyckats.
-        lager.lagra(kopia.getId(), dokument);
+        lager.lagra(new Dataleverans(Dataleverans.nyttId(), korrelationsId, kopia.getId(),
+                lagradVersion, lagrat.getVersion(), java.time.Instant.now(), dokument));
         return lagrat;
     }
 

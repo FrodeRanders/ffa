@@ -13,7 +13,7 @@ module se.fk.ffa.core {
     exports se.fk.mimer.api;
 
     // Endast uppstart/infrastruktur får konfigurera lagring och nycklar.
-    exports se.fk.mimer.runtime to se.fk.ffa.demo;
+    exports se.fk.mimer.runtime to se.fk.ffa.demo, se.fk.ffa.persistence;
     exports se.fk.data.modell.utils to se.fk.ffa.demo;
     opens se.fk.data.modell.adapters to tools.jackson.databind;
     opens se.fk.data.modell.json to tools.jackson.databind;

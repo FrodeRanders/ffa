@@ -11,23 +11,34 @@ Förmånens egen utvidgning visas med hundens ras i det påhittade hundbidraget.
 
 ## Börja här
 
-Du behöver JDK 25 och Maven. Kör från projektets rot:
+Du behöver JDK 25, Maven och Docker. Kör från projektets rot:
 
 ```sh
+docker compose up -d --wait postgres kafka
+docker compose run --rm topic
 mvn -q -Pdemo verify
 ```
 
 Kommandot bygger projektet, kör testerna och startar demon på Java-modulernas
 sökväg. Demon skapar ett yrkande med en ersättning och ett beslut, lagrar det,
-läser tillbaka det och ändrar ersättningen. Resultatet blir:
-
-```text
-Yrkande: version 2, ersättning: version 2, beslut: version 1.
-```
+läser tillbaka det och ändrar ersättningen. Demon skriver ut process-id, senaste dataleverans-id och yrkandets version.
+Samma process-id används för flera leveranser. En ny gränsinstans läser tillbaka
+processens senaste lokala tillstånd, som vid en senare aktivitet i processmotorn.
 
 Det lagrade dokumentet är signerat. Demon exporterar ett verifierat JSON-underlag
 till `target/demo-yrkande.json` för den separata grafdemonstrationen.
-Minneslagret och de tillfälliga RSA-nycklarna skapas vid varje körning.
+Kafka är ingången till masterdataflödet. PostgreSQL lagrar en lokal historikcache
+för processens återläsning. Utvecklingsnyckeln sparas i `.demo/nycklar`, utanför
+Git och Maven:s `clean`, så att tidigare dokument kan verifieras efter omstart.
+
+Vill du köra det mindre exemplet utan Docker finns ett uttryckligt minnesläge:
+
+```sh
+mvn -q -Pdemo -Dffa.demo.action=--minne verify
+```
+
+Lagringslägen, metadata, SQL-schema, felhantering och återförsök beskrivs i
+[Kafka och PostgreSQL](docs/persistens.md).
 
 Läs sedan [förmånsexemplet](hundbidrag/src/main/java/se/fk/hundbidrag/Applikation.java),
 [förmånens objekt-API](ffa-core/src/main/java/se/fk/mimer/api/Yrkanden.java) och
@@ -39,6 +50,7 @@ Läs sedan [förmånsexemplet](hundbidrag/src/main/java/se/fk/hundbidrag/Applika
 | --- | --- |
 | `hundbidrag` | Förmånslogik ovanpå FFA:s modell och en liten förmånsutvidgning |
 | `ffa-core` | Organisationsmodell, gemensamma strukturkrav och förvaltad datahantering |
+| `ffa-persistence` | Kafka-leverans, PostgreSQL-cache, leveranshistorik och återförsök |
 | `ffa-demo` | Koppla ihop förmånen med lagringsadapter och betrodda nycklar |
 | `ffa-graph` | Härleda en sökbar graf från den förvaltade representationen |
 
@@ -47,18 +59,20 @@ flowchart LR
     A[Förmånslogik på FFA-objekt] --> B[Yrkanden: lagra och läs]
     B --> C[Validering, livscykel, JSON och signering]
     C --> D[Signerade dokument]
-    D --> E[Verifierad export]
+    D --> K[Kafka: förmånstopic]
+    K --> P[PostgreSQL: lokal processcache]
+    P --> E[Verifierad export]
     E --> F[Separat grafprojektion till Neo4j]
 ```
 
 Förmånen får ett `Yrkanden<YrkandeOmHundbidrag>` när applikationen skapas.
-Det offentliga API:et har två operationer:
+Processmotorn anger sitt process-id som korrelations-id vid lagring och återläsning:
 
 ```java
-yrkande = yrkanden.las(id);
+yrkande = yrkanden.lasProcess(processId);
 yrkande.addProduceratResultat(ersattning);
 yrkande.setBeslut(beslut);
-yrkande = yrkanden.lagra(yrkande);
+yrkande = yrkanden.lagra(processId, yrkande);
 ```
 
 `lagra` returnerar ett fristående objekt med de lagrade versionerna. Använd det
@@ -69,7 +83,7 @@ Förmånen får inga JSON-strängar, lagringsadaptrar, mappers eller
 signeringsinställningar genom detta API. Java-moduler gör gränsen kontrollerbar:
 `hundbidrag` läser enbart `se.fk.ffa.core`. Kärnan exporterar modellen,
 modellannoteringarna och objekt-API:et. Infrastrukturpaketet exporteras endast
-till demomodulen. Jackson får riktad reflektionsåtkomst till modellpaketen.
+till demo- och persistensmodulerna. Jackson får riktad reflektionsåtkomst till modellpaketen.
 Identitet och version kan läsas med `getId()` och `getVersion()`; deras
 ändringsmekanismer är interna.
 
@@ -162,19 +176,34 @@ historiska format, modellvalidering, inaktuella versioner och lagringsfel.
 Separata kompileringstester använder `javac` för att kontrollera att förmånskod
 kan använda objekt-API:et men inte de interna paketen, Jackson direkt eller
 livscykelns ändringsmekanismer. Profilen `graph` lägger även till graftesterna.
+Vanliga tester behöver inte Docker. För integrationstester, starta Docker och kör:
+
+```sh
+./scripts/test-integration.sh
+```
+
+Skriptet startar projektets Kafka och PostgreSQL, väntar på hälsokontrollerna,
+skapar förmånstopicen och kör testerna inklusive grafmodulen. Tjänsterna lämnas
+kvar efteråt; `docker compose stop` stoppar dem utan att radera volymerna.
+Om tjänsterna redan är startade kan testerna också köras direkt med
+`mvn -q -Pgraph -Dffa.integration=true test`.
+
+De kontrollerar verklig Kafka/PostgreSQL, opaque JSON, metadata, processhistorik,
+fel i båda lagringslägena, återförsök efter omstart och konkurrerande skribenter.
 
 ## Avgränsning och fortsättning
 
-Detta är en PoC med ett minneslager, en konfigurerad nyckel och ett fåtal
+Detta är en PoC med Kafka och en lokal PostgreSQL-cache, en konfigurerad nyckel och ett fåtal
 gemensamma strukturkrav. Förmånsregler, exempelvis hur rätten bedöms eller
 ersättningen beräknas, tillhör förmånen. De offentliga verksamhetsfälten är
 fortfarande muterbara; den gemensamma gränsen kontrollerar tillståndet vid
 lagring och återläsning. Modellen behöver fler förvaltade invariantregler inför
 verklig användning.
 
-Versionskontrollen skyddar mot inaktuella objekt inom en repository-instans.
-En verklig lagringsadapter behöver atomisk versionskontroll mellan flera
-klienter, samt definierad hantering av transaktioner och återförsök. Kopiering
+PostgreSQL-adaptern kontrollerar den förväntade objektversionen inom sin
+transaktion, även mellan flera instanser. Ett rådgivande lås per topic ger enkel
+ordning i denna PoC och begränsar genomströmningen. Kafka och PostgreSQL delar
+ingen atomisk transaktion; kvarvarande felgränser beskrivs i persistensdokumentet. Kopiering
 av intern livscykelmetadata täcker yrkandet, dess beslut och producerade resultat;
 utvidgningar med egna livscykelobjekt behöver en motsvarande central regel.
 

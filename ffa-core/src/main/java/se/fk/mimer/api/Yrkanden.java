@@ -15,4 +15,13 @@ public interface Yrkanden<T extends Yrkande> {
      * Använd returvärdet vid fortsatt handläggning; det inlämnade objektet ändras inte.
      */
     T lagra(T yrkande);
+
+    /** Lagrar ett nytt tillstånd för processmotorns korrelations-id. */
+    T lagra(String korrelationsId, T yrkande);
+
+    /** Hämtar processens senast lokalt lagrade tillstånd, även om leverans väntar på återförsök. */
+    T lasProcess(String korrelationsId);
+
+    /** Hämtar den historiska representation som tillhör en specifik dataleverans. */
+    T lasLeverans(String dataleveransId);
 }

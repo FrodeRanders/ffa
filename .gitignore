@@ -7,3 +7,6 @@ target/
 .DS_Store
 *.log
 *._java
+
+# Beständiga lokala utvecklingsnycklar (även efter mvn clean).
+.demo/

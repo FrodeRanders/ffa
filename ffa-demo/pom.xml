@@ -7,6 +7,7 @@
     </parent>
     <artifactId>ffa-demo</artifactId>
     <dependencies>
+        <dependency><groupId>se.fk.data</groupId><artifactId>ffa-persistence</artifactId><version>${project.version}</version></dependency>
         <dependency>
             <groupId>se.fk.data</groupId>
             <artifactId>ffa-core</artifactId>
@@ -50,12 +51,14 @@
                                 </goals>
                                 <configuration>
                                     <executable>java</executable>
+                                    <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
                                     <arguments>
                                         <argument>--module-path</argument>
                                         <modulepath/>
                                         <argument>--module</argument>
                                         <argument>se.fk.ffa.demo/se.fk.demo.Demo</argument>
                                         <argument>${maven.multiModuleProjectDirectory}/target/demo-yrkande.json</argument>
+                                        <argument>${ffa.demo.action}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

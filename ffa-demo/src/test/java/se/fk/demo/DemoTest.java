@@ -41,7 +41,7 @@ class DemoTest {
     void startbarDemoExporterarUnderlag() throws Exception {
         Path output = temp.resolve("demo.json");
 
-        Demo.main(new String[]{output.toString()});
+        Demo.main(new String[]{output.toString(), "--minne"});
 
         assertTrue(Files.readString(output).contains("producerat_resultat"));
     }

@@ -9,6 +9,7 @@
 
     <modules>
         <module>ffa-core</module>
+        <module>ffa-persistence</module>
         <module>hundbidrag</module>
         <module>ffa-demo</module>
     </modules>
@@ -18,11 +19,14 @@
         <jackson.version>3.2.3</jackson.version>
         <jackson.annotations.version>2.22</jackson.annotations.version>
         <jsonpath.version>3.0.0</jsonpath.version>
+        <kafka.version>4.1.2</kafka.version>
+        <postgresql.version>42.7.13</postgresql.version>
         <titanium-jcs.version>2.0.0</titanium-jcs.version>
         <guid-gen.version>5.2.0</guid-gen.version>
         <slf4j.version>2.0.20</slf4j.version>
         <log4j.version>2.26.1</log4j.version>
         <junit.jupiter.version>5.11.3</junit.jupiter.version>
+        <ffa.demo.action>--kor</ffa.demo.action>
     </properties>
     <dependencyManagement>
         <dependencies>
