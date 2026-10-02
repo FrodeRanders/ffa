@@ -1,6 +1,7 @@
 package se.fk.demo;
 
 import org.junit.jupiter.api.Test;
+import se.fk.teststod.Minneslager;
 import org.junit.jupiter.api.io.TempDir;
 import se.fk.hundbidrag.Applikation;
 import se.fk.hundbidrag.modell.YrkandeOmHundbidrag;
@@ -15,7 +16,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Verifierar förmånsutvidgningen genom den förvaltade gränsen och den startbara demon. */
+/** Verifierar förmånsutvidgningen genom den förvaltade gränsen och demoflödet med en lagringsadapter för test. */
 class DemoTest {
     @TempDir
     Path temp;
@@ -38,10 +39,12 @@ class DemoTest {
     }
 
     @Test
-    void startbarDemoExporterarUnderlag() throws Exception {
+    void demoflodeExporterarUnderlag() throws Exception {
         Path output = temp.resolve("demo.json");
 
-        Demo.main(new String[]{output.toString(), "--minne"});
+        var generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        Demo.kor(output, new Minneslager(), generator.generateKeyPair());
 
         assertTrue(Files.readString(output).contains("producerat_resultat"));
     }

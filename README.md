@@ -31,12 +31,6 @@ Kafka är ingången till masterdataflödet. PostgreSQL lagrar en lokal historikc
 för processens återläsning. Utvecklingsnyckeln sparas i `.demo/nycklar`, utanför
 Git och Maven:s `clean`, så att tidigare dokument kan verifieras efter omstart.
 
-Vill du köra det mindre exemplet utan Docker finns ett uttryckligt minnesläge:
-
-```sh
-mvn -q -Pdemo -Dffa.demo.action=--minne verify
-```
-
 Lagringslägen, metadata, SQL-schema, felhantering och återförsök beskrivs i
 [Kafka och PostgreSQL](docs/persistens.md).
 
@@ -176,7 +170,10 @@ historiska format, modellvalidering, inaktuella versioner och lagringsfel.
 Separata kompileringstester använder `javac` för att kontrollera att förmånskod
 kan använda objekt-API:et men inte de interna paketen, Jackson direkt eller
 livscykelns ändringsmekanismer. Profilen `graph` lägger även till graftesterna.
-Vanliga tester behöver inte Docker. För integrationstester, starta Docker och kör:
+Vanliga tester behöver inte Docker. De använder ett delat minneslager under
+`test-support/src/test/java`, som enbart kompileras som testkod och inte
+paketeras i lösningens JAR-filer. Den körbara demon använder alltid Kafka och
+PostgreSQL. För integrationstester, starta Docker och kör:
 
 ```sh
 ./scripts/test-integration.sh

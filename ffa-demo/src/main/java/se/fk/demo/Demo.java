@@ -8,25 +8,16 @@ import se.fk.data.modell.utils.SignatureUtils;
 
 import java.nio.file.*;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 
-/** Startar den förvaltade modellen med Kafka och PostgreSQL. --minne är ett separat testläge. */
+/** Startar den förvaltade modellen med Kafka och PostgreSQL. */
 public final class Demo {
     private Demo() {}
 
     public static void main(String[] args) throws Exception {
-        boolean memory = Arrays.asList(args).contains("--minne");
         Path output = Path.of(args.length == 0 || args[0].startsWith("--") ? "target/demo-yrkande.json" : args[0]);
-        if (memory) {
-            var generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
-            kor(output, new Minneslager(), generator.generateKeyPair());
-            return;
-        }
-
         var keys = Demonycklar.lasEllerSkapa(Path.of(env("FFA_NYCKLAR", ".demo/nycklar")));
         try (var kafka = new KafkaPublicerare(env("FFA_KAFKA", "localhost:19092"))) {
             var cache = new PostgresKafkaLager(env("FFA_JDBC", "jdbc:postgresql://localhost:15432/ffa"),
@@ -45,7 +36,7 @@ public final class Demo {
 
     private static String env(String name, String fallback) { return System.getenv().getOrDefault(name, fallback); }
 
-    private static void kor(Path output, Dokumentlager lager, KeyPair keys) throws Exception {
+    static void kor(Path output, Dokumentlager lager, KeyPair keys) throws Exception {
         var yrkanden = new ForvaltadeYrkanden<>(YrkandeOmHundbidrag.class, lager, keys.getPrivate(), keys.getPublic());
 
         // Ett signerat historiskt dokument går genom exakt samma leverans- och läsgräns som andra dokument.

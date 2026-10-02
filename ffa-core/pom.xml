@@ -47,4 +47,25 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <!-- Delad testhjälp kompileras endast till target/test-classes. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>teststod</id>
+                        <phase>generate-test-sources</phase>
+                        <goals><goal>add-test-source</goal></goals>
+                        <configuration>
+                            <sources><source>${project.basedir}/../test-support/src/test/java</source></sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

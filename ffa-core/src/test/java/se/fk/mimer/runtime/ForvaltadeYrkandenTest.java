@@ -1,6 +1,7 @@
 package se.fk.mimer.runtime;
 
 import org.junit.jupiter.api.Test;
+import se.fk.teststod.Minneslager;
 import se.fk.data.modell.v1.*;
 import se.fk.data.modell.utils.SignatureUtils;
 import tools.jackson.databind.json.JsonMapper;

@@ -1,8 +1,12 @@
-package se.fk.mimer.runtime;
+package se.fk.teststod;
+
+import se.fk.mimer.runtime.Dataleverans;
+import se.fk.mimer.runtime.Dokumentlager;
+import se.fk.mimer.runtime.LagratDokument;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Lagringsadapter för PoC:en; data försvinner när processen avslutas. */
+/** Testhjälp för enhetstester; kompileras endast som testkod och ingår inte i demots JAR-filer. */
 public final class Minneslager implements Dokumentlager {
     private final ConcurrentHashMap<String, LagratDokument> dokument = new ConcurrentHashMap<>();
     private final java.util.LinkedHashMap<java.util.UUID, Dataleverans> leveranser = new java.util.LinkedHashMap<>();
