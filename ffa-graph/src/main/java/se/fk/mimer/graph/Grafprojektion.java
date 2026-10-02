@@ -28,71 +28,100 @@ public final class Grafprojektion {
 
     /**
      * Skapar Cypher från ett underlag som infrastrukturen redan har verifierat.
-     * Noder skrivs före relationer så att alla relationers ändpunkter finns vid import.
+     * Hela snapshoten tillämpas i en fråga efter låsning och versionskontroll av roten.
+     * Endast rotens egna projekterade relationer ersätts; övergivna noder behålls.
      */
     public String projektera(byte[] json) {
         JsonNode root = JSON.readTree(json);
         if (!root.isObject())
             throw new IllegalArgumentException("Underlaget måste vara ett objekt");
 
-        List<String> noder = new ArrayList<>();
-        List<String> relationer = new ArrayList<>();
-        Set<String> ids = new HashSet<>();
+        List<Nod> noder = new ArrayList<>();
+        List<Kant> relationer = new ArrayList<>();
+        collect(root, null, null, noder, relationer, new HashSet<>());
+        if (noder.isEmpty() || !root.has("id") || !root.has("version"))
+            throw new IllegalArgumentException("Roten måste vara ett livscykelobjekt");
 
-        collect(root, null, null, noder, relationer, ids);
-
-        return "// FFA:s härledda graf. Kör i en separat databas för demonstrationen.\n"
-                + String.join("\n", noder) + "\n" + String.join("\n", relationer) + "\n";
+        var rot = noder.getFirst();
+        StringBuilder cypher = new StringBuilder("// Kör hela projektionen som en enda Cypher-fråga.\n");
+        cypher.append("MERGE (root:FfaObjekt {id: ").append(literal(rot.id())).append("})\n")
+                // Explicit skrivlås före versionsläsningen; hålls till transaktionens slut.
+                .append("SET root._ffaLock = true REMOVE root._ffaLock\n")
+                .append("WITH root WHERE coalesce(root.version, -1) < ").append(rot.version()).append("\n")
+                .append("OPTIONAL MATCH ()-[old]->() WHERE old.ffaProjectionOwner = ")
+                .append(literal(rot.id())).append("\nDELETE old\nWITH DISTINCT root\n");
+        for (int i = 0; i < noder.size(); i++) {
+            var nod = noder.get(i);
+            String variable = "n" + i;
+            cypher.append("MERGE (").append(variable).append(":FfaObjekt {id: ")
+                    .append(literal(nod.id())).append("})\n")
+                    .append("SET ").append(variable).append(":").append(identifier(nod.label())).append("\n")
+                    .append("FOREACH (_ IN CASE WHEN coalesce(").append(variable)
+                    .append(".version, -1) < ").append(nod.version()).append(" THEN [1] ELSE [] END | SET ")
+                    .append(variable).append(" = ").append(nod.properties()).append(")\n");
+        }
+        for (var kant : relationer) {
+            int from = index(noder, kant.fran());
+            int to = index(noder, kant.till());
+            cypher.append("MERGE (n").append(from).append(")-[:").append(identifier(kant.typ()))
+                    .append(" {ffaProjectionOwner: ").append(literal(rot.id())).append("}]->(n")
+                    .append(to).append(")\n");
+        }
+        return cypher.append("RETURN root.id AS objektId, root.version AS version;\n").toString();
     }
+
+    /** Krävs vid import för att samtidiga MERGE-anrop inte ska skapa samma identitet två gånger. */
+    public static String schema() {
+        return "CREATE CONSTRAINT ffa_objekt_id IF NOT EXISTS FOR (n:FfaObjekt) REQUIRE n.id IS UNIQUE";
+    }
+
+    private record Nod(String id, int version, String label, String properties) {}
+    private record Kant(String fran, String till, String typ) {}
+
+    private static int index(List<Nod> noder, String id) {
+        for (int i = 0; i < noder.size(); i++) if (noder.get(i).id().equals(id)) return i;
+        throw new IllegalArgumentException("Relationens ändpunkt saknas");
+    }
+
+    private static String literal(Object value) { return JSON.writeValueAsString(value); }
 
     /** Följer inbäddningen och knyter varje livscykelnod till närmaste ägarnod. */
     private void collect(JsonNode node, String parent, String relation,
-                        List<String> nodes, List<String> relations, Set<String> ids) {
+                        List<Nod> nodes, List<Kant> relations, Set<String> ids) {
         if (node.isArray()) {
-            for (JsonNode child : node)
-                collect(child, parent, relation, nodes, relations, ids);
+            for (JsonNode child : node) collect(child, parent, relation, nodes, relations, ids);
             return;
         }
-        if (!node.isObject())
-            return;
+        if (!node.isObject()) return;
 
-        // Värdeobjekt saknar egen nodidentitet; deras barn fortsätter med samma ägare.
         String owner = parent;
         if (node.has("id") && node.has("version")) {
             String type = node.path("@type").asString();
             JsonNode rule = mapping.get(type);
-            if (rule == null)
-                throw new IllegalArgumentException("Ingen grafmappning för " + type);
-
+            if (rule == null) throw new IllegalArgumentException("Ingen grafmappning för " + type);
             String id = node.path("id").asString();
             if (id.isBlank() || !ids.add(id))
                 throw new IllegalArgumentException("Tom eller dubblerad nodidentitet: " + id);
+            var version = node.get("version");
+            if (!version.isIntegralNumber() || !version.canConvertToInt() || version.intValue() < 0)
+                throw new IllegalArgumentException("Ogiltig objektversion: " + id);
 
-            // Endast egenskaper som valts i den gemensamma mappningen blir sökbara.
             Map<String, Object> properties = new LinkedHashMap<>();
+            properties.put("id", id);
             for (JsonNode field : rule.path("properties")) {
                 String key = field.asString();
                 flatten(key, node.get(key), properties);
             }
-            properties.put("version", node.path("version").intValue());
-
+            properties.put("version", version.intValue());
             String props = properties.entrySet().stream()
-                    .map(e -> identifier(e.getKey()) + ": " + JSON.writeValueAsString(e.getValue()))
-                    .collect(java.util.stream.Collectors.joining(", "));
-            nodes.add("MERGE (n:FfaObjekt:" + identifier(rule.path("label").asString())
-                    + " {id: " + JSON.writeValueAsString(id) + "}) SET n = {id: "
-                    + JSON.writeValueAsString(id) + ", " + props + "};");
-
-            if (parent != null)
-                relations.add("MATCH (a:FfaObjekt {id: " + JSON.writeValueAsString(parent)
-                    + "}), (b:FfaObjekt {id: " + JSON.writeValueAsString(id) + "}) MERGE (a)-[:"
-                    + identifier(relation.toUpperCase(Locale.ROOT)) + "]->(b);");
+                    .map(e -> identifier(e.getKey()) + ": " + literal(e.getValue()))
+                    .collect(java.util.stream.Collectors.joining(", ", "{", "}"));
+            nodes.add(new Nod(id, version.intValue(), rule.path("label").asString(), props));
+            if (parent != null) relations.add(new Kant(parent, id, relation.toUpperCase(Locale.ROOT)));
             owner = id;
         }
-
-        for (var entry : node.properties()) {
+        for (var entry : node.properties())
             collect(entry.getValue(), owner, entry.getKey(), nodes, relations, ids);
-        }
     }
 
     /** Plattar ut valda värdeobjekt till skalära nodegenskaper, exempelvis belopp_varde. */
@@ -118,7 +147,7 @@ public final class Grafprojektion {
         if (args.length != 2)
             throw new IllegalArgumentException("Användning: Grafprojektion <verifierad-json> <cypher-ut>");
 
-        String cypher = new Grafprojektion().projektera(Files.readAllBytes(Path.of(args[0])));
+        String cypher = schema() + ";\n" + new Grafprojektion().projektera(Files.readAllBytes(Path.of(args[0])));
         Path out = Path.of(args[1]);
         if (out.toAbsolutePath().getParent() != null)
             Files.createDirectories(out.toAbsolutePath().getParent());

@@ -28,7 +28,9 @@ public final class Demo {
             if (Arrays.asList(args).contains("--aterforsok")) {
                 System.out.printf("Återförsökt %d leveranser; %d väntar fortfarande.%n", cache.skickaVantande(100), cache.antalVantande());
             } else {
-                kor(output, cache, keys);
+                try (var arbetare = new Aterforsoksarbetare(cache, java.time.Duration.ofSeconds(5), 100)) {
+                    kor(output, cache, keys);
+                }
                 System.out.printf("Väntande Kafka-leveranser i lokal cache: %d.%n", cache.antalVantande());
             }
         }

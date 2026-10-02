@@ -19,3 +19,7 @@ CREATE TABLE IF NOT EXISTS ffa_dataleverans (
 CREATE INDEX IF NOT EXISTS ffa_process_senaste ON ffa_dataleverans(topic, korrelations_id, ordning DESC);
 CREATE INDEX IF NOT EXISTS ffa_objekt_senaste ON ffa_dataleverans(topic, objekt_id, ordning DESC);
 CREATE INDEX IF NOT EXISTS ffa_vantande ON ffa_dataleverans(topic, ordning) WHERE NOT kafka_publicerad;
+
+-- Version först hindrar återställt historiskt backenddata från att skymma nyare lokal data.
+CREATE INDEX IF NOT EXISTS ffa_process_version ON ffa_dataleverans(topic, korrelations_id, objekt_version DESC, ordning DESC);
+CREATE INDEX IF NOT EXISTS ffa_objekt_version ON ffa_dataleverans(topic, objekt_id, objekt_version DESC, ordning DESC);

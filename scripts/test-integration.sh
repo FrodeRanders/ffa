@@ -17,8 +17,8 @@ if ! docker info >/dev/null 2>&1; then
 fi
 docker compose version >/dev/null
 
-printf 'Startar Kafka och PostgreSQL och väntar på hälsokontrollerna.\n'
-docker compose up -d --wait --wait-timeout 180 postgres kafka
+printf 'Startar Kafka, PostgreSQL och Neo4j och väntar på hälsokontrollerna.\n'
+docker compose --profile graph-tests up -d --wait --wait-timeout 180 postgres kafka neo4j
 docker compose run --rm topic
 
 # Skriptet förbereder den lokala Compose-miljön; testerna ska använda samma tjänster.
@@ -26,6 +26,9 @@ export FFA_JDBC='jdbc:postgresql://localhost:15432/ffa'
 export FFA_DB_USER='ffa'
 export FFA_DB_PASSWORD='ffa-demo'
 export FFA_KAFKA='localhost:19092'
+export FFA_NEO4J='bolt://localhost:17687'
+export FFA_NEO4J_USER='neo4j'
+export FFA_NEO4J_PASSWORD='ffa-demo-password'
 
 printf 'Kör enhets-, integrations- och graftester.\n'
 mvn -q -Pgraph -Dffa.integration=true "$@" test

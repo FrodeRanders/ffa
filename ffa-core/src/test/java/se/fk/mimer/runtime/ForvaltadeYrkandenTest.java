@@ -57,6 +57,71 @@ class ForvaltadeYrkandenTest {
     }
 
     @Test
+    void cachemissForSpecifikLeveransBevararHistorisktTillstand() {
+        var backend = new Minneslager();
+        var original = repository(backend).lagra("process", yrkande());
+        var first = backend.lasProcess("process");
+        ((Ersattning) original.produceratResultat.iterator().next()).belopp = 1500;
+        repository(backend).lagra("process", original);
+        var cache = new Minneslager();
+        var repo = new ForvaltadeYrkanden<>(Yrkande.class, cache, backend, KEYS.getPrivate(), KEYS.getPublic());
+        assertEquals(1, repo.lasLeverans(first.id().toString()).getVersion());
+        assertEquals(first.id(), cache.lasLeverans(first.id()).id());
+        assertArrayEquals(first.dokument().json(), cache.lasLeverans(first.id()).dokument().json());
+    }
+
+    @Test
+    void cachemissAterstallerVerifieratBackenddataUtanNyLeverans() {
+        var backend = new Minneslager();
+        var original = repository(backend).lagra("process", yrkande());
+        var delivery = backend.lasProcess("process");
+        var cache = new Minneslager() {
+            @Override public synchronized void lagra(Dataleverans d) {
+                throw new AssertionError("Återställning får inte publicera en ny leverans");
+            }
+        };
+        var repo = new ForvaltadeYrkanden<>(Yrkande.class, cache, backend, KEYS.getPrivate(), KEYS.getPublic());
+        assertEquals(original.getId(), repo.lasProcess("process").getId());
+        assertEquals(delivery.id(), cache.lasProcess("process").id());
+        assertArrayEquals(delivery.dokument().json(), cache.las(original.getId()).json());
+        assertEquals(original.getVersion(), repo.lasLeverans(delivery.id().toString()).getVersion());
+    }
+
+    @Test
+    void aterstalltTillstandKanUppdaterasOchLokalNyareVersionHarForetrade() {
+        var backend = new Minneslager();
+        var original = repository(backend).lagra("process", yrkande());
+        var cache = new Minneslager();
+        var repo = new ForvaltadeYrkanden<>(Yrkande.class, cache, backend, KEYS.getPrivate(), KEYS.getPublic());
+        var loaded = repo.las(original.getId());
+        ((Ersattning) loaded.produceratResultat.iterator().next()).belopp = 1400;
+        var updated = repo.lagra("process", loaded);
+        cache.aterstall(backend.lasProcess("process"));
+        assertEquals(updated.getVersion(), repo.lasProcess("process").getVersion());
+        assertEquals(1400, ((Ersattning) repo.lasProcess("process").produceratResultat.iterator().next()).belopp);
+    }
+
+    @Test
+    void ogiltigSignaturEllerFelaktigBackendmetadataFarInteAterstallas() {
+        var backend = new Minneslager();
+        repository(backend).lagra("process", yrkande());
+        var original = backend.lasProcess("process");
+        for (var invalid : java.util.List.of(
+                new Dataleverans(original.id(), "process", original.objektId(), 0, original.objektVersion(), original.skapad(),
+                        new LagratDokument(original.dokument().json(), new byte[]{0})),
+                new Dataleverans(original.id(), "fel-process", original.objektId(), 0, original.objektVersion(), original.skapad(), original.dokument()),
+                new Dataleverans(original.id(), "process", original.objektId(), 0, original.objektVersion() + 1, original.skapad(), original.dokument()))) {
+            var source = new Minneslager() {
+                @Override public Dataleverans lasProcess(String id) { return invalid; }
+            };
+            var cache = new Minneslager();
+            var repo = new ForvaltadeYrkanden<>(Yrkande.class, cache, source, KEYS.getPrivate(), KEYS.getPublic());
+            assertThrows(RuntimeException.class, () -> repo.lasProcess("process"));
+            assertNull(cache.lasProcess("process"));
+        }
+    }
+
+    @Test
     void lagringAterlasningAndringOchOförandratTillstand() {
         var store = new Minneslager();
         var repo = repository(store);
@@ -243,7 +308,7 @@ class ForvaltadeYrkandenTest {
     @Test
     void lagringsfelAndrarInteOriginaletsLivscykel() {
         // Felet inträffar efter att representationen förberetts, vid själva lagringsanropet.
-        Dokumentlager failing = new Dokumentlager() {
+        Dokumentlager failing = new Minneslager() {
             public LagratDokument las(String id) {
                 return null;
             }

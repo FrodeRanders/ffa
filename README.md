@@ -152,9 +152,23 @@ identiteter som i objektmodellen. Inbäddningen ger relationerna `BESLUT` och
 Mappningen väljer vilka egenskaper som blir sökbara; personnummer och hundras
 projiceras inte i exemplet. Okända nodtyper avvisas tills en mappning finns.
 
-Cypher-filen kan granskas och köras i en separat Neo4j-databas. Verktyget ansluter
-inte till Neo4j. Det visar objektens motsvarigheter i grafen och är inte en
-fullständig synkronisering av ändringar eller borttagna relationer. Den lokala
+Cypher-filen börjar med en unikhetsregel för `FfaObjekt.id`, följd av hela
+projektionen som **en enda fråga**. Kör schemaregeln först och därefter hela
+projektionsfrågan i en transaktion. Rotobjektet låses före versionskontrollen;
+endast en högre objektversion får ändra grafen. Samma version och äldre tillstånd
+lämnar den beständiga grafen oförändrad även vid samtidiga importförsök.
+
+Ett accepterat tillstånd ersätter rotens egna projekterade relationer med de
+relationer som finns i den kompletta snapshoten. Relationer märks med
+`ffaProjectionOwner`; andra rotobjekts relationer berörs inte. Noder som inte längre
+refereras behålls, eftersom automatisk nodradering kräver regler för ägarskap.
+Även barnnodernas egenskaper skyddas av deras versioner. Exemplet utgår från att
+rotens snapshot äger sina inbäddade relationer; delade objekt mellan processer
+behöver ett förvaltat kontrakt för relationernas ägarskap.
+
+Verktyget ansluter inte självt till Neo4j. Integrationssviten kör den genererade
+frågan mot en separat lokal Neo4j och visar dubletter, äldre tillstånd och
+borttagna relationer. Den lokala
 JSON-exporten är redan verifierad av demon; grafverktyget tar inte emot och
 verifierar signerade dokument från externa avsändare.
 
@@ -179,7 +193,7 @@ PostgreSQL. För integrationstester, starta Docker och kör:
 ./scripts/test-integration.sh
 ```
 
-Skriptet startar projektets Kafka och PostgreSQL, väntar på hälsokontrollerna,
+Skriptet startar projektets Kafka, PostgreSQL och Neo4j, väntar på hälsokontrollerna,
 skapar förmånstopicen och kör testerna inklusive grafmodulen. Tjänsterna lämnas
 kvar efteråt; `docker compose stop` stoppar dem utan att radera volymerna.
 Om tjänsterna redan är startade kan testerna också köras direkt med
@@ -198,11 +212,18 @@ lagring och återläsning. Modellen behöver fler förvaltade invariantregler in
 verklig användning.
 
 PostgreSQL-adaptern kontrollerar den förväntade objektversionen inom sin
-transaktion, även mellan flera instanser. Ett rådgivande lås per topic ger enkel
-ordning i denna PoC och begränsar genomströmningen. Kafka och PostgreSQL delar
+transaktion, även mellan flera instanser. Rådgivande processlås bevarar ordningen
+inom processen och objektlås skyddar identiteten. Oberoende processer kan skrivas
+och återförsökas parallellt. Kafka och PostgreSQL delar
 ingen atomisk transaktion; kvarvarande felgränser beskrivs i persistensdokumentet. Kopiering
 av intern livscykelmetadata täcker yrkandet, dess beslut och producerade resultat;
 utvidgningar med egna livscykelobjekt behöver en motsvarande central regel.
+
+En valfri `Dokumentkalla` ger verifierad återställning från backend vid cachemiss,
+utan ny Kafka-publicering. Företagets backendadapter behöver implementeras i den
+miljö där backend är tillgänglig; se [persistenskontraktet](docs/persistens.md).
+Utvecklingsnyckelns skapande skyddas av JVM- och fillås så att samtidiga demostarter
+använder samma beständiga nyckel.
 
 Nyckelrotation, certifikatbaserad tillit och produktionsintegration med Mimer
 återstår. Dessa frågor ska lösas bakom objekt-API:et, så att förmånen kan behålla

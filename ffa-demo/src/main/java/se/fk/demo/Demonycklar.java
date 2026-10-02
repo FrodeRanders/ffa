@@ -1,6 +1,7 @@
 package se.fk.demo;
 
 import java.nio.file.*;
+import java.nio.channels.FileChannel;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.*;
 import java.security.interfaces.RSAPrivateCrtKey;
@@ -10,8 +11,17 @@ import java.security.spec.*;
 final class Demonycklar {
     private Demonycklar() {}
 
-    static KeyPair lasEllerSkapa(Path directory) throws Exception {
+    static synchronized KeyPair lasEllerSkapa(Path directory) throws Exception {
         Files.createDirectories(directory);
+        // JVM-låset ovan och fillåset nedan skyddar även samtidiga demoprocesser.
+        try (var channel = FileChannel.open(directory.resolve(".nyckel.lock"),
+                StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+             var lock = channel.lock()) {
+            return lasEllerSkapaLast(directory);
+        }
+    }
+
+    private static KeyPair lasEllerSkapaLast(Path directory) throws Exception {
         Path file = directory.resolve("signering.pkcs8");
         if (!Files.exists(file)) {
             var generator = KeyPairGenerator.getInstance("RSA");

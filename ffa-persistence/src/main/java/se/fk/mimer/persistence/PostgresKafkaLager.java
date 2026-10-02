@@ -43,10 +43,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
     }
 
     @Override
-    public LagratDokument las(String id) {
-        var delivery = hamta("objekt_id = ?", id);
-        return delivery == null ? null : delivery.dokument();
-    }
+    public Dataleverans lasObjekt(String id) { return hamta("objekt_id = ?", id); }
 
     @Override
     public Dataleverans lasProcess(String id) { return hamta("korrelations_id = ?", id); }
@@ -56,7 +53,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
 
     private Dataleverans hamta(String predicate, Object value) {
         try (var connection = dataSource.getConnection(); var query = connection.prepareStatement(
-                "SELECT * FROM ffa_dataleverans WHERE topic = ? AND " + predicate + " ORDER BY ordning DESC LIMIT 1")) {
+                "SELECT * FROM ffa_dataleverans WHERE topic = ? AND " + predicate + " ORDER BY objekt_version DESC, ordning DESC LIMIT 1")) {
             query.setString(1, topic);
             query.setObject(2, value);
             try (var rows = query.executeQuery()) { return rows.next() ? lasRad(rows) : null; }
@@ -70,31 +67,69 @@ public final class PostgresKafkaLager implements Dokumentlager {
                 row.getString("dokument").getBytes(StandardCharsets.UTF_8), row.getBytes("signatur")));
     }
 
-    @Override
-    public void lagra(String id, LagratDokument dokument) {
-        throw new UnsupportedOperationException("Beständig lagring kräver korrelations-id och dataleveransmetadata");
-    }
-
-    /**
-     * Topic-låset serialiserar lokala skribenter och replay i denna PoC. Det hålls också under
-     * Kafka-anropet. Det ger enkel ordning och versionskontroll, men begränsar genomströmningen.
-     */
-    private void lasTopic(Connection connection) throws SQLException {
-        try (var lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))")) {
-            lock.setString(1, "ffa:" + topic);
-            lock.execute();
+    // Processlås bevarar publiceringsordningen; objektlås skyddar versionskontrollen även
+    // om två anrop felaktigt försöker knyta samma objekt till olika processer.
+    private boolean las(Connection connection, String key, boolean vanta) throws SQLException {
+        String function = vanta ? "pg_advisory_xact_lock" : "pg_try_advisory_xact_lock";
+        try (var lock = connection.prepareStatement("SELECT " + function + "(hashtextextended(?, 0))")) {
+            lock.setString(1, "ffa:" + topic.length() + ":" + topic + ":" + key);
+            try (var rows = lock.executeQuery()) { rows.next(); return vanta || rows.getBoolean(1); }
         }
     }
 
+    @Override
+    public void aterstall(Dataleverans delivery) {
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                las(connection, "process:" + delivery.korrelationsId(), true);
+                las(connection, "objekt:" + delivery.objektId(), true);
+                try (var query = connection.prepareStatement(
+                        "SELECT * FROM ffa_dataleverans WHERE dataleverans_id = ?")) {
+                    query.setObject(1, delivery.id());
+                    try (var rows = query.executeQuery()) {
+                        if (rows.next()) {
+                            var existing = lasRad(rows);
+                            if (!topic.equals(rows.getString("topic")) || !sammaLeverans(existing, delivery))
+                                throw new IllegalStateException("Dataleverans-id är redan knutet till annat data");
+                            // En lokal, ännu okvitterad leverans behåller sin outbox-status.
+                        } else {
+                            skriv(connection, delivery, true);
+                            try (var update = connection.prepareStatement(
+                                    "UPDATE ffa_dataleverans SET leveransforsok = 0 WHERE dataleverans_id = ?")) {
+                                update.setObject(1, delivery.id());
+                                update.executeUpdate();
+                            }
+                        }
+                    }
+                }
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) { throw new IllegalStateException("Backenddata kunde inte återställas", e); }
+    }
+
+    private static boolean sammaLeverans(Dataleverans a, Dataleverans b) {
+        return a.id().equals(b.id()) && a.korrelationsId().equals(b.korrelationsId())
+                && a.objektId().equals(b.objektId()) && a.objektVersion() == b.objektVersion()
+                && a.forvantadVersion() == b.forvantadVersion() && a.skapad().equals(b.skapad())
+                && java.util.Arrays.equals(a.dokument().json(), b.dokument().json())
+                && java.util.Arrays.equals(a.dokument().signatur(), b.dokument().signatur());
+    }
+
     private void kontrolleraVersion(Connection connection, Dataleverans delivery) throws SQLException {
-        try (var query = connection.prepareStatement("SELECT objekt_id, objekt_version FROM ffa_dataleverans "
-                + "WHERE topic = ? AND (objekt_id = ? OR korrelations_id = ?) ORDER BY ordning DESC")) {
+        try (var query = connection.prepareStatement("SELECT objekt_id, objekt_version, korrelations_id FROM ffa_dataleverans "
+                + "WHERE topic = ? AND (objekt_id = ? OR korrelations_id = ?) ORDER BY objekt_version DESC, ordning DESC")) {
             query.setString(1, topic);
             query.setString(2, delivery.objektId());
             query.setString(3, delivery.korrelationsId());
             try (var rows = query.executeQuery()) {
                 if (rows.next()) {
-                    if (!rows.getString(1).equals(delivery.objektId()) || rows.getLong(2) != delivery.forvantadVersion())
+                    if (!rows.getString(1).equals(delivery.objektId())
+                            || !rows.getString(3).equals(delivery.korrelationsId())
+                            || rows.getLong(2) != delivery.forvantadVersion())
                         throw new IllegalStateException("Processen har ändrats; läs om före lagring");
                 } else if (delivery.forvantadVersion() != 0) {
                     throw new IllegalStateException("Tidigare processtillstånd saknas i cachen");
@@ -109,7 +144,8 @@ public final class PostgresKafkaLager implements Dokumentlager {
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
-                lasTopic(connection);
+                las(connection, "process:" + delivery.korrelationsId(), true);
+                las(connection, "objekt:" + delivery.objektId(), true);
                 kontrolleraVersion(connection, delivery);
                 if (lage == Leveranslage.KAFKA_FORST) {
                     if (vantande(connection, delivery.korrelationsId()) != 0)
@@ -130,7 +166,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
 
         // Här är den lokala kopian redan hållbart committad. Ett leveransfel får inte låtsas rulla tillbaka den.
         if (lage == Leveranslage.LOKAL_RESILIENS) {
-            try { skickaVantande(100); }
+            try { skickaProcess(delivery.korrelationsId(), 100); }
             catch (RuntimeException e) {
                 LOG.log(System.Logger.Level.WARNING, "Lokalt lagrat; Kafka väntar på återförsök: " + e.getMessage());
             }
@@ -159,18 +195,60 @@ public final class PostgresKafkaLager implements Dokumentlager {
         }
     }
 
-    /** Återförsök i lokal lagringsordning, med samma id, JSON och signatur som det ursprungliga försöket. */
+    /** Fördelar batchen mellan processer. Ett fel hindrar inte andra processers återförsök. */
     public int skickaVantande(int maxAntal) {
+        if (maxAntal <= 0) throw new IllegalArgumentException("Batchstorleken måste vara positiv");
+        var processer = new java.util.LinkedHashMap<String, Integer>();
+        try (var connection = dataSource.getConnection(); var query = connection.prepareStatement("""
+                SELECT korrelations_id FROM (
+                    SELECT korrelations_id, ordning,
+                           row_number() OVER (PARTITION BY korrelations_id ORDER BY ordning) AS plats
+                    FROM ffa_dataleverans WHERE topic = ? AND NOT kafka_publicerad
+                ) AS vantande ORDER BY plats, ordning LIMIT ?
+                """)) {
+            query.setString(1, topic);
+            query.setInt(2, maxAntal);
+            try (var rows = query.executeQuery()) {
+                while (rows.next()) processer.merge(rows.getString(1), 1, Integer::sum);
+            }
+        } catch (SQLException e) { throw new IllegalStateException("Outbox kunde inte läsas", e); }
+        if (processer.isEmpty()) return 0;
+
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(Math.min(8, processer.size()))) {
+            var resultat = new java.util.ArrayList<java.util.concurrent.Future<Integer>>();
+            processer.forEach((process, antal) -> resultat.add(executor.submit(() -> skickaProcess(process, antal))));
+            int skickade = 0;
+            RuntimeException fel = null;
+            for (var future : resultat) {
+                try { skickade += future.get(); }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Återförsök avbröts", e);
+                } catch (java.util.concurrent.ExecutionException e) {
+                    var failure = e.getCause() instanceof RuntimeException runtime ? runtime
+                            : new IllegalStateException("Återförsök misslyckades", e.getCause());
+                    if (fel == null) fel = failure; else fel.addSuppressed(failure);
+                }
+            }
+            if (fel != null) throw fel;
+            return skickade;
+        }
+    }
+
+    /** Återförsök i processens lagringsordning, med samma id, JSON och signatur.
+     * En process som redan bearbetas av en annan arbetare hoppas över denna gång. */
+    public int skickaProcess(String korrelationsId, int maxAntal) {
         if (maxAntal <= 0) throw new IllegalArgumentException("Batchstorleken måste vara positiv");
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
-                lasTopic(connection);
+                if (!las(connection, "process:" + korrelationsId, false)) return 0;
                 int sent = 0;
                 try (var query = connection.prepareStatement("SELECT * FROM ffa_dataleverans "
-                        + "WHERE topic = ? AND NOT kafka_publicerad ORDER BY ordning LIMIT ? FOR UPDATE")) {
+                        + "WHERE topic = ? AND korrelations_id = ? AND NOT kafka_publicerad ORDER BY ordning LIMIT ? FOR UPDATE")) {
                     query.setString(1, topic);
-                    query.setInt(2, maxAntal);
+                    query.setString(2, korrelationsId);
+                    query.setInt(3, maxAntal);
                     try (var rows = query.executeQuery()) {
                         while (rows.next()) {
                             var delivery = lasRad(rows);

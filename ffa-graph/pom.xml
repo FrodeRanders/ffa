@@ -7,6 +7,13 @@
     </parent>
     <artifactId>ffa-graph</artifactId>
     <dependencies>
+        <!-- Endast integrationstester ansluter till Neo4j; projektionen har ingen drivrutin i körkod. -->
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>6.1.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

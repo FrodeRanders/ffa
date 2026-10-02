@@ -49,6 +49,117 @@ class PostgresKafkaIntegrationTest {
     }
 
     @Test
+    void tvaReplayArbetareFarIntePasseraEnPagåendeLeverans() throws Exception {
+        var down = new AtomicBoolean(true);
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var observed = new CopyOnWriteArrayList<UUID>();
+        var first = delivery("process", "objekt", 0, 1);
+        var second = delivery("process", "objekt", 1, 2);
+        var store = store(Leveranslage.LOKAL_RESILIENS, (t, d) -> {
+            if (down.get()) throw new IllegalStateException("Kafka nere");
+            if (d.id().equals(first.id())) {
+                entered.countDown();
+                try { if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Testtimeout"); }
+                catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
+            }
+            observed.add(d.id());
+        });
+        store.lagra(first);
+        store.lagra(second);
+        down.set(false);
+        var other = store(Leveranslage.LOKAL_RESILIENS, (t, d) -> {
+            throw new AssertionError("En upptagen process får inte publiceras parallellt");
+        });
+        try (var workers = Executors.newSingleThreadExecutor()) {
+            var active = workers.submit(() -> store.skickaProcess("process", 10));
+            try {
+                assertTrue(entered.await(5, TimeUnit.SECONDS));
+                assertEquals(0, other.skickaProcess("process", 10));
+                assertTrue(observed.isEmpty());
+            } finally { release.countDown(); }
+            assertEquals(2, active.get(5, TimeUnit.SECONDS));
+        }
+        assertEquals(List.of(first.id(), second.id()), observed);
+        assertEquals(0, store.antalVantande());
+    }
+
+    @Test
+    void aterstallningArIdempotentOchPublicerarInteEllerSkymmerNyareLokalData() throws Exception {
+        var observed = new ArrayList<UUID>();
+        var store = store(Leveranslage.KAFKA_FORST, (t, d) -> observed.add(d.id()));
+        var restored = delivery("process", "objekt", 0, 1);
+        store.aterstall(restored);
+        store.aterstall(restored);
+        assertEquals(1, count());
+        assertEquals(0, store.antalVantande());
+        assertTrue(observed.isEmpty());
+        var collision = new Dataleverans(restored.id(), restored.korrelationsId(), restored.objektId(), 0, 1,
+                restored.skapad(), new LagratDokument(new byte[]{123, 125}, restored.dokument().signatur()));
+        assertThrows(IllegalStateException.class, () -> store.aterstall(collision));
+        var next = delivery("process", "objekt", 1, 2);
+        store.lagra(next);
+        store.aterstall(delivery("process", "objekt", 0, 1));
+        assertEquals(next.id(), store.lasProcess("process").id());
+        assertEquals(List.of(next.id()), observed);
+    }
+
+    @Test
+    void blockeradProcessHindrarInteAndraSkribenter() throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var store = store(Leveranslage.KAFKA_FORST, (t, d) -> {
+            if (d.korrelationsId().equals("blockerad")) {
+                entered.countDown();
+                try { if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Testtimeout"); }
+                catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
+            }
+        });
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var slow = workers.submit(() -> store.lagra(delivery("blockerad", "o1", 0, 1)));
+            try {
+                assertTrue(entered.await(5, TimeUnit.SECONDS));
+                workers.submit(() -> store.lagra(delivery("annan", "o2", 0, 1))).get(3, TimeUnit.SECONDS);
+                assertNotNull(store.lasProcess("annan"));
+            } finally { release.countDown(); }
+            slow.get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    void felandeProcessHindrarInteAndraProcessersReplay() {
+        var down = new AtomicBoolean(true);
+        var observed = new CopyOnWriteArrayList<UUID>();
+        var store = store(Leveranslage.LOKAL_RESILIENS, (t, d) -> {
+            if (down.get() || d.korrelationsId().equals("felande")) throw new IllegalStateException("Kafka nere");
+            observed.add(d.id());
+        });
+        store.lagra(delivery("felande", "o1", 0, 1));
+        var other = delivery("annan", "o2", 0, 1);
+        store.lagra(other);
+        down.set(false);
+        assertThrows(Leveransfel.class, () -> store.skickaVantande(100));
+        assertEquals(List.of(other.id()), observed);
+        assertEquals(1, store.antalVantande());
+    }
+
+    @Test
+    void periodiskArbetareAterforsokerEfterAttKafkaAterhamtatSig() throws Exception {
+        var down = new AtomicBoolean(true);
+        var sent = new CountDownLatch(1);
+        var store = store(Leveranslage.LOKAL_RESILIENS, (t, d) -> {
+            if (down.get()) throw new IllegalStateException("Kafka nere");
+            sent.countDown();
+        });
+        store.lagra(delivery("process", "objekt", 0, 1));
+        down.set(false);
+        try (var worker = new Aterforsoksarbetare(store, Duration.ofMillis(50), 10)) {
+            assertTrue(sent.await(5, TimeUnit.SECONDS));
+        }
+        assertEquals(0, store.antalVantande());
+    }
+
+    @Test
     void kafkaFelGerIngenLokalKopiaIStriktLage() throws Exception {
         var store = store(Leveranslage.KAFKA_FORST, (t, d) -> { throw new IllegalStateException("Kafka nere"); });
         var delivery = delivery("process", "objekt", 0, 1);

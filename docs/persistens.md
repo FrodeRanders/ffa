@@ -42,8 +42,10 @@ varken som unik nyckel eller som grund för deduplicering.
 Signaturen lagras separat som `bytea`.
 
 Varje rad har leveranstid `skapad`, lokal lagringstid `lagrad` och en monoton
-`ordning`. Senaste lokala tillstånd väljs med `ordning`, så att lika tidsstämplar
-eller en justerad klocka inte ger tvetydig ordning. Tiderna finns kvar för sökning
+`ordning`. Senaste tillstånd väljs med högst `objekt_version` och därefter
+`ordning`, så att återställning av ett äldre backenddokument inte skymmer nyare
+lokalt processtillstånd. Lika tidsstämplar eller en justerad klocka ger därmed
+inte tvetydig ordning. Tiderna finns kvar för sökning
 och spårning. `kafka_publicerad`, `kafka_publicerad_tid`, `leveransforsok` och
 `senaste_fel` beskriver leveransstatus. Återförsök flyttar inte en gammal rad framåt
 i processhistoriken.
@@ -57,7 +59,7 @@ commit mellan systemen.
 
 ### KAFKA_FORST (standard)
 
-1. Öppna PostgreSQL-transaktion och lås den lokala topicens skrivflöde.
+1. Öppna PostgreSQL-transaktion och lås processen och objektidentiteten.
 2. Kontrollera processens identitet, förväntad objektversion och eventuella väntande leveranser.
 3. Skicka JSON och headers med `acks=all`, och invänta Kafka-kvitto.
 4. Skriv exakt samma dokument och signatur i cachen med `kafka_publicerad=true`.
@@ -66,8 +68,9 @@ commit mellan systemen.
 Ett Kafka-fel ger ingen ny lokal kopia. Det motsvarar kravet att lokal lagring
 aldrig sker utan Kafka-kvitto. Om Kafka lyckas men INSERT eller commit misslyckas
 kan leveransen däremot finnas i masterdataflödet utan lokal kopia. `Leveransfel`
-rapporterar dataleverans-id och om Kafka redan kvitterat. Reparation av cachen
-från masterdataflödet ingår ännu inte i PoC:en. Även ett förlorat kvitto kan ge
+rapporterar dataleverans-id och om Kafka redan kvitterat. Cachen kan återställas
+från backend genom läskontraktet nedan; anslutningen till företagets backend
+behöver implementeras inne på företagsnätet. Även ett förlorat kvitto kan ge
 ett osäkert utfall: meddelandet kan ha tagits emot trots att klienten får timeout.
 
 ### LOKAL_RESILIENS
@@ -82,20 +85,58 @@ Ett Kafka-fel hindrar inte framgångsrik lokal lagring. Återläsning av process
 senaste tillstånd inkluderar även väntande leveranser. Ett databasfel före commit
 returneras som fel och leder inte till någon Kafka-publicering.
 
-Väntande leveranser överlever omstart. Varje ny lokal lagring försöker tömma en
-batch om högst 100 rader; ytterligare batcher kan köras med återförsökskommandot.
-Återförsök återanvänder id, JSON och signatur. Vid fel stoppas batchen innan senare
-leveranser skickas. Ett lås per topic samordnar skribenter och replay även mellan
-flera instanser i denna PoC. Ett mer skalbart genomförande kan dela upp låsningen
-per process, men måste då bevara ordning och versionskontroll.
+Väntande leveranser överlever omstart. Varje lokal lagring försöker skicka högst
+100 väntande rader för den egna processen. Ett processlås samordnar skribenter och
+återförsök mellan instanser. Ett separat objektlås hindrar att samma objekt knyts
+till två processer samtidigt. Oberoende processer delar inte ett topiclås.
+
+`skickaVantande(maxAntal)` fördelar batchen mellan processer, med de äldsta
+väntande leveranserna först inom varje process. Upp till åtta processer hanteras
+parallellt. En upptagen process hoppas över och kan försöka igen nästa gång.
+Ett leveransfel stoppar senare leveranser **inom den felande processen**; övriga
+processer fortsätter. Metoden rapporterar fel efter att övriga försök slutförts,
+så ett undantag betyder inte att hela batchen misslyckats. Tidigare kvitton behålls.
+Återförsök använder alltid ursprungligt id, JSON och signatur.
 
 Om processen kraschar efter Kafka-kvitto men före uppdaterad lokal flagga kan
 samma dataleverans skickas igen. Leveransgarantin är därför minst en gång.
 Producentens idempotens skyddar dess interna nätverksåterförsök, inte replay
 efter en omstart. Dubletter accepteras i det befintliga masterdataflödet enligt
 beskrivningen nedan; separat deduplicering behöver därför inte införas i förmånen.
-Det finns ingen automatisk bakgrundsarbetare i demon; använd det uttryckliga
-återförsökskommandot eller anropa `skickaVantande` från en schemalagd körning.
+`Aterforsoksarbetare` kör återförsök var femte sekund medan demoprocessen lever.
+Demon är ett kortlivat program; efter avslut krävs nästa programstart eller det
+uttryckliga återförsökskommandot. En långlivad värd, exempelvis processmotorn,
+kan behålla arbetaren under hela sin livstid. Stäng arbetaren före Kafka-publiceraren.
+
+## Återställning från backend vid cachemiss
+
+`Dokumentkalla` beskriver backendens läsning per objekt-id, korrelations-id och
+dataleverans-id. Källan returnerar den ursprungliga `Dataleverans` med signerad
+JSON och metadata, eller `null` när tillståndet saknas. Transportfel ska rapporteras
+som fel, inte som att data saknas. Anslut den i infrastruktursammansättningen:
+
+```java
+var yrkanden = new ForvaltadeYrkanden<>(YrkandeOmHundbidrag.class, cache,
+        backend, signeringsnyckel, verifieringsnyckel);
+```
+
+Kärnan läser backend endast när den lokala cachen saknar den begärda identiteten.
+Den kontrollerar söknyckel, signatur, dokumenttyp, modellidentitet och objektversion,
+och migrerar före Java-bindning. Först därefter anropas `cache.aterstall(leverans)`.
+Återställning behåller ursprungligt leverans-id, JSON, signatur och leveranstid;
+den skapar ingen ny Kafka-leverans. Backenddata betraktas som redan levererat,
+med `kafka_publicerad=true` och noll lokala publiceringsförsök. En redan befintlig
+lokal rad behåller däremot sin leveransstatus. Samma id med annat data avvisas.
+Nyare lokal version, även en väntande sådan, har företräde framför äldre backenddata.
+
+Alla lagringsadaptrar måste implementera hela `Dokumentlager`-kontraktet. Den
+äldre skrivmetoden som tappade leveransmetadata finns inte längre i körkoden.
+Bakåtkompatibla metoder för att lägga in råa testfixturer finns enbart i teststödet.
+
+Det finns ingen anslutning till företagets verkliga backend i denna miljö.
+Demon använder därför fortfarande konstruktorn utan backend. Återställningsvägen
+testas med en testkälla och den riktiga PostgreSQL-adaptern; något fiktivt HTTP-API
+eller en backend i primärminne har inte införts i den körbara lösningen.
 
 ## Det efterföljande masterdataflödet
 
@@ -124,8 +165,8 @@ lagring (CAS), där dataleverans-id är SHA-256 av en entydigt definierad
 JSON-representation och hashen signeras. Då skulle identiteten knytas direkt
 till innehållet. Det gör vi inte nu: demon tilldelar UUID version 7 och signerar
 JSON-dokumentet enligt den befintliga policyn. UUID:t är inte en innehållshash.
-Den lokala lagringsordningen används fortsatt för senaste tillstånd; UUID:t
-ersätter inte versionskontroll eller ordning vid återförsök.
+Objektversion och lokal lagringsordning används fortsatt för senaste tillstånd;
+UUID:t ersätter inte versionskontroll eller ordning vid återförsök.
 
 Inlevererade processtillstånd bearbetas även till en graf. Övriga konsumenter
 läser från grafen, inte direkt från object store. Enligt det befintliga systemets
@@ -200,8 +241,8 @@ Förbered den lokala Docker-miljön och kör integrationstester:
 ```
 
 Skriptet kan anropas från valfri katalog och förutsätter att Docker-daemonen
-är startad. Det hämtar vid behov avbildningarna, startar Kafka och PostgreSQL,
-väntar på båda hälsokontrollerna och skapar `ffa.hundbidrag` om topicen saknas.
+är startad. Det hämtar vid behov avbildningarna, startar Kafka, PostgreSQL och
+Neo4j (Compose-profilen `graph-tests`), väntar på hälsokontrollerna och skapar `ffa.hundbidrag` om topicen saknas.
 Om förberedelsen misslyckas startas inte Maven-testerna. Testanslutningarna sätts
 till projektets lokala Compose-tjänster, även om andra `FFA_*`-anslutningar finns
 i den anropande miljön.
@@ -212,6 +253,12 @@ om alla Maven-beroenden redan finns lokalt. Tjänster och volymer lämnas kvar e
 körning för fortsatt utveckling; stoppa med `docker compose stop` vid behov.
 Tester använder egna topicnamn och rensar sina cacherader efteråt; testet mot
 verklig Kafka tar även bort sin topic. Demons lagrade processtillstånd raderas inte.
+
+Graftesterna ansluter till `bolt://localhost:17687`, med lokal testanvändare
+`neo4j` och lösenord `ffa-demo-password`. Direktkörning kan konfigurera
+`FFA_NEO4J`, `FFA_NEO4J_USER` och `FFA_NEO4J_PASSWORD`. Drivrutinen finns bara
+som testberoende. Testerna verifierar dubletter, äldre tillstånd, borttagna
+relationer och samtidiga projektioner, och rensar endast egna slumpade identiteter.
 
 Med tjänsterna redan förberedda kan testerna köras direkt:
 

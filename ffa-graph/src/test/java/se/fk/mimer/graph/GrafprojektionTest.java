@@ -20,11 +20,11 @@ class GrafprojektionTest {
     @Test
     void valdaObjektBlirNoderMedRelationerOchPlattaEgenskaper() {
         String cypher = new Grafprojektion().projektera(INPUT.getBytes(StandardCharsets.UTF_8));
-        assertEquals(3, cypher.lines().filter(line -> line.startsWith("MERGE (n:")).count());
-        assertEquals(2, cypher.lines().filter(line -> line.startsWith("MATCH")).count());
-        assertTrue(cypher.contains("FfaObjekt:`Yrkande`"));
-        assertTrue(cypher.contains("[:`PRODUCERAT_RESULTAT`]"));
-        assertTrue(cypher.contains("[:`BESLUT`]"));
+        assertEquals(3, cypher.lines().filter(line -> line.startsWith("MERGE (n") && !line.contains("->")).count());
+        assertEquals(2, cypher.lines().filter(line -> line.startsWith("MERGE (n") && line.contains("->")).count());
+        assertTrue(cypher.contains("SET n0:`Yrkande`"));
+        assertTrue(cypher.contains("[:`PRODUCERAT_RESULTAT` {"));
+        assertTrue(cypher.contains("[:`BESLUT` {"));
         assertTrue(cypher.contains("`belopp_varde`: 1200.0"));
         assertFalse(cypher.contains("19121212-1212"));
         assertFalse(cypher.contains("Collie"));
