@@ -58,6 +58,27 @@ services:
       timeout: 10s
       retries: 30
       start_period: 20s
+  rustfs:
+    image: rustfs/rustfs:1.0.1
+    profiles: [pipeline-tests]
+    environment:
+      RUSTFS_ACCESS_KEY: ffa-demo
+      RUSTFS_SECRET_KEY: ffa-demo-object-store
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    volumes:
+      - rustfs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
   topic:
     image: apache/kafka:4.1.2
     depends_on:
@@ -68,3 +89,4 @@ services:
 volumes:
   postgres-data:
   kafka-data:
+  rustfs-data:

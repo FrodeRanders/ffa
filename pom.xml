@@ -91,5 +91,10 @@
             <id>graph</id>
             <modules><module>ffa-graph</module></modules>
         </profile>
+        <profile>
+            <id>pipeline</id>
+            <!-- Kör tillsammans med graph; förmånens vanliga bygge behöver inte S3 eller Neo4j. -->
+            <modules><module>ffa-pipeline</module></modules>
+        </profile>
     </profiles>
 </project>

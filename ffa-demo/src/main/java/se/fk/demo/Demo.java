@@ -23,7 +23,7 @@ public final class Demo {
             var cache = new PostgresKafkaLager(env("FFA_JDBC", "jdbc:postgresql://localhost:15432/ffa"),
                     env("FFA_DB_USER", "ffa"), env("FFA_DB_PASSWORD", "ffa-demo"),
                     env("FFA_TOPIC", "ffa.hundbidrag"),
-                    Leveranslage.valueOf(env("FFA_LEVERANSLAGE", "KAFKA_FORST")), kafka);
+                    Leveranslage.valueOf(env("FFA_LEVERANSLAGE", "STRIKT")), kafka);
             cache.initiera();
             if (Arrays.asList(args).contains("--aterforsok")) {
                 System.out.printf("Återförsökt %d leveranser; %d väntar fortfarande.%n", cache.skickaVantande(100), cache.antalVantande());
@@ -62,6 +62,8 @@ public final class Demo {
         // En ny gränsinstans simulerar en framtida aktivitet i processmotorn.
         var reloaded = new ForvaltadeYrkanden<>(YrkandeOmHundbidrag.class, lager, keys.getPrivate(), keys.getPublic()).lasProcess(processId);
         System.out.printf("Process %s återläst. Dataleverans: %s. Yrkandeversion: %d.%n", processId, delivery.id(), reloaded.getVersion());
+        if (lager instanceof PostgresKafkaLager cache)
+            System.out.printf("Bekräftat leveranssteg: %s.%n", cache.lasStatus(delivery.id()).steg());
         yrkanden.lasLeverans(delivery.id().toString());
 
         Files.createDirectories(output.toAbsolutePath().getParent());

@@ -28,6 +28,8 @@ Korrelations-id är Kafka-nyckel och håller processens meddelanden på samma pa
 | `dataleverans-id` | UUID version 7, UTF-8 |
 | `korrelations-id` | Processmotorns process-id, UTF-8 |
 | `objekt-id` | Modellobjektets identitet, UTF-8 |
+| `objekt-version` | Dokumentets objektversion, UTF-8 |
+| `forvantad-version` | Version före lagringsanropet, UTF-8 |
 | `skapad` | Leveransens UTC-tid, UTF-8 |
 | `signatur` | Binär RSA-PSS-signatur för det JCS-kanoniserade JSON-dokumentet |
 | `signatur-algoritm` | `JCS+RSA-PSS-SHA512` |
@@ -57,21 +59,48 @@ omfattar Kafka; den kan inte rulla tillbaka en committad PostgreSQL-transaktion.
 Demon använder därför två namngivna policyer i stället för att utlova atomisk
 commit mellan systemen.
 
-### KAFKA_FORST (standard)
+### STRIKT (standard)
 
 1. Öppna PostgreSQL-transaktion och lås processen och objektidentiteten.
-2. Kontrollera processens identitet, förväntad objektversion och eventuella väntande leveranser.
-3. Skicka JSON och headers med `acks=all`, och invänta Kafka-kvitto.
-4. Skriv exakt samma dokument och signatur i cachen med `kafka_publicerad=true`.
-5. Committa PostgreSQL-transaktionen och returnera Java-objektet.
+2. Kontrollera identitet, förväntad objektversion och att processen inte har väntande leveranser.
+3. Börja Kafka-transaktionen, skicka JSON och headers och invänta kvitto på sändningen.
+4. Skriv exakt samma dokument och signatur lokalt som en väntande leverans och committa PostgreSQL.
+5. Committa Kafka. Konsumenter måste använda `read_committed`.
+6. Registrera bekräftad publicering i en separat databastransaktion och returnera objektet.
 
-Ett Kafka-fel ger ingen ny lokal kopia. Det motsvarar kravet att lokal lagring
-aldrig sker utan Kafka-kvitto. Om Kafka lyckas men INSERT eller commit misslyckas
-kan leveransen däremot finnas i masterdataflödet utan lokal kopia. `Leveransfel`
-rapporterar dataleverans-id och om Kafka redan kvitterat. Cachen kan återställas
-från backend genom läskontraktet nedan; anslutningen till företagets backend
-behöver implementeras inne på företagsnätet. Även ett förlorat kvitto kan ge
-ett osäkert utfall: meddelandet kan ha tagits emot trots att klienten får timeout.
+Sändningskvittot i steg 3 är inte ett commitkvitto. Misslyckas lokal lagring
+aborteras Kafka-transaktionen. Misslyckas Kafka efter lokal commit finns den nya
+versionen beständigt i cachen och kan återförsökas med samma leverans-id.
+`Leveransfel` anger id, positiv lokal commitbekräftelse (`lokaltLagrat`) och
+positiv Kafka-commitbekräftelse (`kafkaKvitterat`). Ett negativt värde bevisar
+inte att motsvarande system saknar data: ett commitkvitto kan ha förlorats.
+
+Vanlig läsning per process eller objekt, och nya lagringar, blockeras i strikt
+läge medan processen har obekräftade leveranser. Ingen äldre version lämnas ut
+som ersättning. `lasLeverans(id)` och `lasStatus(id)` är däremot tillgängliga för
+infrastrukturens diagnos och återhämtning. Efter återförsök eller positiv
+backendbekräftelse kan processen fortsätta från den nya versionen.
+
+Sessionslås på den fysiska PostgreSQL-anslutningen bevarar process- och objekt-
+samordningen även över den inre databascommitten. Anslutningen stängs efter
+försöket, vilket släpper låsen. En krasch lämnar den väntande raden som beständig
+spärr. Återförsök använder transaktionslås på samma processnyckel och hoppar över
+ett pågående strikt försök. Om anslutningspool införs måste sessionslåsen släppas
+uttryckligen innan anslutningen återlämnas.
+
+Fel när den lokala statusflaggan uppdateras efter bekräftad Kafka-commit loggas;
+de kan inte rulla tillbaka de två redan lyckade lagringarna. Raden kan avstämmas
+eller återförsökas. Tills dess kan en senare strikt processaktivitet blockeras.
+
+`KAFKA_FORST` accepteras fortfarande som äldre konfigurationsnamn, men betyder
+nu samma sak som `STRIKT`. Den gamla ordningen med Kafka-publicering före
+beständig cache används inte längre.
+
+En `KafkaPublicerare` utför en Kafka-transaktion åt gången och delar därför
+inte en pågående transaktion mellan parallella processer. Återförsöksbatchens
+databasarbetare kan arbeta parallellt, men publicering genom samma producent
+serialiseras. Högre publiceringskapacitet kräver separata producentinstanser
+med egna transaktions-id:n; det ingår inte i denna PoC.
 
 ### LOKAL_RESILIENS
 
@@ -126,7 +155,8 @@ och migrerar före Java-bindning. Först därefter anropas `cache.aterstall(leve
 Återställning behåller ursprungligt leverans-id, JSON, signatur och leveranstid;
 den skapar ingen ny Kafka-leverans. Backenddata betraktas som redan levererat,
 med `kafka_publicerad=true` och noll lokala publiceringsförsök. En redan befintlig
-lokal rad behåller däremot sin leveransstatus. Samma id med annat data avvisas.
+lokal rad avstäms också till bekräftad rådatalagring om samma leveransdata matchar.
+Samma id med annat data avvisas.
 Nyare lokal version, även en väntande sådan, har företräde framför äldre backenddata.
 
 Alla lagringsadaptrar måste implementera hela `Dokumentlager`-kontraktet. Den
@@ -134,9 +164,13 @@ Alla lagringsadaptrar måste implementera hela `Dokumentlager`-kontraktet. Den
 Bakåtkompatibla metoder för att lägga in råa testfixturer finns enbart i teststödet.
 
 Det finns ingen anslutning till företagets verkliga backend i denna miljö.
-Demon använder därför fortfarande konstruktorn utan backend. Återställningsvägen
-testas med en testkälla och den riktiga PostgreSQL-adaptern; något fiktivt HTTP-API
-eller en backend i primärminne har inte införts i den körbara lösningen.
+Den vanliga demon använder därför fortfarande konstruktorn utan backend.
+Den valfria [hela-kedjan-demon](pipeline.md) använder `RestDokumentkalla` mot
+`BackendRestServer`, som läser den lokala RustFS/PostgreSQL-backenden.
+Återställningsvägen testas både med en testkälla och genom verklig HTTP, Kafka,
+PostgreSQL och RustFS. REST-kontraktet är PoC:ens eget lokala kontrakt; det är
+inte en implementation av företagets befintliga backend-API. Ingen backend i
+primärminne har införts i den körbara lösningen.
 
 ## Det efterföljande masterdataflödet
 
@@ -186,6 +220,66 @@ separat egenskap: outbox skickar i lokal lagringsordning och korrelations-id som
 Kafka-nyckel håller en process på samma partition. Hantering av eventuella äldre
 tillstånd vid återspelning i efterföljande led hör till masterdataflödets kontrakt.
 
+## Leveransmilstolpar och avstämning
+
+`lasStatus(id)` visar lokala observationstider för följande milstolpar:
+
+| Steg | Positivt bevis |
+| --- | --- |
+| `LOKALT_LAGRAD` | Den lokala leveransen är beständig. |
+| `KAFKA_PUBLICERAD` | Kafka-commit är bekräftad. |
+| `RADATA_LAGRADE` | Rätt JSON och metadata finns beständigt i både objektlager och backendens sökindex. |
+| `GRAFBEHANDLAD` | Grafsteget är klart: versionen har tillämpats, fanns redan eller har ersatts av en nyare. |
+
+Betrodd infrastruktur kan anropa `bekrafta(leverans, steg)` efter ett positivt
+REST-kvitto eller en observation från kedjan. Hela leveransen måste matcha den
+lokala raden: id, korrelations-id, objekt-id, versioner, tid, JSON och signatur.
+Kafka-kvittenser hanteras i stället genom `bekrafta(kvittens)`, som kontrollerar
+leveransens fingeravtryck och sparar kvittot i inkorgen, även om cacheposten saknas.
+Bekräftelser är monotona och kan inte sänka status eller skriva om dokumentet.
+Ett grafkvitto fastställer även rådatalagring och tidigare Kafka-publicering.
+Att observera grafens **indatatopic** fastställer däremot bara rådatalagring,
+inte slutförd grafhantering. Ett misslyckat uppslag fastställer inget steg.
+
+Återställning genom `Dokumentkalla` använder samma positiva rådatabevis efter
+kärnans dokumentverifiering. Den kan därför lösa ett osäkert publiceringsutfall
+utan en ny Kafka-leverans. Den valfria pipeline-demon har ett lokalt REST-
+gränssnitt och en separat kvittotopic där rådata- och grafsteget publicerar
+positiva kvitton. `Kvittenskonsument` lagrar dem i en beständig inkorg och
+uppdaterar cachemilstolpar före offsetcommit. Saknade cacheposter stäms av mot
+inkorgen vid återställning. Se [REST och kvittokanal](pipeline.md) för kontrakt,
+konsumentgrupper och behörighetsantaganden. Företagets verkliga REST-tjänst är
+fortfarande inte ansluten.
+
+Milstolpen avser en viss leverans, inte processens senaste tillstånd. Förmånen
+behöver inte invänta rådatalagring eller grafbehandling när rätt tillstånd finns
+lokalt och den valda lagringspolicyn tillåter fortsättning.
+
+## Formell granskning av leveransprotokollet
+
+[TLA+-modellen](../spec/delivery/README.md) följer lokal commit, Kafka-commit,
+rådatalagring, grafbehandling och fördröjda bekräftelser. Den kontrollerar
+krascher, förlorade kvitton, återförsök, strikt processpaus, atomisk
+vidareleverans med källoffset och grafens versionsskydd. Den kompletterande [kvittensmodellen](../spec/delivery/Receipts.tla) följer
+kvittotopic, inkorg, offsetcommit, cacheförlust och återställning som separata
+tillstånd. Den binder kvittot till en innehållstoken fristående från objektversion.
+Modellernas koppling till Java-koden beskrivs i [modellöversikten](../spec/delivery/README.md);
+de utgör inte en mekanisk förfiningskontroll. `./scripts/test-models.sh` kör modellkontrollerna
+med en Java-JAR.
+
+Det tidigare motexemplet med publicerad version 2 och kvarvarande lokal version
+1 används inte längre som accepterad begränsning. `strict-ordering` är nu en
+positiv kontroll; integrationstestet kräver att version 2 behålls och processen
+pausas tills leveransen återhämtats. Negativa kontroller visar varför den nya
+commit-ordningen, korrekta bekräftelser och grafens versionsskydd behövs.
+
+[Backendmodellen](../spec/backend/README.md) fördjupar de separata skrivningarna
+i objektlager och index. För det överenskomna steg N−1 gäller varianten som
+kräver båda lagringarna före vidarepublicering. Varianten med objektbekräftelse
+före index och hållbar indexreparation finns kvar som en undersökt alternativ
+policy, inte som det valda flödet. Modellerna är inte mekaniskt sammansatta och
+bevisar inte att Java-koden är en korrekt förfining av hela kedjan.
+
 ## Köra och konfigurera
 
 ```sh
@@ -219,7 +313,7 @@ mvn -q -Pdemo -Dffa.demo.action=--aterforsok verify
 | `FFA_DB_USER` / `FFA_DB_PASSWORD` | `ffa` / `ffa-demo` (lokalt utvecklingsexempel) |
 | `FFA_KAFKA` | `localhost:19092` |
 | `FFA_TOPIC` | `ffa.hundbidrag` |
-| `FFA_LEVERANSLAGE` | `KAFKA_FORST` eller `LOKAL_RESILIENS` |
+| `FFA_LEVERANSLAGE` | `STRIKT` (standard) eller `LOKAL_RESILIENS` |
 | `FFA_PROCESS_ID` | Nytt process-id per demokörning om inget anges |
 | `FFA_NYCKLAR` | `.demo/nycklar` |
 
@@ -231,7 +325,7 @@ av olika betrodda nycklar behöver förvaltad hantering inför produktion.
 Inspektera cachehistoriken:
 
 ```sh
-docker compose exec postgres psql -U ffa -d ffa -c 'SELECT dataleverans_id, korrelations_id, objekt_version, skapad, lagrad, kafka_publicerad FROM ffa_dataleverans ORDER BY ordning;'
+docker compose exec postgres psql -U ffa -d ffa -c 'SELECT dataleverans_id, korrelations_id, objekt_version, skapad, lagrad, kafka_publicerad, radata_lagrade_tid, grafbehandlad_tid FROM ffa_dataleverans ORDER BY ordning;'
 ```
 
 Förbered den lokala Docker-miljön och kör integrationstester:
@@ -256,8 +350,9 @@ verklig Kafka tar även bort sin topic. Demons lagrade processtillstånd raderas
 
 Graftesterna ansluter till `bolt://localhost:17687`, med lokal testanvändare
 `neo4j` och lösenord `ffa-demo-password`. Direktkörning kan konfigurera
-`FFA_NEO4J`, `FFA_NEO4J_USER` och `FFA_NEO4J_PASSWORD`. Drivrutinen finns bara
-som testberoende. Testerna verifierar dubletter, äldre tillstånd, borttagna
+`FFA_NEO4J`, `FFA_NEO4J_USER` och `FFA_NEO4J_PASSWORD`. I `ffa-graph` finns
+drivrutinen som testberoende; den valfria `ffa-pipeline` använder den även i
+den körbara demon. Testerna verifierar dubletter, äldre tillstånd, borttagna
 relationer och samtidiga projektioner, och rensar endast egna slumpade identiteter.
 
 Med tjänsterna redan förberedda kan testerna köras direkt:
@@ -265,3 +360,12 @@ Med tjänsterna redan förberedda kan testerna köras direkt:
 ```sh
 mvn -q -Pgraph -Dffa.integration=true test
 ```
+
+För hela kedjan, inklusive REST-återläsning och Kafka-kvitton:
+
+```sh
+./scripts/test-integration.sh --pipeline
+```
+
+Detta startar även RustFS och kör kedjetesterna. Se [pipeline-dokumentationen](pipeline.md)
+för serverläge, endpoints, kvittensformat och konfiguration.

@@ -45,6 +45,7 @@ Läs sedan [förmånsexemplet](hundbidrag/src/main/java/se/fk/hundbidrag/Applika
 | `hundbidrag` | Förmånslogik ovanpå FFA:s modell och en liten förmånsutvidgning |
 | `ffa-core` | Organisationsmodell, gemensamma strukturkrav och förvaltad datahantering |
 | `ffa-persistence` | Kafka-leverans, PostgreSQL-cache, leveranshistorik och återförsök |
+| `ffa-pipeline` (valfri) | RustFS, metadataindex med REST, Neo4j och Kafka-kvitton till cachen |
 | `ffa-demo` | Koppla ihop förmånen med lagringsadapter och betrodda nycklar |
 | `ffa-graph` | Härleda en sökbar graf från den förvaltade representationen |
 
@@ -201,6 +202,46 @@ Om tjänsterna redan är startade kan testerna också köras direkt med
 
 De kontrollerar verklig Kafka/PostgreSQL, opaque JSON, metadata, processhistorik,
 fel i båda lagringslägena, återförsök efter omstart och konkurrerande skribenter.
+
+## Modellkontroll med TLA+
+
+Leveransprotokollet kan granskas separat från Java-testerna:
+
+```sh
+./scripts/test-models.sh
+```
+
+Skriptet kör TLC från en versionslåst Java-JAR, utan Maven eller Docker.
+Modellen kontrollerar båda lagringslägena, kraschfönster, processlås, återförsök,
+backendåterställning och eventualitet under uttryckliga antaganden om återhämtning.
+Den visar varför dubletter måste accepteras och kontrollerar lokal commit före
+Kafka-commit, strikt processpaus, leveransmilstolpar och grafens versionsskydd.
+Modell, körinstruktioner, avgränsningar och kopplingen till Java finns i
+[TLA+-modellen](spec/delivery/README.md).
+
+[Backendmodellen](spec/backend/README.md) granskar indexet och object store som
+separata lagringar, båda skrivordningarna, upprepade leveranser och indexreparation.
+Den skiljer lagringsbevis från återsökbarhet och visar motexempel för indexrad
+som falskt bevis, ankomsttid som versionsordning och blandade bindningspunkter.
+Även dessa kontroller körs med samma skript.
+
+## Hela kedjan med objektlager
+
+```sh
+./scripts/test-integration.sh --pipeline
+mvn -q -Pgraph,pipeline,pipeline-demo test
+```
+
+Det första kommandot förbereder Kafka, PostgreSQL, RustFS och Neo4j och kör
+hela integrationssviten. Det andra kör hundbidrag genom de verkliga stegen
+N−2 → N−1 → N och lämnar data kvar för inspektion. Leveransmilstolparna skrivs
+ut och söknycklarna sparas i `target/pipeline-demo/`.
+
+Rådatasteget vidarepublicerar först efter både objektskrivning och indexcommit.
+Vidareleverans och källoffset committas tillsammans i Kafka. Tester täcker även
+avbrott mellan systemen, samma id med motstridiga data, fördröjda äldre versioner
+och återställning efter förlust av lokal cache. Körinstruktioner, åtkomst till
+RustFS-konsolen och avgränsningar finns i [hela-kedjan-dokumentationen](docs/pipeline.md).
 
 ## Avgränsning och fortsättning
 

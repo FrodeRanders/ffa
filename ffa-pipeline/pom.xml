@@ -1,0 +1,41 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent><groupId>se.fk.data</groupId><artifactId>ffa</artifactId><version>1.0-SNAPSHOT</version></parent>
+    <artifactId>ffa-pipeline</artifactId>
+    <dependencies>
+        <dependency><groupId>se.fk.data</groupId><artifactId>ffa-persistence</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>se.fk.data</groupId><artifactId>ffa-graph</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>se.fk.data</groupId><artifactId>hundbidrag</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>software.amazon.awssdk</groupId><artifactId>s3</artifactId><version>2.55.9</version>
+            <exclusions>
+                <exclusion><groupId>software.amazon.awssdk</groupId><artifactId>apache-client</artifactId></exclusion>
+                <exclusion><groupId>software.amazon.awssdk</groupId><artifactId>netty-nio-client</artifactId></exclusion>
+            </exclusions>
+        </dependency>
+        <dependency><groupId>software.amazon.awssdk</groupId><artifactId>url-connection-client</artifactId><version>2.55.9</version></dependency>
+        <dependency><groupId>org.neo4j.driver</groupId><artifactId>neo4j-java-driver</artifactId><version>6.1.0</version></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-api</artifactId></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-engine</artifactId></dependency>
+        <dependency><groupId>org.apache.logging.log4j</groupId><artifactId>log4j-slf4j2-impl</artifactId><scope>runtime</scope></dependency>
+    </dependencies>
+    <profiles>
+        <profile>
+            <id>pipeline-demo</id>
+            <build><plugins><plugin>
+                <groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.6.3</version>
+                <executions><execution>
+                    <id>pipeline-demo</id><phase>test</phase><goals><goal>exec</goal></goals>
+                    <configuration>
+                        <executable>java</executable>
+                        <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                        <arguments>
+                            <argument>--module-path</argument><modulepath/>
+                            <argument>--module</argument><argument>se.fk.ffa.pipeline/se.fk.mimer.pipeline.Pipelinedemo</argument>
+                        </arguments>
+                    </configuration>
+                </execution></executions>
+            </plugin></plugins></build>
+        </profile>
+    </profiles>
+</project>

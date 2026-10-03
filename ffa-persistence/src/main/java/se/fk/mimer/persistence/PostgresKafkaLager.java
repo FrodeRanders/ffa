@@ -43,20 +43,27 @@ public final class PostgresKafkaLager implements Dokumentlager {
     }
 
     @Override
-    public Dataleverans lasObjekt(String id) { return hamta("objekt_id = ?", id); }
+    public Dataleverans lasObjekt(String id) { return hamta("objekt_id = ?", id, true); }
 
     @Override
-    public Dataleverans lasProcess(String id) { return hamta("korrelations_id = ?", id); }
+    public Dataleverans lasProcess(String id) { return hamta("korrelations_id = ?", id, true); }
 
     @Override
-    public Dataleverans lasLeverans(UUID id) { return hamta("dataleverans_id = ?", id); }
+    public Dataleverans lasLeverans(UUID id) { return hamta("dataleverans_id = ?", id, false); }
 
-    private Dataleverans hamta(String predicate, Object value) {
+    private Dataleverans hamta(String predicate, Object value, boolean processlasning) {
         try (var connection = dataSource.getConnection(); var query = connection.prepareStatement(
                 "SELECT * FROM ffa_dataleverans WHERE topic = ? AND " + predicate + " ORDER BY objekt_version DESC, ordning DESC LIMIT 1")) {
             query.setString(1, topic);
             query.setObject(2, value);
-            try (var rows = query.executeQuery()) { return rows.next() ? lasRad(rows) : null; }
+            try (var rows = query.executeQuery()) {
+                if (!rows.next()) return null;
+                var delivery = lasRad(rows);
+                if (processlasning && lage.strikt() && vantande(connection, delivery.korrelationsId()) != 0)
+                    throw new Leveransfel(delivery.id(), true, false,
+                            new IllegalStateException("Processen har obekräftade leveranser; återhämta före fortsättning"));
+                return delivery;
+            }
         } catch (SQLException e) { throw new IllegalStateException("Cachen kunde inte läsas", e); }
     }
 
@@ -77,6 +84,15 @@ public final class PostgresKafkaLager implements Dokumentlager {
         }
     }
 
+    // Strikt publicering behöver behålla låset även efter den inre PostgreSQL-committen.
+    // PGSimpleDataSource ger en egen fysisk anslutning; close släpper sessionslåsen också vid fel.
+    private void lasSession(Connection connection, String key) throws SQLException {
+        try (var lock = connection.prepareStatement("SELECT pg_advisory_lock(hashtextextended(?, 0))")) {
+            lock.setString(1, "ffa:" + topic.length() + ":" + topic + ":" + key);
+            lock.execute();
+        }
+    }
+
     @Override
     public void aterstall(Dataleverans delivery) {
         try (var connection = dataSource.getConnection()) {
@@ -84,6 +100,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
             try {
                 las(connection, "process:" + delivery.korrelationsId(), true);
                 las(connection, "objekt:" + delivery.objektId(), true);
+                las(connection, "leverans:" + delivery.id(), true);
                 try (var query = connection.prepareStatement(
                         "SELECT * FROM ffa_dataleverans WHERE dataleverans_id = ?")) {
                     query.setObject(1, delivery.id());
@@ -92,7 +109,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
                             var existing = lasRad(rows);
                             if (!topic.equals(rows.getString("topic")) || !sammaLeverans(existing, delivery))
                                 throw new IllegalStateException("Dataleverans-id är redan knutet till annat data");
-                            // En lokal, ännu okvitterad leverans behåller sin outbox-status.
+                            // Verifierat backenddata är positivt bevis även vid ett tidigare osäkert Kafka-utfall.
                         } else {
                             skriv(connection, delivery, true);
                             try (var update = connection.prepareStatement(
@@ -103,6 +120,8 @@ public final class PostgresKafkaLager implements Dokumentlager {
                         }
                     }
                 }
+                bekrafta(connection, delivery.id(), Leveranssteg.RADATA_LAGRADE);
+                avstamKvitton(connection, delivery);
                 connection.commit();
             } catch (Exception e) {
                 connection.rollback();
@@ -141,28 +160,47 @@ public final class PostgresKafkaLager implements Dokumentlager {
     @Override
     public void lagra(Dataleverans delivery) {
         boolean acknowledged = false;
+        var local = new boolean[]{false};
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
-                las(connection, "process:" + delivery.korrelationsId(), true);
-                las(connection, "objekt:" + delivery.objektId(), true);
+                if (lage.strikt()) {
+                    lasSession(connection, "process:" + delivery.korrelationsId());
+                    lasSession(connection, "objekt:" + delivery.objektId());
+                } else {
+                    las(connection, "process:" + delivery.korrelationsId(), true);
+                    las(connection, "objekt:" + delivery.objektId(), true);
+                }
                 kontrolleraVersion(connection, delivery);
-                if (lage == Leveranslage.KAFKA_FORST) {
+                if (lage.strikt()) {
                     if (vantande(connection, delivery.korrelationsId()) != 0)
                         throw new IllegalStateException("Processen har väntande leveranser; återförsök dem först");
 
-                    publicerare.publicera(topic, delivery);
+                    publicerare.publicera(topic, delivery, () -> {
+                        try {
+                            skriv(connection, delivery, false);
+                            connection.commit();
+                            local[0] = true;
+                        } catch (SQLException e) {
+                            throw new IllegalStateException("Lokal commit kunde inte bekräftas", e);
+                        }
+                    });
+                    if (!local[0]) throw new IllegalStateException("Publiceraren utelämnade lokal commit");
                     acknowledged = true;
+                    registreraForsok(delivery.id(), true, null);
+                } else {
+                    skriv(connection, delivery, false);
+                    connection.commit();
+                    local[0] = true;
                 }
-                skriv(connection, delivery, acknowledged);
-                connection.commit();
             } catch (Exception e) {
                 try { connection.rollback(); }
                 catch (SQLException rollback) { e.addSuppressed(rollback); }
 
-                throw new Leveransfel(delivery.id(), acknowledged, e);
+                if (local[0]) registreraForsok(delivery.id(), false, e.toString());
+                throw new Leveransfel(delivery.id(), local[0], acknowledged, e);
             }
-        } catch (SQLException e) { throw new Leveransfel(delivery.id(), acknowledged, e); }
+        } catch (SQLException e) { throw new Leveransfel(delivery.id(), local[0], acknowledged, e); }
 
         // Här är den lokala kopian redan hållbart committad. Ett leveransfel får inte låtsas rulla tillbaka den.
         if (lage == Leveranslage.LOKAL_RESILIENS) {
@@ -173,7 +211,144 @@ public final class PostgresKafkaLager implements Dokumentlager {
         }
     }
 
+    // Fel i bokföringen får inte förvandla en bekräftad Kafka-commit till en påstådd rollback.
+    // Raden förblir väntande och kan avstämmas eller skickas igen med samma id.
+    private void registreraForsok(UUID id, boolean sent, String error) {
+        try (var connection = dataSource.getConnection()) { uppdatera(connection, id, sent, error); }
+        catch (SQLException e) {
+            LOG.log(System.Logger.Level.WARNING, "Leveransstatus kunde inte registreras för " + id, e);
+        }
+    }
+
+    public Leveransstatus lasStatus(UUID id) {
+        try (var connection = dataSource.getConnection(); var query = connection.prepareStatement(
+                "SELECT * FROM ffa_dataleverans WHERE topic = ? AND dataleverans_id = ?")) {
+            query.setString(1, topic);
+            query.setObject(2, id);
+            try (var rows = query.executeQuery()) {
+                if (!rows.next()) return null;
+                return new Leveransstatus(id, tid(rows, "lagrad"), tid(rows, "kafka_publicerad_tid"),
+                        tid(rows, "radata_lagrade_tid"), tid(rows, "grafbehandlad_tid"),
+                        rows.getInt("leveransforsok"), rows.getString("senaste_fel"));
+            }
+        } catch (SQLException e) { throw new IllegalStateException("Leveransstatus kunde inte läsas", e); }
+    }
+
+    private static java.time.Instant tid(ResultSet row, String column) throws SQLException {
+        var value = row.getTimestamp(column);
+        return value == null ? null : value.toInstant();
+    }
+
+    /** Anropas av betrodd infrastruktur efter positivt kvitto, aldrig enbart efter ett misslyckat uppslag.
+     * Rådatakvittot måste avse båda backendlagren. Grafkvittot måste avse slutförd grafhantering. */
+    public void bekrafta(Dataleverans delivery, Leveranssteg steg) {
+        java.util.Objects.requireNonNull(steg);
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                try (var query = connection.prepareStatement(
+                        "SELECT * FROM ffa_dataleverans WHERE topic = ? AND dataleverans_id = ? FOR UPDATE")) {
+                    query.setString(1, topic);
+                    query.setObject(2, delivery.id());
+                    try (var rows = query.executeQuery()) {
+                        if (!rows.next() || !sammaLeverans(lasRad(rows), delivery))
+                            throw new IllegalArgumentException("Bekräftelsen avser inte samma lokala leveransdata");
+                    }
+                }
+                bekrafta(connection, delivery.id(), steg);
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) { throw new IllegalStateException("Leveransbekräftelse kunde inte lagras", e); }
+    }
+
+    public String topic() { return topic; }
+
+    /** Beständig inkorg även när leveransen ännu saknas i cachen. */
+    public void bekrafta(Kvittens kvittens) {
+        if (!topic.equals(kvittens.topic())) throw new IllegalArgumentException("Fel förmånstopic");
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                las(connection, "leverans:" + kvittens.dataleveransId(), true);
+                try (var insert = connection.prepareStatement("""
+                        INSERT INTO ffa_kvittens(topic, dataleverans_id, steg, kvittens)
+                        VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING
+                        """)) {
+                    insert.setString(1, topic);
+                    insert.setObject(2, kvittens.dataleveransId());
+                    insert.setString(3, kvittens.steg().name());
+                    insert.setBytes(4, kvittens.json());
+                    insert.executeUpdate();
+                }
+                try (var query = connection.prepareStatement(
+                        "SELECT kvittens FROM ffa_kvittens WHERE topic = ? AND dataleverans_id = ?")) {
+                    query.setString(1, topic);
+                    query.setObject(2, kvittens.dataleveransId());
+                    try (var rows = query.executeQuery()) {
+                        while (rows.next()) {
+                            var saved = Kvittens.las(rows.getBytes(1));
+                            if (!saved.fingeravtryck().equals(kvittens.fingeravtryck())
+                                    || !saved.korrelationsId().equals(kvittens.korrelationsId()))
+                                throw new IllegalArgumentException("Samma leverans-id har motstridiga kvitton");
+                        }
+                    }
+                }
+                try (var query = connection.prepareStatement(
+                        "SELECT * FROM ffa_dataleverans WHERE topic = ? AND dataleverans_id = ? FOR UPDATE")) {
+                    query.setString(1, topic);
+                    query.setObject(2, kvittens.dataleveransId());
+                    try (var rows = query.executeQuery()) {
+                        if (rows.next()) avstamKvitton(connection, lasRad(rows));
+                    }
+                }
+                connection.commit();
+            } catch (Exception e) { connection.rollback(); throw e; }
+        } catch (SQLException e) { throw new IllegalStateException("Kvittens kunde inte lagras", e); }
+    }
+
+    private void avstamKvitton(Connection connection, Dataleverans d) throws SQLException {
+        try (var query = connection.prepareStatement(
+                "SELECT kvittens FROM ffa_kvittens WHERE topic = ? AND dataleverans_id = ?")) {
+            query.setString(1, topic);
+            query.setObject(2, d.id());
+            try (var rows = query.executeQuery()) {
+                while (rows.next()) {
+                    var kvittens = Kvittens.las(rows.getBytes(1));
+                    if (!kvittens.avser(d)) throw new IllegalArgumentException("Kvittot avser andra leveransdata");
+                    bekrafta(connection, d.id(), kvittens.steg());
+                }
+            }
+        }
+    }
+
+    private void bekrafta(Connection connection, UUID id, Leveranssteg steg) throws SQLException {
+        boolean kafka = steg != Leveranssteg.LOKALT_LAGRAD;
+        boolean raw = steg == Leveranssteg.RADATA_LAGRADE || steg == Leveranssteg.GRAFBEHANDLAD;
+        try (var update = connection.prepareStatement("""
+                UPDATE ffa_dataleverans SET
+                    kafka_publicerad = kafka_publicerad OR ?,
+                    kafka_publicerad_tid = CASE WHEN ? THEN COALESCE(kafka_publicerad_tid, clock_timestamp()) ELSE kafka_publicerad_tid END,
+                    radata_lagrade_tid = CASE WHEN ? THEN COALESCE(radata_lagrade_tid, clock_timestamp()) ELSE radata_lagrade_tid END,
+                    grafbehandlad_tid = CASE WHEN ? THEN COALESCE(grafbehandlad_tid, clock_timestamp()) ELSE grafbehandlad_tid END,
+                    senaste_fel = CASE WHEN ? THEN NULL ELSE senaste_fel END
+                WHERE topic = ? AND dataleverans_id = ?
+                """)) {
+            update.setBoolean(1, kafka);
+            update.setBoolean(2, kafka);
+            update.setBoolean(3, raw);
+            update.setBoolean(4, steg == Leveranssteg.GRAFBEHANDLAD);
+            update.setBoolean(5, kafka);
+            update.setString(6, topic);
+            update.setObject(7, id);
+            update.executeUpdate();
+        }
+    }
+
     private void skriv(Connection connection, Dataleverans delivery, boolean sent) throws SQLException {
+        las(connection, "leverans:" + delivery.id(), true);
         try (var insert = connection.prepareStatement("""
                 INSERT INTO ffa_dataleverans(dataleverans_id, korrelations_id, objekt_id, objekt_version,
                     forvantad_version, topic, skapad, dokument, signatur, kafka_publicerad, kafka_publicerad_tid, leveransforsok)
@@ -193,6 +368,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
             insert.setInt(12, sent ? 1 : 0);
             insert.executeUpdate();
         }
+        avstamKvitton(connection, delivery);
     }
 
     /** Fördelar batchen mellan processer. Ett fel hindrar inte andra processers återförsök. */
@@ -261,7 +437,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
 
                                 // Bevara tidigare kvitton och felinformationen; nästa leverans får inte passera den felande.
                                 connection.commit();
-                                throw new Leveransfel(delivery.id(), false, e);
+                                throw new Leveransfel(delivery.id(), true, false, e);
                             }
                         }
                     }
@@ -277,13 +453,16 @@ public final class PostgresKafkaLager implements Dokumentlager {
     }
 
     private void uppdatera(Connection connection, UUID id, boolean sent, String error) throws SQLException {
-        try (var update = connection.prepareStatement("UPDATE ffa_dataleverans SET kafka_publicerad = ?, "
-                + "kafka_publicerad_tid = CASE WHEN ? THEN clock_timestamp() ELSE NULL END, "
-                + "leveransforsok = leveransforsok + 1, senaste_fel = ? WHERE dataleverans_id = ?")) {
+        try (var update = connection.prepareStatement("UPDATE ffa_dataleverans SET kafka_publicerad = kafka_publicerad OR ?, "
+                + "kafka_publicerad_tid = CASE WHEN ? THEN COALESCE(kafka_publicerad_tid, clock_timestamp()) ELSE kafka_publicerad_tid END, "
+                + "leveransforsok = leveransforsok + 1, senaste_fel = CASE WHEN kafka_publicerad OR ? THEN NULL ELSE ? END "
+                + "WHERE topic = ? AND dataleverans_id = ?")) {
             update.setBoolean(1, sent);
             update.setBoolean(2, sent);
-            update.setString(3, error);
-            update.setObject(4, id);
+            update.setBoolean(3, sent);
+            update.setString(4, error);
+            update.setString(5, topic);
+            update.setObject(6, id);
             update.executeUpdate();
         }
     }

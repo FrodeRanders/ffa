@@ -31,6 +31,10 @@ class PostgresKafkaIntegrationTest {
         store.initiera();
         return store;
     }
+    // Testdubbeln simulerar Kafka-commit efter den lokala committen.
+    private PostgresKafkaLager store(Leveranslage mode, java.util.function.BiConsumer<String, Dataleverans> publisher) {
+        return store(mode, (t, d, commit) -> { commit.run(); publisher.accept(t, d); });
+    }
     private Dataleverans delivery(String process, String object, long previous, long version) {
         return new Dataleverans(Dataleverans.nyttId(), process, object, previous, version, Instant.now(),
                 new LagratDokument("{ \"bevarat\": 42 }".getBytes(StandardCharsets.UTF_8), new byte[]{1, 2, 3}));
@@ -46,6 +50,51 @@ class PostgresKafkaIntegrationTest {
         try (var connection = connect(); var query = connection.prepareStatement("DELETE FROM ffa_dataleverans WHERE topic = ?")) {
             query.setString(1, topic); query.executeUpdate();
         }
+    }
+
+    /** Ett förlorat Kafka-kvitto får varken lämna gammal cache eller återanvända en objektversion. */
+    @Test
+    void striktLageBevararNyVersionOchPausarTillsLeveransenAterhamtats() throws Exception {
+        var observed = new ArrayList<Dataleverans>();
+        var fail = new AtomicBoolean(false);
+        var store = store(Leveranslage.STRIKT, (t, d, commit) -> {
+            commit.run();
+            observed.add(d);
+            if (fail.get()) throw new IllegalStateException("Kafka-commit kan ha lyckats; kvittot saknas");
+        });
+        var generator = java.security.KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        var keys = generator.generateKeyPair();
+        var repository = new ForvaltadeYrkanden<>(se.fk.data.modell.v1.Yrkande.class,
+                store, keys.getPrivate(), keys.getPublic());
+        var initial = new se.fk.data.modell.v1.Yrkande("Version 1");
+        initial.setPerson(new se.fk.data.modell.v1.FysiskPerson("19121212-1212"));
+        var saved = repository.lagra("process", initial);
+        saved.beskrivning = "Version 2";
+        fail.set(true);
+        var error = assertThrows(Leveransfel.class, () -> repository.lagra("process", saved));
+        assertTrue(error.lokaltLagrat());
+        assertFalse(error.kafkaKvitterat());
+        var pending = store.lasLeverans(error.dataleveransId());
+        assertEquals(2, pending.objektVersion());
+        assertEquals(Leveranssteg.LOKALT_LAGRAD, store.lasStatus(pending.id()).steg());
+        assertThrows(Leveransfel.class, () -> repository.lasProcess("process"));
+        assertThrows(Leveransfel.class, () -> repository.lagra("process", saved));
+        assertThrows(Leveransfel.class, () -> store.lagra(delivery("process", saved.getId(), 2, 3)));
+        assertEquals(2, count());
+
+        fail.set(false);
+        var restarted = store(Leveranslage.STRIKT, (t, d) -> observed.add(d));
+        assertEquals(1, restarted.skickaVantande(100));
+        assertEquals(pending.id(), observed.getLast().id());
+        assertArrayEquals(pending.dokument().json(), observed.getLast().dokument().json());
+        assertArrayEquals(pending.dokument().signatur(), observed.getLast().dokument().signatur());
+        var recovered = repository.lasProcess("process");
+        assertEquals(2, recovered.getVersion());
+        assertEquals("Version 2", recovered.beskrivning);
+        recovered.beskrivning = "Version 3";
+        assertEquals(3, repository.lagra("process", recovered).getVersion());
+        assertEquals(List.of(1L, 2L, 2L, 3L), observed.stream().map(Dataleverans::objektVersion).toList());
     }
 
     @Test
@@ -87,7 +136,7 @@ class PostgresKafkaIntegrationTest {
     @Test
     void aterstallningArIdempotentOchPublicerarInteEllerSkymmerNyareLokalData() throws Exception {
         var observed = new ArrayList<UUID>();
-        var store = store(Leveranslage.KAFKA_FORST, (t, d) -> observed.add(d.id()));
+        var store = store(Leveranslage.STRIKT, (t, d) -> observed.add(d.id()));
         var restored = delivery("process", "objekt", 0, 1);
         store.aterstall(restored);
         store.aterstall(restored);
@@ -108,7 +157,7 @@ class PostgresKafkaIntegrationTest {
     void blockeradProcessHindrarInteAndraSkribenter() throws Exception {
         var entered = new CountDownLatch(1);
         var release = new CountDownLatch(1);
-        var store = store(Leveranslage.KAFKA_FORST, (t, d) -> {
+        var store = store(Leveranslage.STRIKT, (t, d) -> {
             if (d.korrelationsId().equals("blockerad")) {
                 entered.countDown();
                 try { if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Testtimeout"); }
@@ -161,7 +210,7 @@ class PostgresKafkaIntegrationTest {
 
     @Test
     void kafkaFelGerIngenLokalKopiaIStriktLage() throws Exception {
-        var store = store(Leveranslage.KAFKA_FORST, (t, d) -> { throw new IllegalStateException("Kafka nere"); });
+        var store = store(Leveranslage.STRIKT, (t, d, commit) -> { throw new IllegalStateException("Kafka nere före lokal commit"); });
         var delivery = delivery("process", "objekt", 0, 1);
         var error = assertThrows(Leveransfel.class, () -> store.lagra(delivery));
         assertFalse(error.kafkaKvitterat());
@@ -173,7 +222,8 @@ class PostgresKafkaIntegrationTest {
     void lokalResiliensBevararHistorikOchReplayOrdningMedSammaId() throws Exception {
         var down = new AtomicBoolean(true);
         var observed = new ArrayList<Dataleverans>();
-        Leveranspublicerare publisher = (t, d) -> {
+        Leveranspublicerare publisher = (t, d, commit) -> {
+            commit.run();
             if (down.get()) throw new IllegalStateException("Kafka nere");
             observed.add(d);
         };
@@ -198,15 +248,16 @@ class PostgresKafkaIntegrationTest {
     }
 
     @Test
-    void databasfelEfterKafkaKvittoRapporterasSomDelvisGenomfordLeverans() throws Exception {
+    void databasfelForhindrarKafkaCommitIStriktLage() throws Exception {
         var observed = new ArrayList<UUID>();
-        var store = store(Leveranslage.KAFKA_FORST, (t, d) -> observed.add(d.id()));
+        var store = store(Leveranslage.STRIKT, (t, d) -> observed.add(d.id()));
         var first = delivery("p1", "o1", 0, 1);
         store.lagra(first);
         var collision = new Dataleverans(first.id(), "p2", "o2", 0, 1, Instant.now(), first.dokument());
         var error = assertThrows(Leveransfel.class, () -> store.lagra(collision));
-        assertTrue(error.kafkaKvitterat());
-        assertEquals(2, observed.size());
+        assertFalse(error.kafkaKvitterat());
+        assertFalse(error.lokaltLagrat());
+        assertEquals(1, observed.size());
         assertEquals(1, count());
         assertNull(store.lasProcess("p2"));
     }
@@ -250,8 +301,8 @@ class PostgresKafkaIntegrationTest {
 
     @Test
     void tvaSkribenterKanInteSkrivaSammaGamlaVersion() throws Exception {
-        var firstStore = store(Leveranslage.KAFKA_FORST, (t, d) -> {});
-        var secondStore = store(Leveranslage.KAFKA_FORST, (t, d) -> {});
+        var firstStore = store(Leveranslage.STRIKT, (t, d) -> {});
+        var secondStore = store(Leveranslage.STRIKT, (t, d) -> {});
         firstStore.lagra(delivery("process", "objekt", 0, 1));
         try (var workers = Executors.newFixedThreadPool(2)) {
             var start = new CountDownLatch(1);
@@ -268,8 +319,14 @@ class PostgresKafkaIntegrationTest {
         try (var admin = Admin.create(Map.of("bootstrap.servers", broker))) {
             admin.createTopics(List.of(new NewTopic(topic, 1, (short) 1))).all().get(15, TimeUnit.SECONDS);
             try (var publisher = new KafkaPublicerare(broker)) {
-                var store = store(Leveranslage.KAFKA_FORST, publisher);
+                var store = store(Leveranslage.STRIKT, publisher);
                 var delivery = delivery("process", "objekt", 0, 1);
+                // En riktig Kafka-transaktion skickar data, men avbryts när lokal INSERT
+                // misslyckas. read_committed-konsumenten nedan ska inte få den leveransen.
+                var aborted = delivery("avbruten", "avbrutet-objekt", 0, 1);
+                assertThrows(IllegalStateException.class, () -> publisher.publicera(topic, aborted, () -> {
+                    throw new IllegalStateException("Simulerat lokalt commitfel");
+                }));
                 store.lagra(delivery);
                 assertEquals(0, store.antalVantande());
                 assertArrayEquals(delivery.dokument().json(), store.lasLeverans(delivery.id()).dokument().json());
@@ -278,6 +335,7 @@ class PostgresKafkaIntegrationTest {
                 config.put("group.id", UUID.randomUUID().toString());
                 config.put("auto.offset.reset", "earliest");
                 config.put("enable.auto.commit", "false");
+                config.put("isolation.level", "read_committed");
                 try (var consumer = new KafkaConsumer<>(config, new StringDeserializer(), new ByteArrayDeserializer())) {
                     consumer.subscribe(List.of(topic));
                     ConsumerRecord<String, byte[]> message = null;
@@ -294,5 +352,47 @@ class PostgresKafkaIntegrationTest {
                 }
             } finally { admin.deleteTopics(List.of(topic)).all().get(15, TimeUnit.SECONDS); }
         }
+    }
+
+    @Test
+    void senaBekraftelserArMonotonaOchMasteAvseSammaData() throws Exception {
+        var store = store(Leveranslage.LOKAL_RESILIENS, (t, d) -> { throw new IllegalStateException("Kafka nere"); });
+        var delivery = delivery("process", "objekt", 0, 1);
+        store.lagra(delivery);
+        assertEquals(Leveranssteg.LOKALT_LAGRAD, store.lasStatus(delivery.id()).steg());
+        var strict = store(Leveranslage.STRIKT, (t, d) -> fail("Bekräftad leverans ska inte skickas igen"));
+        assertThrows(Leveransfel.class, () -> strict.lasProcess("process"));
+
+        strict.bekrafta(delivery, Leveranssteg.GRAFBEHANDLAD);
+        var graph = strict.lasStatus(delivery.id());
+        assertEquals(Leveranssteg.GRAFBEHANDLAD, graph.steg());
+        assertNotNull(graph.kafkaPublicerad());
+        assertNotNull(graph.radataLagrade());
+        assertNull(graph.senasteFel());
+        assertEquals(delivery.id(), strict.lasProcess("process").id());
+        strict.bekrafta(delivery, Leveranssteg.RADATA_LAGRADE);
+        strict.bekrafta(delivery, Leveranssteg.LOKALT_LAGRAD);
+        assertEquals(graph, strict.lasStatus(delivery.id()));
+        assertEquals(0, strict.skickaVantande(100));
+
+        var conflict = new Dataleverans(delivery.id(), "annan-process", delivery.objektId(), 0, 1,
+                delivery.skapad(), delivery.dokument());
+        assertThrows(IllegalArgumentException.class, () -> strict.bekrafta(conflict, Leveranssteg.GRAFBEHANDLAD));
+        assertEquals(graph, strict.lasStatus(delivery.id()));
+    }
+
+    @Test
+    void backendAvstamningLoserOsakertUtfallUtanNyPublicering() {
+        var store = store(Leveranslage.STRIKT, (t, d, commit) -> {
+            commit.run();
+            throw new IllegalStateException("Kafka-kvittot saknas");
+        });
+        var delivery = delivery("process", "objekt", 0, 1);
+        assertThrows(Leveransfel.class, () -> store.lagra(delivery));
+        // Återställning får bara anropas efter verifiering av dokumentet och backendkontraktet.
+        store.aterstall(delivery);
+        assertEquals(Leveranssteg.RADATA_LAGRADE, store.lasStatus(delivery.id()).steg());
+        assertEquals(0, store.antalVantande());
+        assertEquals(delivery.id(), store.lasProcess("process").id());
     }
 }
