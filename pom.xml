@@ -1,4 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>se.fk.data</groupId>
@@ -31,70 +31,92 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.jayway.jsonpath</groupId><artifactId>json-path</artifactId>
+                <groupId>com.jayway.jsonpath</groupId>
+                <artifactId>json-path</artifactId>
                 <version>${jsonpath.version}</version>
             </dependency>
             <dependency>
-                <groupId>tools.jackson.core</groupId><artifactId>jackson-databind</artifactId>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-annotations</artifactId>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.annotations.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.apicatalog</groupId><artifactId>titanium-jcs</artifactId>
+                <groupId>com.apicatalog</groupId>
+                <artifactId>titanium-jcs</artifactId>
                 <version>${titanium-jcs.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.uuid</groupId><artifactId>java-uuid-generator</artifactId>
+                <groupId>com.fasterxml.uuid</groupId>
+                <artifactId>java-uuid-generator</artifactId>
                 <version>${guid-gen.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId><artifactId>log4j-slf4j2-impl</artifactId>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j2-impl</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-api</artifactId>
-                <version>${junit.jupiter.version}</version><scope>test</scope>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-engine</artifactId>
-                <version>${junit.jupiter.version}</version><scope>test</scope>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.15.0</version>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-clean-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
                 <version>3.5.0</version>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.6.0-M1</version>
-                <configuration><useModulePath>false</useModulePath></configuration>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
             </plugin>
         </plugins>
     </build>
     <profiles>
-        <profile><id>demo</id></profile>
+        <profile>
+            <id>demo</id>
+        </profile>
         <profile>
             <id>graph</id>
-            <modules><module>ffa-graph</module></modules>
+            <modules>
+                <module>ffa-graph</module>
+            </modules>
         </profile>
         <profile>
             <id>pipeline</id>
             <!-- Kör tillsammans med graph; förmånens vanliga bygge behöver inte S3 eller Neo4j. -->
-            <modules><module>ffa-pipeline</module></modules>
+            <modules>
+                <module>ffa-pipeline</module>
+            </modules>
         </profile>
     </profiles>
 </project>

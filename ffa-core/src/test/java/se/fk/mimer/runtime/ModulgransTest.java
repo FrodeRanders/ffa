@@ -8,12 +8,12 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Kontrollera gränsen med javac, även om testköraren själv använder klassökvägen. */
+/**
+ * Kontrollera gränsen med javac, även om testköraren själv använder klassökvägen.
+ */
 class ModulgransTest {
     @TempDir
     Path temp;
-
-    private record Result(int exit, String output) {}
 
     private Result compile(String body) throws Exception {
         Path directory = Files.createTempDirectory(temp, "probe");
@@ -60,5 +60,8 @@ class ModulgransTest {
         assertTrue(jsonPath.output().contains("does not read"), jsonPath.output());
         var metadata = compile("void run(se.fk.data.modell.v1.Yrkande y) { y.version = 99; y.stepVersion(); }");
         assertNotEquals(0, metadata.exit());
+    }
+
+    private record Result(int exit, String output) {
     }
 }

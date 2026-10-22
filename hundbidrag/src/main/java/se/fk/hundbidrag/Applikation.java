@@ -1,14 +1,18 @@
 package se.fk.hundbidrag;
 
-import se.fk.data.modell.v1.*;
+import se.fk.data.modell.v1.Beslut;
+import se.fk.data.modell.v1.Ersattning;
+import se.fk.data.modell.v1.FysiskPerson;
+import se.fk.data.modell.v1.Period;
 import se.fk.hundbidrag.modell.YrkandeOmHundbidrag;
 import se.fk.mimer.api.Yrkanden;
 
 import java.time.Instant;
-
 import java.util.Date;
 
-/** Ett litet förmånsexempel. All datahantering ligger bakom Yrkanden. */
+/**
+ * Ett litet förmånsexempel. All datahantering ligger bakom Yrkanden.
+ */
 public final class Applikation {
     private final Yrkanden<YrkandeOmHundbidrag> yrkanden;
 
@@ -16,7 +20,9 @@ public final class Applikation {
         this.yrkanden = yrkanden;
     }
 
-    /** Visar en första handläggning och en senare ändring med samma objekt-API. */
+    /**
+     * Visar en första handläggning och en senare ändring med samma objekt-API.
+     */
     public YrkandeOmHundbidrag handlagg() {
         return handlagg(java.util.UUID.randomUUID().toString());
     }
@@ -33,7 +39,9 @@ public final class Applikation {
         return fortsattHandlaggning(processId);
     }
 
-    /** En senare processaktivitet känner process-id, inte lagrings- eller transportformat. */
+    /**
+     * En senare processaktivitet känner process-id, inte lagrings- eller transportformat.
+     */
     public YrkandeOmHundbidrag fortsattHandlaggning(String processId) {
         // Fortsatt handläggning efter återläsning: ändra det befintliga resultatet.
         var yrkande = yrkanden.lasProcess(processId);

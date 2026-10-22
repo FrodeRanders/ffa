@@ -24,7 +24,8 @@ import java.util.Map;
  * Operates on raw JSON without changing the original serialization format.
  */
 public final class JsonLdExpansionExample {
-    private JsonLdExpansionExample() {}
+    private JsonLdExpansionExample() {
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1 || args.length > 2) {

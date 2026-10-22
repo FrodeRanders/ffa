@@ -17,7 +17,8 @@ import java.util.Set;
  * Builds a JSON-LD graph document by selecting known record types.
  */
 public final class JsonLdGraphBuilder {
-    private JsonLdGraphBuilder() {}
+    private JsonLdGraphBuilder() {
+    }
 
     public static JsonObject buildGraph(JsonArray expanded, Path sdlPath, String contextUri) throws Exception {
         Map<String, String> typeToUri = JsonLdTypeMapper.loadTypeUriMap(sdlPath);
@@ -89,7 +90,8 @@ public final class JsonLdGraphBuilder {
                     collectNodes(child, recordUris, graph, seenIds, seenAnonymous);
                 }
             }
-            default -> {}
+            default -> {
+            }
         }
     }
 }

@@ -1,9 +1,13 @@
 package se.fk.mimer.persistence;
 
 import java.time.Duration;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-/** Periodiska återförsök så länge värdprocessen lever. Stäng före Kafka-publiceraren. */
+/**
+ * Periodiska återförsök så länge värdprocessen lever. Stäng före Kafka-publiceraren.
+ */
 public final class Aterforsoksarbetare implements AutoCloseable {
     private static final System.Logger LOG = System.getLogger(Aterforsoksarbetare.class.getName());
     private final ScheduledExecutorService executor;
@@ -17,8 +21,11 @@ public final class Aterforsoksarbetare implements AutoCloseable {
             return thread;
         });
         executor.scheduleWithFixedDelay(() -> {
-            try { lager.skickaVantande(batchstorlek); }
-            catch (RuntimeException e) { LOG.log(System.Logger.Level.WARNING, "Återförsök kvarstår", e); }
+            try {
+                lager.skickaVantande(batchstorlek);
+            } catch (RuntimeException e) {
+                LOG.log(System.Logger.Level.WARNING, "Återförsök kvarstår", e);
+            }
         }, intervall.toMillis(), intervall.toMillis(), TimeUnit.MILLISECONDS);
     }
 

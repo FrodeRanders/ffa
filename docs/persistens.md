@@ -23,16 +23,16 @@ JSON serialiseras och signeras centralt, och kontrolleras före leverans.
 Kafka-värdet är exakt dessa UTF-8-bytes. Ingen JSON-envelope läggs runt dokumentet.
 Korrelations-id är Kafka-nyckel och håller processens meddelanden på samma partition.
 
-| Header | Innehåll |
-| --- | --- |
-| `dataleverans-id` | UUID version 7, UTF-8 |
-| `korrelations-id` | Processmotorns process-id, UTF-8 |
-| `objekt-id` | Modellobjektets identitet, UTF-8 |
-| `objekt-version` | Dokumentets objektversion, UTF-8 |
-| `forvantad-version` | Version före lagringsanropet, UTF-8 |
-| `skapad` | Leveransens UTC-tid, UTF-8 |
-| `signatur` | Binär RSA-PSS-signatur för det JCS-kanoniserade JSON-dokumentet |
-| `signatur-algoritm` | `JCS+RSA-PSS-SHA512` |
+| Header              | Innehåll                                                        |
+|---------------------|-----------------------------------------------------------------|
+| `dataleverans-id`   | UUID version 7, UTF-8                                           |
+| `korrelations-id`   | Processmotorns process-id, UTF-8                                |
+| `objekt-id`         | Modellobjektets identitet, UTF-8                                |
+| `objekt-version`    | Dokumentets objektversion, UTF-8                                |
+| `forvantad-version` | Version före lagringsanropet, UTF-8                             |
+| `skapad`            | Leveransens UTC-tid, UTF-8                                      |
+| `signatur`          | Binär RSA-PSS-signatur för det JCS-kanoniserade JSON-dokumentet |
+| `signatur-algoritm` | `JCS+RSA-PSS-SHA512`                                            |
 
 Signaturen skyddar JSON-dokumentet; dessa transportmetadata ingår inte i den.
 RSA-PSS använder slump, så samma JSON kan få olika signaturer. Signaturen används
@@ -224,12 +224,12 @@ tillstånd vid återspelning i efterföljande led hör till masterdataflödets k
 
 `lasStatus(id)` visar lokala observationstider för följande milstolpar:
 
-| Steg | Positivt bevis |
-| --- | --- |
-| `LOKALT_LAGRAD` | Den lokala leveransen är beständig. |
-| `KAFKA_PUBLICERAD` | Kafka-commit är bekräftad. |
-| `RADATA_LAGRADE` | Rätt JSON och metadata finns beständigt i både objektlager och backendens sökindex. |
-| `GRAFBEHANDLAD` | Grafsteget är klart: versionen har tillämpats, fanns redan eller har ersatts av en nyare. |
+| Steg               | Positivt bevis                                                                            |
+|--------------------|-------------------------------------------------------------------------------------------|
+| `LOKALT_LAGRAD`    | Den lokala leveransen är beständig.                                                       |
+| `KAFKA_PUBLICERAD` | Kafka-commit är bekräftad.                                                                |
+| `RADATA_LAGRADE`   | Rätt JSON och metadata finns beständigt i både objektlager och backendens sökindex.       |
+| `GRAFBEHANDLAD`    | Grafsteget är klart: versionen har tillämpats, fanns redan eller har ersatts av en nyare. |
 
 Betrodd infrastruktur kan anropa `bekrafta(leverans, steg)` efter ett positivt
 REST-kvitto eller en observation från kedjan. Hela leveransen måste matcha den
@@ -260,7 +260,8 @@ lokalt och den valda lagringspolicyn tillåter fortsättning.
 [TLA+-modellen](../spec/delivery/README.md) följer lokal commit, Kafka-commit,
 rådatalagring, grafbehandling och fördröjda bekräftelser. Den kontrollerar
 krascher, förlorade kvitton, återförsök, strikt processpaus, atomisk
-vidareleverans med källoffset och grafens versionsskydd. Den kompletterande [kvittensmodellen](../spec/delivery/Receipts.tla) följer
+vidareleverans med källoffset och grafens versionsskydd. Den
+kompletterande [kvittensmodellen](../spec/delivery/Receipts.tla) följer
 kvittotopic, inkorg, offsetcommit, cacheförlust och återställning som separata
 tillstånd. Den binder kvittot till en innehållstoken fristående från objektversion.
 Modellernas koppling till Java-koden beskrivs i [modellöversikten](../spec/delivery/README.md);
@@ -307,15 +308,15 @@ FFA_LEVERANSLAGE=LOKAL_RESILIENS mvn -q -Pdemo verify
 mvn -q -Pdemo -Dffa.demo.action=--aterforsok verify
 ```
 
-| Miljövariabel | Standard |
-| --- | --- |
-| `FFA_JDBC` | `jdbc:postgresql://localhost:15432/ffa` |
+| Miljövariabel                     | Standard                                       |
+|-----------------------------------|------------------------------------------------|
+| `FFA_JDBC`                        | `jdbc:postgresql://localhost:15432/ffa`        |
 | `FFA_DB_USER` / `FFA_DB_PASSWORD` | `ffa` / `ffa-demo` (lokalt utvecklingsexempel) |
-| `FFA_KAFKA` | `localhost:19092` |
-| `FFA_TOPIC` | `ffa.hundbidrag` |
-| `FFA_LEVERANSLAGE` | `STRIKT` (standard) eller `LOKAL_RESILIENS` |
-| `FFA_PROCESS_ID` | Nytt process-id per demokörning om inget anges |
-| `FFA_NYCKLAR` | `.demo/nycklar` |
+| `FFA_KAFKA`                       | `localhost:19092`                              |
+| `FFA_TOPIC`                       | `ffa.hundbidrag`                               |
+| `FFA_LEVERANSLAGE`                | `STRIKT` (standard) eller `LOKAL_RESILIENS`    |
+| `FFA_PROCESS_ID`                  | Nytt process-id per demokörning om inget anges |
+| `FFA_NYCKLAR`                     | `.demo/nycklar`                                |
 
 En annan förmån konfigurerar en egen topic, som behöver skapas före körning.
 Utvecklingsnyckeln sparas utanför Git och `target`; radera eller ersätt den inte

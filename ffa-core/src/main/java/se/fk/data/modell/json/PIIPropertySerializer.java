@@ -15,10 +15,8 @@ import tools.jackson.databind.jsontype.TypeSerializer;
  * Klassificeringen är metadata; den krypterar eller maskerar inte värdet.
  */
 public class PIIPropertySerializer extends ValueSerializer<Object> {
-    private static final Logger log = LoggerFactory.getLogger(PIIPropertySerializer.class);
-
     public static final String MAGIC_WRAPPED_PROPERTY_NAME = "varde";
-
+    private static final Logger log = LoggerFactory.getLogger(PIIPropertySerializer.class);
     private final String typ;
 
     // Jackson behöver en konstruktor utan annoteringsparametrar.
@@ -55,20 +53,15 @@ public class PIIPropertySerializer extends ValueSerializer<Object> {
 
         if (value instanceof Double d) {
             gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, d);
-        }
-        else if (value instanceof Long l) {
+        } else if (value instanceof Long l) {
             gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, l);
-        }
-        else if (value instanceof Integer i) {
+        } else if (value instanceof Integer i) {
             gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, i);
-        }
-        else if (value instanceof Boolean b) {
+        } else if (value instanceof Boolean b) {
             gen.writeBooleanProperty(MAGIC_WRAPPED_PROPERTY_NAME, b);
-        }
-        else if (value instanceof String s) {
+        } else if (value instanceof String s) {
             gen.writeStringProperty(MAGIC_WRAPPED_PROPERTY_NAME, s);
-        }
-        else if (value instanceof Float f) {
+        } else if (value instanceof Float f) {
             gen.writeNumberProperty(MAGIC_WRAPPED_PROPERTY_NAME, f);
         }
 

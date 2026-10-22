@@ -4,15 +4,14 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Infrastrukturens leveranskuvert; metadata ändrar inte det signerade JSON-dokumentet. */
+/**
+ * Infrastrukturens leveranskuvert; metadata ändrar inte det signerade JSON-dokumentet.
+ */
 public record Dataleverans(UUID id, String korrelationsId, String objektId,
-                          long forvantadVersion, long objektVersion,
-                          Instant skapad, LagratDokument dokument) {
+                           long forvantadVersion, long objektVersion,
+                           Instant skapad, LagratDokument dokument) {
     private static final com.fasterxml.uuid.NoArgGenerator IDS =
             com.fasterxml.uuid.Generators.timeBasedEpochGenerator();
-
-    /** Nya leveranser får UUID version 7; äldre id-versioner kan fortfarande läsas från cachen. */
-    public static UUID nyttId() { return IDS.generate(); }
 
     public Dataleverans {
         Objects.requireNonNull(id);
@@ -25,5 +24,12 @@ public record Dataleverans(UUID id, String korrelationsId, String objektId,
             throw new IllegalArgumentException("Korrelations-id och objekt-id måste anges");
         if (forvantadVersion < 0 || objektVersion < forvantadVersion)
             throw new IllegalArgumentException("Ogiltiga objektversioner i dataleveransen");
+    }
+
+    /**
+     * Nya leveranser får UUID version 7; äldre id-versioner kan fortfarande läsas från cachen.
+     */
+    public static UUID nyttId() {
+        return IDS.generate();
     }
 }

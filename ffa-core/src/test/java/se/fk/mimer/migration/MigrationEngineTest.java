@@ -1,7 +1,7 @@
 package se.fk.mimer.migration;
 
-import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.junit.jupiter.api.Test;
 import se.fk.mimer.runtime.ModellCodec;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -10,7 +10,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static se.fk.mimer.migration.MigrationEngine.*;
 
-/** Verifierar att officiella JsonPath kan välja och förändra Jackson 3-träd. */
+/**
+ * Verifierar att officiella JsonPath kan välja och förändra Jackson 3-träd.
+ */
 class MigrationEngineTest {
     private final JsonMapper mapper = JsonMapper.builder().build();
     private final MigrationEngine engine = new MigrationEngine();
@@ -114,11 +116,6 @@ class MigrationEngineTest {
         assertEquals(migrated, MimerMigrations.migrate(migrated.deepCopy()));
     }
 
-    public record Dokument(@JsonProperty("producerat_resultat") List<Resultat> resultat,
-                           @JsonProperty("mimer:schemaVersion") int format) {}
-    public record Resultat(Belopp belopp) {}
-    public record Belopp(int varde) {}
-
     @Test
     void codecMigrerarInnanHistoriskStrukturBindsTillJava() {
         String historic = "{\"producerade_resultat\":{\"belopp\":{\"summa\":1000}}}";
@@ -130,5 +127,15 @@ class MigrationEngineTest {
 
         assertEquals(2, document.format());
         assertEquals(1000, document.resultat().getFirst().belopp().varde());
+    }
+
+    public record Dokument(@JsonProperty("producerat_resultat") List<Resultat> resultat,
+                           @JsonProperty("mimer:schemaVersion") int format) {
+    }
+
+    public record Resultat(Belopp belopp) {
+    }
+
+    public record Belopp(int varde) {
     }
 }

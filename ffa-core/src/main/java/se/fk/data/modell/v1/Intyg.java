@@ -5,7 +5,9 @@ import se.fk.data.modell.annotations.Context;
 
 import java.util.Date;
 
-/** Ett producerat intyg med utfärdare, beskrivning och giltighetsperiod. */
+/**
+ * Ett producerat intyg med utfärdare, beskrivning och giltighetsperiod.
+ */
 @Context("https://data.fk.se/kontext/std/intyg/1.0")
 public class Intyg extends ProduceratResultat {
 
@@ -21,7 +23,8 @@ public class Intyg extends ProduceratResultat {
     @JsonProperty("utfardat_datum")
     public Date utfardatDatum;
 
-    public Intyg() {} // Behövs vid återläsning med Jackson.
+    public Intyg() {
+    } // Behövs vid återläsning med Jackson.
 
     @Override
     public String toString() {

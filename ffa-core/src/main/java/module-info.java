@@ -1,4 +1,6 @@
-/** FFA:s objektmodell och förvaltade gräns för datahantering. */
+/**
+ * FFA:s objektmodell och förvaltade gräns för datahantering.
+ */
 module se.fk.ffa.core {
     requires tools.jackson.databind;
     requires json.path;

@@ -1,7 +1,6 @@
 package se.fk.data.modell.json;
 
 import se.fk.data.modell.internal.LifecycleAwareSerializer;
-
 import se.fk.data.modell.v1.Livscykelhanterad;
 import tools.jackson.databind.BeanDescription;
 import tools.jackson.databind.ObjectMapper;
@@ -10,7 +9,9 @@ import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.ValueSerializerModifier;
 
-/** Kopplar livscykelserialisering till objekt som ärver från Livscykelhanterad. */
+/**
+ * Kopplar livscykelserialisering till objekt som ärver från Livscykelhanterad.
+ */
 public class LifecycleAwareSerializerModule extends SimpleModule {
     private final ObjectMapper canonicalMapper;
 

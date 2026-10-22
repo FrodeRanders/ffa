@@ -1,31 +1,28 @@
 package se.fk.data.modell.json;
 
-import se.fk.data.modell.internal.LifecycleAwareDeserializer;
-
-import se.fk.data.modell.internal.LifecycleAwareSerializer;
-
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
 import java.util.ArrayList;
-
 import java.util.List;
 
-/** Samlar Jackson-modulerna för modellens gemensamma representations- och livscykelregler. */
+/**
+ * Samlar Jackson-modulerna för modellens gemensamma representations- och livscykelregler.
+ */
 public class Modifiers {
-
-    private Modifiers() {}
 
     public static final SimpleModule ANNOTATED_CLASSES_MODULE =
             new SimpleModule()
                     .setSerializerModifier(new ClassSerializerModifier())
                     .setDeserializerModifier(new ClassDeserializerModifier());
-
     public static final SimpleModule ANNOTATED_PROPERTIES_MODULE =
             new SimpleModule()
                     .setSerializerModifier(new PropertySerializerModifier())
                     .setDeserializerModifier(new PropertyDeserializerModifier());
+
+    private Modifiers() {
+    }
 
     private static JsonMapper setupCanonicalMapper() {
         // Separat mapper utan livscykel-hooks: beräkning av en kontrollsumma får inte

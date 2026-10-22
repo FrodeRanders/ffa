@@ -1,4 +1,6 @@
-/** Separat infrastrukturdemonstration av N−1 och N; inga beroenden från förmånens verksamhetskod. */
+/**
+ * Separat infrastrukturdemonstration av N−1 och N; inga beroenden från förmånens verksamhetskod.
+ */
 module se.fk.ffa.pipeline {
     requires se.fk.ffa.core;
     requires se.fk.ffa.persistence;

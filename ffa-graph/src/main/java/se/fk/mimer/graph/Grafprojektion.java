@@ -27,6 +27,56 @@ public final class Grafprojektion {
     }
 
     /**
+     * Krävs vid import för att samtidiga MERGE-anrop inte ska skapa samma identitet två gånger.
+     */
+    public static String schema() {
+        return "CREATE CONSTRAINT ffa_objekt_id IF NOT EXISTS FOR (n:FfaObjekt) REQUIRE n.id IS UNIQUE";
+    }
+
+    private static int index(List<Nod> noder, String id) {
+        for (int i = 0; i < noder.size(); i++) if (noder.get(i).id().equals(id)) return i;
+        throw new IllegalArgumentException("Relationens ändpunkt saknas");
+    }
+
+    private static String literal(Object value) {
+        return JSON.writeValueAsString(value);
+    }
+
+    /**
+     * Plattar ut valda värdeobjekt till skalära nodegenskaper, exempelvis belopp_varde.
+     */
+    private static void flatten(String key, JsonNode value, Map<String, Object> properties) {
+        if (value == null || value.isNull())
+            return;
+        if (value.isObject()) {
+            for (var entry : value.properties()) {
+                if (!entry.getKey().startsWith("@"))
+                    flatten(key + "_" + entry.getKey(), entry.getValue(), properties);
+            }
+        } else if (value.isValueNode()) {
+            properties.put(key, JSON.treeToValue(value, Object.class));
+        }
+    }
+
+    // Skydda Cypher-identifierare; JSON-skrivaren hanterar motsvarande escaping av värden.
+    private static String identifier(String value) {
+        return "`" + value.replace("`", "``") + "`";
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length != 2)
+            throw new IllegalArgumentException("Användning: Grafprojektion <verifierad-json> <cypher-ut>");
+
+        String cypher = schema() + ";\n" + new Grafprojektion().projektera(Files.readAllBytes(Path.of(args[0])));
+        Path out = Path.of(args[1]);
+        if (out.toAbsolutePath().getParent() != null)
+            Files.createDirectories(out.toAbsolutePath().getParent());
+
+        Files.writeString(out, cypher);
+        System.out.println("Separat grafprojektion skapad: " + out);
+    }
+
+    /**
      * Skapar Cypher från ett underlag som infrastrukturen redan har verifierat.
      * Hela snapshoten tillämpas i en fråga efter låsning och versionskontroll av roten.
      * Endast rotens egna projekterade relationer ersätts; övergivna noder behålls.
@@ -70,24 +120,11 @@ public final class Grafprojektion {
         return cypher.append("RETURN root.id AS objektId, root.version AS version;\n").toString();
     }
 
-    /** Krävs vid import för att samtidiga MERGE-anrop inte ska skapa samma identitet två gånger. */
-    public static String schema() {
-        return "CREATE CONSTRAINT ffa_objekt_id IF NOT EXISTS FOR (n:FfaObjekt) REQUIRE n.id IS UNIQUE";
-    }
-
-    private record Nod(String id, int version, String label, String properties) {}
-    private record Kant(String fran, String till, String typ) {}
-
-    private static int index(List<Nod> noder, String id) {
-        for (int i = 0; i < noder.size(); i++) if (noder.get(i).id().equals(id)) return i;
-        throw new IllegalArgumentException("Relationens ändpunkt saknas");
-    }
-
-    private static String literal(Object value) { return JSON.writeValueAsString(value); }
-
-    /** Följer inbäddningen och knyter varje livscykelnod till närmaste ägarnod. */
+    /**
+     * Följer inbäddningen och knyter varje livscykelnod till närmaste ägarnod.
+     */
     private void collect(JsonNode node, String parent, String relation,
-                        List<Nod> nodes, List<Kant> relations, Set<String> ids) {
+                         List<Nod> nodes, List<Kant> relations, Set<String> ids) {
         if (node.isArray()) {
             for (JsonNode child : node) collect(child, parent, relation, nodes, relations, ids);
             return;
@@ -124,35 +161,9 @@ public final class Grafprojektion {
             collect(entry.getValue(), owner, entry.getKey(), nodes, relations, ids);
     }
 
-    /** Plattar ut valda värdeobjekt till skalära nodegenskaper, exempelvis belopp_varde. */
-    private static void flatten(String key, JsonNode value, Map<String, Object> properties) {
-        if (value == null || value.isNull())
-            return;
-        if (value.isObject()) {
-            for (var entry : value.properties()) {
-                if (!entry.getKey().startsWith("@"))
-                    flatten(key + "_" + entry.getKey(), entry.getValue(), properties);
-            }
-        } else if (value.isValueNode()) {
-            properties.put(key, JSON.treeToValue(value, Object.class));
-        }
+    private record Nod(String id, int version, String label, String properties) {
     }
 
-    // Skydda Cypher-identifierare; JSON-skrivaren hanterar motsvarande escaping av värden.
-    private static String identifier(String value) {
-        return "`" + value.replace("`", "``") + "`";
-    }
-
-    public static void main(String[] args) throws Exception {
-        if (args.length != 2)
-            throw new IllegalArgumentException("Användning: Grafprojektion <verifierad-json> <cypher-ut>");
-
-        String cypher = schema() + ";\n" + new Grafprojektion().projektera(Files.readAllBytes(Path.of(args[0])));
-        Path out = Path.of(args[1]);
-        if (out.toAbsolutePath().getParent() != null)
-            Files.createDirectories(out.toAbsolutePath().getParent());
-
-        Files.writeString(out, cypher);
-        System.out.println("Separat grafprojektion skapad: " + out);
+    private record Kant(String fran, String till, String typ) {
     }
 }

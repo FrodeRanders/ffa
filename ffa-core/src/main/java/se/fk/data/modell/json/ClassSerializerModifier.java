@@ -1,10 +1,10 @@
 package se.fk.data.modell.json;
 
-import se.fk.data.modell.internal.AttentionPropertyWriter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.data.modell.annotations.Context;
+import se.fk.data.modell.internal.AttentionPropertyWriter;
+import se.fk.data.modell.v1.Livscykelhanterad;
 import tools.jackson.databind.BeanDescription;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.PropertyName;
@@ -14,8 +14,6 @@ import tools.jackson.databind.introspect.VirtualAnnotatedMember;
 import tools.jackson.databind.ser.BeanPropertyWriter;
 import tools.jackson.databind.ser.ValueSerializerModifier;
 import tools.jackson.databind.util.SimpleBeanPropertyDefinition;
-
-import se.fk.data.modell.v1.Livscykelhanterad;
 
 import java.util.ArrayList;
 import java.util.List;

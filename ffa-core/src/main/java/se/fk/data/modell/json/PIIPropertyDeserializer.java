@@ -7,7 +7,9 @@ import tools.jackson.core.JsonParser;
 import tools.jackson.databind.*;
 import tools.jackson.databind.jsontype.TypeDeserializer;
 
-/** Läser varde ur @PII-representationen och binder det till fältets Java-typ. */
+/**
+ * Läser varde ur @PII-representationen och binder det till fältets Java-typ.
+ */
 public class PIIPropertyDeserializer extends ValueDeserializer<Object> {
     private static final Logger log = LoggerFactory.getLogger(PIIPropertyDeserializer.class);
 

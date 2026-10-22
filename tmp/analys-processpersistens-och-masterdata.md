@@ -52,14 +52,14 @@ period vara den enda beständiga kopian av ett nytt processtillstånd.
 
 ## Identiteter, versioner och data
 
-| Egenskap | Betydelse |
-| --- | --- |
-| Korrelations-id | Processinstansens identitet. Flera leveranser kan tillhöra samma process. |
-| Objekt-id | Domänobjektets beständiga identitet. |
-| Objektversion | Innehållets version inom objektets identitet. Höjs vid relevant ändring. |
-| Dataleverans-id | En leverans identitet, tilldelad som UUID version 7 i demon. |
-| Signatur | Gör det möjligt att verifiera JSON-dokumentet; är inte en unik leveransnyckel. |
-| Tidsstämplar | Underlag för spårning och driftanalys. |
+| Egenskap        | Betydelse                                                                      |
+|-----------------|--------------------------------------------------------------------------------|
+| Korrelations-id | Processinstansens identitet. Flera leveranser kan tillhöra samma process.      |
+| Objekt-id       | Domänobjektets beständiga identitet.                                           |
+| Objektversion   | Innehållets version inom objektets identitet. Höjs vid relevant ändring.       |
+| Dataleverans-id | En leverans identitet, tilldelad som UUID version 7 i demon.                   |
+| Signatur        | Gör det möjligt att verifiera JSON-dokumentet; är inte en unik leveransnyckel. |
+| Tidsstämplar    | Underlag för spårning och driftanalys.                                         |
 
 Två invarianter behöver hållas isär:
 
@@ -94,12 +94,12 @@ leveransstatus lagras tillsammans.
 
 ### Diskuterade alternativ
 
-| Alternativ | Villkor för framgång | Återläsning och återhämtning |
-| --- | --- | --- |
-| a: Endast Kafka | Bekräftad Kafka-publicering. Ingen lokal kopia krävs. | Läs via backendens REST-gränssnitt. Backend kan ännu vara upptagen med leveransen. |
-| b: Kafka och lokal cache | Både lokal lagring och Kafka-publicering ska lyckas. | Läs lokalt när rätt tillstånd finns, annars via backend. Delvis lyckade operationer måste återhämtas. |
-| c: Lokal resiliens | Lokal lagring räcker när Kafka inte fungerar. | Läs det nya tillståndet lokalt och återförsök publiceringen. |
-| d: Avbryt arbetet | Det begärda lagringsvillkoret kan inte uppfyllas. | Returnera fel och pausa processen; skilj säkert misslyckande från osäkert eller delvis lyckat utfall. |
+| Alternativ               | Villkor för framgång                                  | Återläsning och återhämtning                                                                          |
+|--------------------------|-------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| a: Endast Kafka          | Bekräftad Kafka-publicering. Ingen lokal kopia krävs. | Läs via backendens REST-gränssnitt. Backend kan ännu vara upptagen med leveransen.                    |
+| b: Kafka och lokal cache | Både lokal lagring och Kafka-publicering ska lyckas.  | Läs lokalt när rätt tillstånd finns, annars via backend. Delvis lyckade operationer måste återhämtas. |
+| c: Lokal resiliens       | Lokal lagring räcker när Kafka inte fungerar.         | Läs det nya tillståndet lokalt och återförsök publiceringen.                                          |
+| d: Avbryt arbetet        | Det begärda lagringsvillkoret kan inte uppfyllas.     | Returnera fel och pausa processen; skilj säkert misslyckande från osäkert eller delvis lyckat utfall. |
 
 Alternativ d är ett felutfall för vald policy, snarare än en separat
 lagringsmekanism. Ett lyckat Kafka-anrop är inte heller ett besked om att REST
@@ -119,8 +119,8 @@ PoC:en använder en yttre Kafka-transaktion och en inre PostgreSQL-transaktion i
 6. Committa Kafka.
 7. Registrera bekräftad Kafka-publicering i en ny lokal databastransaktion.
 8. Returnera framgång när de två lagringarna är bekräftade. Om enbart
-  statusuppdateringen misslyckas får den återhämtas; leveransdata är då redan
-  lagrade i båda systemen.
+   statusuppdateringen misslyckas får den återhämtas; leveransdata är då redan
+   lagrade i båda systemen.
 
 PostgreSQL-commit släpper transaktionslåsen före Kafka-commit. Den beständiga
 väntande raden måste därför hindra andra skribenter från att passera en
@@ -135,12 +135,12 @@ Kafka avsiktligt committas innan den lokala kopian är beständig. Konsumenterna
 måste läsa med `read_committed` för att bara se committade Kafka-transaktioner.
 [Apache Kafka: transaktioner och leveranssemantik](https://kafka.apache.org/41/design/design/)
 
-| Avbrott | Beständigt resultat | Hantering |
-| --- | --- | --- |
-| Lokal lagring misslyckas före commit | Ingen ny lokal kopia; Kafka ska aborteras. | Returnera fel. Kontrollera osäkra commit-utfall vid behov. |
-| PostgreSQL har committats men Kafka aborterar | Lokal leverans finns; ingen bekräftad Kafka-publicering. | Behåll leveransen och återförsök. |
-| PostgreSQL har committats och processen kraschar före Kafka-commit | Lokal leverans finns; Kafka-utfallet behöver återhämtas. | Återställ producentens transaktionshantering och publicera vid behov. |
-| Kafka har committats men kvittot eller lokal statusuppdatering uteblir | Leveransen kan redan finnas i båda systemen. | Sök positiv bekräftelse eller återförsök samma leverans. |
+| Avbrott                                                                | Beständigt resultat                                      | Hantering                                                             |
+|------------------------------------------------------------------------|----------------------------------------------------------|-----------------------------------------------------------------------|
+| Lokal lagring misslyckas före commit                                   | Ingen ny lokal kopia; Kafka ska aborteras.               | Returnera fel. Kontrollera osäkra commit-utfall vid behov.            |
+| PostgreSQL har committats men Kafka aborterar                          | Lokal leverans finns; ingen bekräftad Kafka-publicering. | Behåll leveransen och återförsök.                                     |
+| PostgreSQL har committats och processen kraschar före Kafka-commit     | Lokal leverans finns; Kafka-utfallet behöver återhämtas. | Återställ producentens transaktionshantering och publicera vid behov. |
+| Kafka har committats men kvittot eller lokal statusuppdatering uteblir | Leveransen kan redan finnas i båda systemen.             | Sök positiv bekräftelse eller återförsök samma leverans.              |
 
 En timeout vid Kafka-commit är inte ett säkert besked om att commit misslyckats.
 För en fortfarande fungerande producent måste återhämtningen följa klientens
@@ -233,12 +233,12 @@ ge samma graf under olika tolkningar.
 Leveransstatus är infrastrukturinformation per dataleverans-id, skild från
 objektets verksamhetsversion. Följande milstolpar är implementerade:
 
-| Bekräftad milstolpe | Vad vi vet |
-| --- | --- |
-| Lokalt lagrad | Dokument och metadata är beständiga lokalt. Tillståndet kan återläsas och leveransen återförsökas. |
-| Publicerad till Kafka | Kafka-commit är bekräftad. Backend kan ännu bearbeta leveransen. |
-| Rådata beständigt lagrade | Objektlager och sökbart metadataindex innehåller rätt leverans. |
-| Grafbehandlad | Grafsteget har slutfört hanteringen, med tillämpad, redan tillämpad eller ersatt version som möjligt resultat. |
+| Bekräftad milstolpe       | Vad vi vet                                                                                                     |
+|---------------------------|----------------------------------------------------------------------------------------------------------------|
+| Lokalt lagrad             | Dokument och metadata är beständiga lokalt. Tillståndet kan återläsas och leveransen återförsökas.             |
+| Publicerad till Kafka     | Kafka-commit är bekräftad. Backend kan ännu bearbeta leveransen.                                               |
+| Rådata beständigt lagrade | Objektlager och sökbart metadataindex innehåller rätt leverans.                                                |
+| Grafbehandlad             | Grafsteget har slutfört hanteringen, med tillämpad, redan tillämpad eller ersatt version som möjligt resultat. |
 
 Modellen bör lagra bekräftelser, exempelvis med observerad tid och källa, snarare
 än enbart ett fält som påstås beskriva exakt var data befinner sig. Framsteg i

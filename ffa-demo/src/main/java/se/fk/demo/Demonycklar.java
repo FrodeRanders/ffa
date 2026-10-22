@@ -1,19 +1,28 @@
 package se.fk.demo;
 
-import java.nio.file.*;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.security.*;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateCrtKey;
-import java.security.spec.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 
-/** En lokal utvecklingsnyckel; produktionsnycklar ska komma från förvaltad nyckelhantering. */
+/**
+ * En lokal utvecklingsnyckel; produktionsnycklar ska komma från förvaltad nyckelhantering.
+ */
 final class Demonycklar {
-    private Demonycklar() {}
+    private Demonycklar() {
+    }
 
     static synchronized KeyPair lasEllerSkapa(Path directory) throws Exception {
         Files.createDirectories(directory);
-        // JVM-låset ovan och fillåset nedan skyddar även samtidiga demoprocesser.
+        // synchronized och fillås skyddar även samtidiga demoprocesser.
         try (var channel = FileChannel.open(directory.resolve(".nyckel.lock"),
                 StandardOpenOption.CREATE, StandardOpenOption.WRITE);
              var lock = channel.lock()) {
@@ -31,7 +40,9 @@ final class Demonycklar {
                 Files.setPosixFilePermissions(temporary, PosixFilePermissions.fromString("rw-------"));
                 Files.write(temporary, generator.generateKeyPair().getPrivate().getEncoded());
                 Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE);
-            } finally { Files.deleteIfExists(temporary); }
+            } finally {
+                Files.deleteIfExists(temporary);
+            }
         }
         var factory = KeyFactory.getInstance("RSA");
         var privateKey = (RSAPrivateCrtKey) factory.generatePrivate(new PKCS8EncodedKeySpec(Files.readAllBytes(file)));

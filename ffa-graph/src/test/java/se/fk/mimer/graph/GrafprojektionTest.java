@@ -6,16 +6,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.charset.StandardCharsets;
 
-/** Verifierar vilka objekt, relationer och egenskaper som lämnar dokumentet för grafen. */
+/**
+ * Verifierar vilka objekt, relationer och egenskaper som lämnar dokumentet för grafen.
+ */
 class GrafprojektionTest {
     private static final String INPUT = """
-        {"@type":"se.fk.data.modell.v1.Yrkande", "id":"y", "version":2,
-         "beskrivning":"Hundutställning", "ras":"Collie",
-         "person":{"varde":{"personnummer":{"varde":"19121212-1212"}}},
-         "beslut":{"@type":"se.fk.data.modell.v1.Beslut", "id":"b", "version":1, "utfall":"BEVILJAT"},
-         "producerat_resultat":[{"@type":"se.fk.data.modell.v1.Ersattning", "id":"e", "version":2,
-           "typ":"HUNDBIDRAG", "belopp":{"varde":1200.0, "valuta":"iso4217:SEK"}}]}
-        """;
+            {"@type":"se.fk.data.modell.v1.Yrkande", "id":"y", "version":2,
+             "beskrivning":"Hundutställning", "ras":"Collie",
+             "person":{"varde":{"personnummer":{"varde":"19121212-1212"}}},
+             "beslut":{"@type":"se.fk.data.modell.v1.Beslut", "id":"b", "version":1, "utfall":"BEVILJAT"},
+             "producerat_resultat":[{"@type":"se.fk.data.modell.v1.Ersattning", "id":"e", "version":2,
+               "typ":"HUNDBIDRAG", "belopp":{"varde":1200.0, "valuta":"iso4217:SEK"}}]}
+            """;
 
     @Test
     void valdaObjektBlirNoderMedRelationerOchPlattaEgenskaper() {

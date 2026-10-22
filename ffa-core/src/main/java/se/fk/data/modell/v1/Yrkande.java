@@ -6,10 +6,11 @@ import se.fk.data.modell.annotations.Context;
 import se.fk.data.modell.annotations.Som;
 
 import java.util.ArrayList;
-
 import java.util.Collection;
 
-/** Samlar en parts yrkande, handläggningens producerade resultat och ett eventuellt beslut. */
+/**
+ * Samlar en parts yrkande, handläggningens producerade resultat och ett eventuellt beslut.
+ */
 @Context("https://data.fk.se/kontext/std/yrkande/1.0")
 public class Yrkande extends Livscykelhanterad {
     @Som(roll = "ffa:yrkanden")
@@ -25,7 +26,8 @@ public class Yrkande extends Livscykelhanterad {
     @JsonProperty("producerat_resultat")
     public Collection<ProduceratResultat> produceratResultat = new ArrayList<>();
 
-    public Yrkande() {} // Behövs vid återläsning med Jackson.
+    public Yrkande() {
+    } // Behövs vid återläsning med Jackson.
 
     public Yrkande(String beskrivning) {
         this.beskrivning = beskrivning;

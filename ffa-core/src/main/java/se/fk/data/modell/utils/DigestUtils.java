@@ -4,9 +4,13 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.security.MessageDigest;
 
-/** Stabil kontrollsumma för jämförelse av objektinnehåll, separat från dokumentsignaturen. */
+/**
+ * Stabil kontrollsumma för jämförelse av objektinnehåll, separat från dokumentsignaturen.
+ */
 public final class DigestUtils {
-    private DigestUtils() {}
+    private DigestUtils() {
+    }
+
     public static byte[] computeDigest(Object bean, ObjectMapper mapper) {
         try {
             byte[] canonical = JcsUtils.canonicalize(mapper.writeValueAsBytes(bean));

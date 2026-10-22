@@ -28,11 +28,11 @@ rapporterar rätt namngiven invariant; ett godtyckligt verktygsfel räcker inte.
 
 Tre tillstånd behöver hållas isär:
 
-| Tillstånd | Vad vi vet |
-| --- | --- |
-| Indexrad finns, objekt saknas | En avsikt eller ett ofullständigt skrivförsök finns. Data är inte bekräftat lagrat. |
+| Tillstånd                                         | Vad vi vet                                                                            |
+|---------------------------------------------------|---------------------------------------------------------------------------------------|
+| Indexrad finns, objekt saknas                     | En avsikt eller ett ofullständigt skrivförsök finns. Data är inte bekräftat lagrat.   |
 | Objekt finns och matchar leveransen, index saknas | Data är lagrat och kan nås med känt leverans-id. Processuppslag är ännu inte färdigt. |
-| Index och objekt finns och matchar | Data kan återläsas genom korrelations-id. |
+| Index och objekt finns och matchar                | Data kan återläsas genom korrelations-id.                                             |
 
 `HasObject` betyder verifierat matchande objekt, inte enbart att nyckeln finns.
 Detta behöver motsvaras av ett tillförlitligt skrivkvitto eller återläsning som
@@ -138,26 +138,26 @@ ett kontraktskrav som inte följer av atomiska operationer i vardera lagringen.
 
 ## Tillstånd och egenskaper
 
-| Tillstånd | Betydelse |
-| --- | --- |
-| `objects`, `index` | Hållbara bindningar av id till innehåll och metadata |
-| `repair` | Hållbara uppdrag för indexreparation |
-| `active`, `stage` | Arbetarnas pågående meddelanden och nästa skrivsteg |
-| `completed`, `rejected` | Bekräftade respektive avvisade meddelanden |
-| `history`, `returned` | Granskningshistorik för bindningar och utlämnat data |
-| `lastIndexed`, `readHighest`, `readOrdered` | Hjälpvariabler för läsordningen |
-| `stable` | Om den godtyckligt långa felperioden är över |
+| Tillstånd                                   | Betydelse                                            |
+|---------------------------------------------|------------------------------------------------------|
+| `objects`, `index`                          | Hållbara bindningar av id till innehåll och metadata |
+| `repair`                                    | Hållbara uppdrag för indexreparation                 |
+| `active`, `stage`                           | Arbetarnas pågående meddelanden och nästa skrivsteg  |
+| `completed`, `rejected`                     | Bekräftade respektive avvisade meddelanden           |
+| `history`, `returned`                       | Granskningshistorik för bindningar och utlämnat data |
+| `lastIndexed`, `readHighest`, `readOrdered` | Hjälpvariabler för läsordningen                      |
+| `stable`                                    | Om den godtyckligt långa felperioden är över         |
 
-| Egenskap | Krav |
-| --- | --- |
-| `IdentityImmutable` | Samma id får inte bindas till två olika innehåll/metadata |
-| `StoresAgree` | Index och objekt måste matcha när båda finns |
-| `ConfirmedHasObject` | Bekräftade meddelanden har verifierbart lagrat objekt |
-| `ConfirmedHasIndexOrRepair` | Bekräftelse lämnar inte indexreparation utan hållbar grund |
-| `ReturnedHasObject` | Processläsning lämnar bara ut faktiskt lagrat, matchande data |
-| `ReadDoesNotRegress` | Lyckade processuppslag går inte bakåt i objektversion |
-| `EventuallySettled` | Varje inkommande meddelande blir till slut bekräftat eller avvisat |
-| `EventuallyDiscoverable` | Varje bekräftad leverans får till slut ett matchande index |
+| Egenskap                    | Krav                                                               |
+|-----------------------------|--------------------------------------------------------------------|
+| `IdentityImmutable`         | Samma id får inte bindas till två olika innehåll/metadata          |
+| `StoresAgree`               | Index och objekt måste matcha när båda finns                       |
+| `ConfirmedHasObject`        | Bekräftade meddelanden har verifierbart lagrat objekt              |
+| `ConfirmedHasIndexOrRepair` | Bekräftelse lämnar inte indexreparation utan hållbar grund         |
+| `ReturnedHasObject`         | Processläsning lämnar bara ut faktiskt lagrat, matchande data      |
+| `ReadDoesNotRegress`        | Lyckade processuppslag går inte bakåt i objektversion              |
+| `EventuallySettled`         | Varje inkommande meddelande blir till slut bekräftat eller avvisat |
+| `EventuallyDiscoverable`    | Varje bekräftad leverans får till slut ett matchande index         |
 
 Säkerhetsmodellerna tillåter krascher och skrivfel vid alla aktiva steg. De tar
 inte bort redan committad data. Framstegsmodellerna kräver att tjänsterna till
@@ -167,15 +167,15 @@ inte dessa antaganden; modellen lovar därför inte återsökbarhet under ett s�
 
 ## Konfigurationer och förväntade motexempel
 
-| Positiv kontroll | Innehåll |
-| --- | --- |
-| `backend-index-first`, `backend-object-first` | Två arbetare och processer, båda ordningarna, konfliktande inleveranser |
-| `backend-object-confirm` | Objektbekräftelse med hållbart reparationsuppdrag |
-| `backend-index-live`, `backend-object-live` | Eventualitet med båda lagringarna som bekräftelsekrav |
-| `backend-repair-live` | Eventualitet efter objektbekräftelse och senare indexreparation |
-| `backend-duplicates` | Två meddelandekopior per variant av samma id, samtidiga återförsök och konflikter |
-| `backend-version-read` | Två objektversioner som kan indexeras i omvänd ordning |
-| `backend-mixed-valid` | Blandade ordningar med oförändrade inleveranser |
+| Positiv kontroll                              | Innehåll                                                                          |
+|-----------------------------------------------|-----------------------------------------------------------------------------------|
+| `backend-index-first`, `backend-object-first` | Två arbetare och processer, båda ordningarna, konfliktande inleveranser           |
+| `backend-object-confirm`                      | Objektbekräftelse med hållbart reparationsuppdrag                                 |
+| `backend-index-live`, `backend-object-live`   | Eventualitet med båda lagringarna som bekräftelsekrav                             |
+| `backend-repair-live`                         | Eventualitet efter objektbekräftelse och senare indexreparation                   |
+| `backend-duplicates`                          | Två meddelandekopior per variant av samma id, samtidiga återförsök och konflikter |
+| `backend-version-read`                        | Två objektversioner som kan indexeras i omvänd ordning                            |
+| `backend-mixed-valid`                         | Blandade ordningar med oförändrade inleveranser                                   |
 
 De vanliga säkerhetsmodellerna har två processer, två arbetare och ett id per
 process. Dublettmodellen har en process, två arbetare och två meddelandekopior

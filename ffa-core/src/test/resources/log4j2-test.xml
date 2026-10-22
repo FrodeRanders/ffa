@@ -21,7 +21,7 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="se.fk" level="TRACE" />
+        <Logger name="se.fk" level="TRACE"/>
         <Logger name="tools.jackson.databind" level="TRACE"/>
         <Logger name="tools.jackson.core" level="TRACE"/>
 

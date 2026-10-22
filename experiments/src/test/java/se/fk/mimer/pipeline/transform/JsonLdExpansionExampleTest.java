@@ -12,20 +12,6 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JsonLdExpansionExampleTest {
-    @Test
-    void expandsWithContextAndFindsKnownTerms() throws Exception {
-        Path rawJson = Path.of("src/test/resources/fixtures/yrkande-full.json");
-        Path context = Path.of("src/main/resources/context/ffa-1.0.jsonld");
-
-        JsonArray expanded = JsonLdExpansionExample.expandWithLocalContext(rawJson, context);
-        JsonArray remapped = JsonLdTypeMapper.replaceTypes(expanded, Path.of("src/main/resources/schema/ffa.graphqls"));
-
-        assertTrue(containsKey(remapped, "https://data.sfa.se/termer/1.0/ersattningstyp"),
-                "Expected expanded JSON-LD to include ersattningstyp term");
-        assertTrue(containsType(remapped, "https://data.sfa.se/termer/1.0/ersattning"),
-                "Expected @type to be mapped to domain IRI");
-    }
-
     private static boolean containsKey(JsonValue value, String key) {
         return switch (value.getValueType()) {
             case OBJECT -> {
@@ -92,5 +78,19 @@ public class JsonLdExpansionExampleTest {
             }
             default -> false;
         };
+    }
+
+    @Test
+    void expandsWithContextAndFindsKnownTerms() throws Exception {
+        Path rawJson = Path.of("src/test/resources/fixtures/yrkande-full.json");
+        Path context = Path.of("src/main/resources/context/ffa-1.0.jsonld");
+
+        JsonArray expanded = JsonLdExpansionExample.expandWithLocalContext(rawJson, context);
+        JsonArray remapped = JsonLdTypeMapper.replaceTypes(expanded, Path.of("src/main/resources/schema/ffa.graphqls"));
+
+        assertTrue(containsKey(remapped, "https://data.sfa.se/termer/1.0/ersattningstyp"),
+                "Expected expanded JSON-LD to include ersattningstyp term");
+        assertTrue(containsType(remapped, "https://data.sfa.se/termer/1.0/ersattning"),
+                "Expected @type to be mapped to domain IRI");
     }
 }

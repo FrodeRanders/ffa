@@ -1,22 +1,25 @@
 package se.fk.demo;
 
 import org.junit.jupiter.api.Test;
-import se.fk.teststod.Minneslager;
 import org.junit.jupiter.api.io.TempDir;
+import se.fk.data.modell.utils.SignatureUtils;
+import se.fk.data.modell.v1.Ersattning;
 import se.fk.hundbidrag.Applikation;
 import se.fk.hundbidrag.modell.YrkandeOmHundbidrag;
-import se.fk.data.modell.v1.Ersattning;
-import se.fk.mimer.runtime.*;
-import se.fk.data.modell.utils.SignatureUtils;
+import se.fk.mimer.runtime.ForvaltadeYrkanden;
+import se.fk.mimer.runtime.LagratDokument;
+import se.fk.teststod.Minneslager;
 
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPairGenerator;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Verifierar förmånsutvidgningen genom den förvaltade gränsen och demoflödet med en lagringsadapter för test. */
+/**
+ * Verifierar förmånsutvidgningen genom den förvaltade gränsen och demoflödet med en lagringsadapter för test.
+ */
 class DemoTest {
     @TempDir
     Path temp;

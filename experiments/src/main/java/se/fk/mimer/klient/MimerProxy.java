@@ -54,134 +54,6 @@ public final class MimerProxy {
                 .build();
     }
 
-    public enum SignatureEncoding {
-        BASE64("base64"),
-        BASE64_URL("base64url"),
-        HEX("hex"),
-        PEM("pem");
-
-        private static final String PEM_BEGIN = "-----BEGIN SIGNATURE-----";
-        private static final String PEM_END = "-----END SIGNATURE-----";
-        private final String wireName;
-
-        SignatureEncoding(String wireName) {
-            this.wireName = wireName;
-        }
-
-        public String wireName() {
-            return wireName;
-        }
-    }
-
-    public record SignedJson(
-            byte[] jsonBytes,
-            byte[] signatureBytes,
-            String signatureAlgorithm,
-            String digestAlgorithm,
-            String canonicalization,
-            Instant signingTime,
-            String keyId,
-            byte[] signerCertificateDer,
-            byte[][] certificateChainDer
-    ) {
-        public String signatureText() {
-            return signatureText(SignatureEncoding.BASE64_URL);
-        }
-
-        public String signatureText(SignatureEncoding encoding) {
-            return encodeSignature(signatureBytes, encoding);
-        }
-
-        public static byte[] decodeSignature(String signatureText, SignatureEncoding encoding) {
-            return decodeSignatureText(signatureText, encoding);
-        }
-    }
-
-    public record VerificationResult(
-            boolean signatureValid,
-            boolean chainValid,
-            String message
-    ) {}
-
-    public record SignOptions(
-            String keyId,
-            SignatureUtils.DigestAlgorithm digestAlgorithm,
-            SignatureUtils.SignatureScheme signatureScheme,
-            X509Certificate signerCertificate,
-            List<X509Certificate> certificateChain,
-            List<X509Certificate> intermediates,
-            List<X509Certificate> trustAnchors
-    ) {
-        // Immutable defaults for options-based signing.
-        public static SignOptions defaults() {
-            return new SignOptions(null, DEFAULT_DIGEST_ALGORITHM, DEFAULT_SIGNATURE_SCHEME, null, null, null, null);
-        }
-
-        public SignOptions withKeyId(String value) {
-            return new SignOptions(
-                    value,
-                    digestAlgorithm,
-                    signatureScheme,
-                    signerCertificate,
-                    certificateChain,
-                    intermediates,
-                    trustAnchors
-            );
-        }
-
-        public SignOptions withDigestAlgorithm(SignatureUtils.DigestAlgorithm value) {
-            return new SignOptions(
-                    keyId,
-                    value,
-                    signatureScheme,
-                    signerCertificate,
-                    certificateChain,
-                    intermediates,
-                    trustAnchors
-            );
-        }
-
-        public SignOptions withSignatureScheme(SignatureUtils.SignatureScheme value) {
-            return new SignOptions(
-                    keyId,
-                    digestAlgorithm,
-                    value,
-                    signerCertificate,
-                    certificateChain,
-                    intermediates,
-                    trustAnchors
-            );
-        }
-    }
-
-    public record VerifyOptions(
-            SignatureEncoding signatureEncoding,
-            List<X509Certificate> chain,
-            List<X509Certificate> trustAnchors,
-            boolean enableRevocation
-    ) {
-        // Text signatures default to Base64URL because it is safe in URLs and JSON fields.
-        public static VerifyOptions defaults() {
-            return new VerifyOptions(SignatureEncoding.BASE64_URL, null, null, false);
-        }
-
-        public VerifyOptions withSignatureEncoding(SignatureEncoding value) {
-            return new VerifyOptions(value, chain, trustAnchors, enableRevocation);
-        }
-
-        public VerifyOptions withChain(List<X509Certificate> value) {
-            return new VerifyOptions(signatureEncoding, value, trustAnchors, enableRevocation);
-        }
-
-        public VerifyOptions withTrustAnchors(List<X509Certificate> value) {
-            return new VerifyOptions(signatureEncoding, chain, value, enableRevocation);
-        }
-
-        public VerifyOptions withEnableRevocation(boolean value) {
-            return new VerifyOptions(signatureEncoding, chain, trustAnchors, value);
-        }
-    }
-
     public static String encodeSignature(byte[] signatureBytes, SignatureEncoding encoding) {
         if (signatureBytes == null) {
             throw new IllegalArgumentException("signatureBytes must not be null");
@@ -211,13 +83,6 @@ public final class MimerProxy {
     public static SignedJson serializeAndSign(
             Object bean,
             ObjectMapper mapper,
-            PrivateKey privateKey
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, privateKey, (String) null);
-    }
-
-    public SignedJson serializeAndSign(
-            Object bean,
             PrivateKey privateKey
     ) throws JacksonException {
         return serializeAndSign(bean, mapper, privateKey, (String) null);
@@ -280,33 +145,6 @@ public final class MimerProxy {
         );
     }
 
-    public SignedJson serializeAndSign(
-            Object bean,
-            KeyMaterialLoader.KeyMaterial keyMaterial,
-            String keyId
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, keyMaterial, keyId);
-    }
-
-    public SignedJson serializeAndSign(
-            Object bean,
-            KeyMaterialLoader.KeyMaterial keyMaterial,
-            String keyId,
-            SignatureUtils.DigestAlgorithm digestAlgorithm
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, keyMaterial, keyId, digestAlgorithm);
-    }
-
-    public SignedJson serializeAndSign(
-            Object bean,
-            KeyMaterialLoader.KeyMaterial keyMaterial,
-            String keyId,
-            SignatureUtils.DigestAlgorithm digestAlgorithm,
-            SignatureUtils.SignatureScheme signatureScheme
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, keyMaterial, keyId, digestAlgorithm, signatureScheme);
-    }
-
     public static SignedJson serializeAndSign(
             Object bean,
             ObjectMapper mapper,
@@ -351,14 +189,6 @@ public final class MimerProxy {
         );
     }
 
-    public SignedJson serializeAndSign(
-            Object bean,
-            KeyMaterialLoader.KeyMaterial keyMaterial,
-            SignOptions options
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, keyMaterial, options);
-    }
-
     public static byte[] serialize(
             Object bean,
             ObjectMapper mapper
@@ -366,23 +196,11 @@ public final class MimerProxy {
         return mapper.writeValueAsBytes(bean);
     }
 
-    public byte[] serialize(
-            Object bean
-    ) throws JacksonException {
-        return serialize(bean, mapper);
-    }
-
     public static String serializePretty(
             Object bean,
             ObjectMapper mapper
     ) throws JacksonException {
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(bean);
-    }
-
-    public String serializePretty(
-            Object bean
-    ) throws JacksonException {
-        return serializePretty(bean, mapper);
     }
 
     public static <T> T deserialize(
@@ -401,13 +219,6 @@ public final class MimerProxy {
         return mapper.treeToValue(result.root, type);
     }
 
-    public <T> T deserialize(
-            byte[] jsonBytes,
-            Class<T> type
-    ) throws JacksonException {
-        return deserialize(jsonBytes, mapper, type);
-    }
-
     public static <T> T deserialize(
             String json,
             ObjectMapper mapper,
@@ -422,13 +233,6 @@ public final class MimerProxy {
 
         // Bind after migration
         return mapper.treeToValue(result.root, type);
-    }
-
-    public <T> T deserialize(
-            String json,
-            Class<T> type
-    ) throws JacksonException {
-        return deserialize(json, mapper, type);
     }
 
     public static <T> T verifyAndDeserialize(
@@ -454,25 +258,6 @@ public final class MimerProxy {
         return deserializeIfVerified(jsonBytes, mapper, type, result, false);
     }
 
-    public <T> T verifyAndDeserialize(
-            byte[] jsonBytes,
-            byte[] signatureBytes,
-            X509Certificate signerCertificate,
-            Class<T> type
-    ) throws JacksonException {
-        return verifyAndDeserialize(jsonBytes, signatureBytes, signerCertificate, mapper, type);
-    }
-
-    public <T> T verifyAndDeserialize(
-            byte[] jsonBytes,
-            String signatureText,
-            SignatureEncoding signatureEncoding,
-            X509Certificate signerCertificate,
-            Class<T> type
-    ) throws JacksonException {
-        return verifyAndDeserialize(jsonBytes, signatureText, signatureEncoding, signerCertificate, mapper, type);
-    }
-
     @Deprecated(since = "1.0", forRemoval = false)
     public static <T> T verifyAndDeserialize(
             byte[] jsonBytes,
@@ -517,28 +302,6 @@ public final class MimerProxy {
                 enableRevocation
         );
         return deserializeIfVerified(jsonBytes, mapper, type, result, true);
-    }
-
-    @Deprecated(since = "1.0", forRemoval = false)
-    public <T> T verifyAndDeserialize(
-            byte[] jsonBytes,
-            byte[] signatureBytes,
-            X509Certificate signerCertificate,
-            List<X509Certificate> chain,
-            List<X509Certificate> trustAnchors,
-            boolean enableRevocation,
-            Class<T> type
-    ) throws JacksonException {
-        return verifyAndDeserialize(
-                jsonBytes,
-                signatureBytes,
-                signerCertificate,
-                chain,
-                trustAnchors,
-                enableRevocation,
-                mapper,
-                type
-        );
     }
 
     public static <T> T verifyAndDeserialize(
@@ -554,16 +317,6 @@ public final class MimerProxy {
         return deserializeIfVerified(jsonBytes, mapper, type, result, shouldRequireChainValidation(effective));
     }
 
-    public <T> T verifyAndDeserialize(
-            byte[] jsonBytes,
-            byte[] signatureBytes,
-            X509Certificate signerCertificate,
-            VerifyOptions options,
-            Class<T> type
-    ) throws JacksonException {
-        return verifyAndDeserialize(jsonBytes, signatureBytes, signerCertificate, options, mapper, type);
-    }
-
     public static <T> T verifyAndDeserialize(
             byte[] jsonBytes,
             String signatureText,
@@ -575,40 +328,6 @@ public final class MimerProxy {
         VerifyOptions effective = effectiveVerifyOptions(options);
         VerificationResult result = verifySignature(jsonBytes, signatureText, signerCertificate, effective);
         return deserializeIfVerified(jsonBytes, mapper, type, result, shouldRequireChainValidation(effective));
-    }
-
-    public <T> T verifyAndDeserialize(
-            byte[] jsonBytes,
-            String signatureText,
-            X509Certificate signerCertificate,
-            VerifyOptions options,
-            Class<T> type
-    ) throws JacksonException {
-        return verifyAndDeserialize(jsonBytes, signatureText, signerCertificate, options, mapper, type);
-    }
-
-    @Deprecated(since = "1.0", forRemoval = false)
-    public <T> T verifyAndDeserialize(
-            byte[] jsonBytes,
-            String signatureText,
-            SignatureEncoding signatureEncoding,
-            X509Certificate signerCertificate,
-            List<X509Certificate> chain,
-            List<X509Certificate> trustAnchors,
-            boolean enableRevocation,
-            Class<T> type
-    ) throws JacksonException {
-        return verifyAndDeserialize(
-                jsonBytes,
-                signatureText,
-                signatureEncoding,
-                signerCertificate,
-                chain,
-                trustAnchors,
-                enableRevocation,
-                mapper,
-                type
-        );
     }
 
     public static SignedJson serializeAndSign(
@@ -661,33 +380,6 @@ public final class MimerProxy {
         return serializeAndSign(bean, mapper, privateKey, keyId, null, null, digestAlgorithm, signatureScheme);
     }
 
-    public SignedJson serializeAndSign(
-            Object bean,
-            PrivateKey privateKey,
-            String keyId
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, privateKey, keyId);
-    }
-
-    public SignedJson serializeAndSign(
-            Object bean,
-            PrivateKey privateKey,
-            String keyId,
-            SignatureUtils.DigestAlgorithm digestAlgorithm
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, privateKey, keyId, digestAlgorithm);
-    }
-
-    public SignedJson serializeAndSign(
-            Object bean,
-            PrivateKey privateKey,
-            String keyId,
-            SignatureUtils.DigestAlgorithm digestAlgorithm,
-            SignatureUtils.SignatureScheme signatureScheme
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, privateKey, keyId, digestAlgorithm, signatureScheme);
-    }
-
     public static SignedJson serializeAndSign(
             Object bean,
             ObjectMapper mapper,
@@ -719,14 +411,6 @@ public final class MimerProxy {
                 effective.digestAlgorithm(),
                 effective.signatureScheme()
         );
-    }
-
-    public SignedJson serializeAndSign(
-            Object bean,
-            PrivateKey privateKey,
-            SignOptions options
-    ) throws JacksonException {
-        return serializeAndSign(bean, mapper, privateKey, options);
     }
 
     @Deprecated(since = "1.0", forRemoval = false)
@@ -1327,5 +1011,322 @@ public final class MimerProxy {
             throw new IllegalArgumentException("PEM value does not contain a signature body");
         }
         return Base64.getDecoder().decode(body);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            PrivateKey privateKey
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, privateKey, (String) null);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            KeyMaterialLoader.KeyMaterial keyMaterial,
+            String keyId
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, keyMaterial, keyId);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            KeyMaterialLoader.KeyMaterial keyMaterial,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, keyMaterial, keyId, digestAlgorithm);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            KeyMaterialLoader.KeyMaterial keyMaterial,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm,
+            SignatureUtils.SignatureScheme signatureScheme
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, keyMaterial, keyId, digestAlgorithm, signatureScheme);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            KeyMaterialLoader.KeyMaterial keyMaterial,
+            SignOptions options
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, keyMaterial, options);
+    }
+
+    public byte[] serialize(
+            Object bean
+    ) throws JacksonException {
+        return serialize(bean, mapper);
+    }
+
+    public String serializePretty(
+            Object bean
+    ) throws JacksonException {
+        return serializePretty(bean, mapper);
+    }
+
+    public <T> T deserialize(
+            byte[] jsonBytes,
+            Class<T> type
+    ) throws JacksonException {
+        return deserialize(jsonBytes, mapper, type);
+    }
+
+    public <T> T deserialize(
+            String json,
+            Class<T> type
+    ) throws JacksonException {
+        return deserialize(json, mapper, type);
+    }
+
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            byte[] signatureBytes,
+            X509Certificate signerCertificate,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(jsonBytes, signatureBytes, signerCertificate, mapper, type);
+    }
+
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(jsonBytes, signatureText, signatureEncoding, signerCertificate, mapper, type);
+    }
+
+    @Deprecated(since = "1.0", forRemoval = false)
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            byte[] signatureBytes,
+            X509Certificate signerCertificate,
+            List<X509Certificate> chain,
+            List<X509Certificate> trustAnchors,
+            boolean enableRevocation,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(
+                jsonBytes,
+                signatureBytes,
+                signerCertificate,
+                chain,
+                trustAnchors,
+                enableRevocation,
+                mapper,
+                type
+        );
+    }
+
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            byte[] signatureBytes,
+            X509Certificate signerCertificate,
+            VerifyOptions options,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(jsonBytes, signatureBytes, signerCertificate, options, mapper, type);
+    }
+
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            String signatureText,
+            X509Certificate signerCertificate,
+            VerifyOptions options,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(jsonBytes, signatureText, signerCertificate, options, mapper, type);
+    }
+
+    @Deprecated(since = "1.0", forRemoval = false)
+    public <T> T verifyAndDeserialize(
+            byte[] jsonBytes,
+            String signatureText,
+            SignatureEncoding signatureEncoding,
+            X509Certificate signerCertificate,
+            List<X509Certificate> chain,
+            List<X509Certificate> trustAnchors,
+            boolean enableRevocation,
+            Class<T> type
+    ) throws JacksonException {
+        return verifyAndDeserialize(
+                jsonBytes,
+                signatureText,
+                signatureEncoding,
+                signerCertificate,
+                chain,
+                trustAnchors,
+                enableRevocation,
+                mapper,
+                type
+        );
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            PrivateKey privateKey,
+            String keyId
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, privateKey, keyId);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            PrivateKey privateKey,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, privateKey, keyId, digestAlgorithm);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            PrivateKey privateKey,
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm,
+            SignatureUtils.SignatureScheme signatureScheme
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, privateKey, keyId, digestAlgorithm, signatureScheme);
+    }
+
+    public SignedJson serializeAndSign(
+            Object bean,
+            PrivateKey privateKey,
+            SignOptions options
+    ) throws JacksonException {
+        return serializeAndSign(bean, mapper, privateKey, options);
+    }
+
+    public enum SignatureEncoding {
+        BASE64("base64"),
+        BASE64_URL("base64url"),
+        HEX("hex"),
+        PEM("pem");
+
+        private static final String PEM_BEGIN = "-----BEGIN SIGNATURE-----";
+        private static final String PEM_END = "-----END SIGNATURE-----";
+        private final String wireName;
+
+        SignatureEncoding(String wireName) {
+            this.wireName = wireName;
+        }
+
+        public String wireName() {
+            return wireName;
+        }
+    }
+
+    public record SignedJson(
+            byte[] jsonBytes,
+            byte[] signatureBytes,
+            String signatureAlgorithm,
+            String digestAlgorithm,
+            String canonicalization,
+            Instant signingTime,
+            String keyId,
+            byte[] signerCertificateDer,
+            byte[][] certificateChainDer
+    ) {
+        public static byte[] decodeSignature(String signatureText, SignatureEncoding encoding) {
+            return decodeSignatureText(signatureText, encoding);
+        }
+
+        public String signatureText() {
+            return signatureText(SignatureEncoding.BASE64_URL);
+        }
+
+        public String signatureText(SignatureEncoding encoding) {
+            return encodeSignature(signatureBytes, encoding);
+        }
+    }
+
+    public record VerificationResult(
+            boolean signatureValid,
+            boolean chainValid,
+            String message
+    ) {
+    }
+
+    public record SignOptions(
+            String keyId,
+            SignatureUtils.DigestAlgorithm digestAlgorithm,
+            SignatureUtils.SignatureScheme signatureScheme,
+            X509Certificate signerCertificate,
+            List<X509Certificate> certificateChain,
+            List<X509Certificate> intermediates,
+            List<X509Certificate> trustAnchors
+    ) {
+        // Immutable defaults for options-based signing.
+        public static SignOptions defaults() {
+            return new SignOptions(null, DEFAULT_DIGEST_ALGORITHM, DEFAULT_SIGNATURE_SCHEME, null, null, null, null);
+        }
+
+        public SignOptions withKeyId(String value) {
+            return new SignOptions(
+                    value,
+                    digestAlgorithm,
+                    signatureScheme,
+                    signerCertificate,
+                    certificateChain,
+                    intermediates,
+                    trustAnchors
+            );
+        }
+
+        public SignOptions withDigestAlgorithm(SignatureUtils.DigestAlgorithm value) {
+            return new SignOptions(
+                    keyId,
+                    value,
+                    signatureScheme,
+                    signerCertificate,
+                    certificateChain,
+                    intermediates,
+                    trustAnchors
+            );
+        }
+
+        public SignOptions withSignatureScheme(SignatureUtils.SignatureScheme value) {
+            return new SignOptions(
+                    keyId,
+                    digestAlgorithm,
+                    value,
+                    signerCertificate,
+                    certificateChain,
+                    intermediates,
+                    trustAnchors
+            );
+        }
+    }
+
+    public record VerifyOptions(
+            SignatureEncoding signatureEncoding,
+            List<X509Certificate> chain,
+            List<X509Certificate> trustAnchors,
+            boolean enableRevocation
+    ) {
+        // Text signatures default to Base64URL because it is safe in URLs and JSON fields.
+        public static VerifyOptions defaults() {
+            return new VerifyOptions(SignatureEncoding.BASE64_URL, null, null, false);
+        }
+
+        public VerifyOptions withSignatureEncoding(SignatureEncoding value) {
+            return new VerifyOptions(value, chain, trustAnchors, enableRevocation);
+        }
+
+        public VerifyOptions withChain(List<X509Certificate> value) {
+            return new VerifyOptions(signatureEncoding, value, trustAnchors, enableRevocation);
+        }
+
+        public VerifyOptions withTrustAnchors(List<X509Certificate> value) {
+            return new VerifyOptions(signatureEncoding, chain, value, enableRevocation);
+        }
+
+        public VerifyOptions withEnableRevocation(boolean value) {
+            return new VerifyOptions(signatureEncoding, chain, trustAnchors, value);
+        }
     }
 }

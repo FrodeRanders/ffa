@@ -2,13 +2,19 @@ package se.fk.demo;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import java.nio.file.*;
-import java.util.*;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class DemonycklarTest {
-    @TempDir Path directory;
+    @TempDir
+    Path directory;
 
     @Test
     void samtidigaJvmProcesserAnvanderSammaBestandigaNyckel() throws Exception {
@@ -31,7 +37,9 @@ class DemonycklarTest {
             var reopened = Demonycklar.lasEllerSkapa(directory);
             assertEquals(publicKeys.iterator().next(), Base64.getEncoder().encodeToString(reopened.getPublic().getEncoded()));
             assertArrayEquals(original, Files.readAllBytes(directory.resolve("signering.pkcs8")));
-        } finally { processer.forEach(Process::destroyForcibly); }
+        } finally {
+            processer.forEach(Process::destroyForcibly);
+        }
     }
 
     public static class Probe {

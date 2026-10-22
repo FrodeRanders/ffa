@@ -1,22 +1,33 @@
 package se.fk.mimer.persistence;
 
-import org.junit.jupiter.api.*;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.clients.consumer.*;
-import org.apache.kafka.common.serialization.*;
-import se.fk.mimer.runtime.*;
+import se.fk.mimer.runtime.Dataleverans;
+import se.fk.mimer.runtime.ForvaltadeYrkanden;
+import se.fk.mimer.runtime.LagratDokument;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.*;
-import java.time.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Körs uttryckligen mot Docker-miljön: mvn -Dffa.integration=true test. */
+/**
+ * Körs uttryckligen mot Docker-miljön: mvn -Dffa.integration=true test.
+ */
 @EnabledIfSystemProperty(named = "ffa.integration", matches = "true")
 class PostgresKafkaIntegrationTest {
     private final String topic = "ffa.test." + UUID.randomUUID();
@@ -25,34 +36,50 @@ class PostgresKafkaIntegrationTest {
     private final String user = System.getenv().getOrDefault("FFA_DB_USER", "ffa");
     private final String password = System.getenv().getOrDefault("FFA_DB_PASSWORD", "ffa-demo");
 
-    private Connection connect() throws SQLException { return DriverManager.getConnection(url, user, password); }
+    private Connection connect() throws SQLException {
+        return DriverManager.getConnection(url, user, password);
+    }
+
     private PostgresKafkaLager store(Leveranslage mode, Leveranspublicerare publisher) {
         var store = new PostgresKafkaLager(url, user, password, topic, mode, publisher);
         store.initiera();
         return store;
     }
+
     // Testdubbeln simulerar Kafka-commit efter den lokala committen.
     private PostgresKafkaLager store(Leveranslage mode, java.util.function.BiConsumer<String, Dataleverans> publisher) {
-        return store(mode, (t, d, commit) -> { commit.run(); publisher.accept(t, d); });
+        return store(mode, (t, d, commit) -> {
+            commit.run();
+            publisher.accept(t, d);
+        });
     }
+
     private Dataleverans delivery(String process, String object, long previous, long version) {
         return new Dataleverans(Dataleverans.nyttId(), process, object, previous, version, Instant.now(),
                 new LagratDokument("{ \"bevarat\": 42 }".getBytes(StandardCharsets.UTF_8), new byte[]{1, 2, 3}));
     }
+
     private long count() throws SQLException {
         try (var connection = connect(); var query = connection.prepareStatement("SELECT count(*) FROM ffa_dataleverans WHERE topic = ?")) {
             query.setString(1, topic);
-            try (var rows = query.executeQuery()) { rows.next(); return rows.getLong(1); }
-        }
-    }
-    @AfterEach
-    void cleanup() throws SQLException {
-        try (var connection = connect(); var query = connection.prepareStatement("DELETE FROM ffa_dataleverans WHERE topic = ?")) {
-            query.setString(1, topic); query.executeUpdate();
+            try (var rows = query.executeQuery()) {
+                rows.next();
+                return rows.getLong(1);
+            }
         }
     }
 
-    /** Ett förlorat Kafka-kvitto får varken lämna gammal cache eller återanvända en objektversion. */
+    @AfterEach
+    void cleanup() throws SQLException {
+        try (var connection = connect(); var query = connection.prepareStatement("DELETE FROM ffa_dataleverans WHERE topic = ?")) {
+            query.setString(1, topic);
+            query.executeUpdate();
+        }
+    }
+
+    /**
+     * Ett förlorat Kafka-kvitto får varken lämna gammal cache eller återanvända en objektversion.
+     */
     @Test
     void striktLageBevararNyVersionOchPausarTillsLeveransenAterhamtats() throws Exception {
         var observed = new ArrayList<Dataleverans>();
@@ -109,8 +136,12 @@ class PostgresKafkaIntegrationTest {
             if (down.get()) throw new IllegalStateException("Kafka nere");
             if (d.id().equals(first.id())) {
                 entered.countDown();
-                try { if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Testtimeout"); }
-                catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
+                try {
+                    if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Testtimeout");
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(e);
+                }
             }
             observed.add(d.id());
         });
@@ -126,7 +157,9 @@ class PostgresKafkaIntegrationTest {
                 assertTrue(entered.await(5, TimeUnit.SECONDS));
                 assertEquals(0, other.skickaProcess("process", 10));
                 assertTrue(observed.isEmpty());
-            } finally { release.countDown(); }
+            } finally {
+                release.countDown();
+            }
             assertEquals(2, active.get(5, TimeUnit.SECONDS));
         }
         assertEquals(List.of(first.id(), second.id()), observed);
@@ -160,8 +193,12 @@ class PostgresKafkaIntegrationTest {
         var store = store(Leveranslage.STRIKT, (t, d) -> {
             if (d.korrelationsId().equals("blockerad")) {
                 entered.countDown();
-                try { if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Testtimeout"); }
-                catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
+                try {
+                    if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("Testtimeout");
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(e);
+                }
             }
         });
         try (var workers = Executors.newFixedThreadPool(2)) {
@@ -170,7 +207,9 @@ class PostgresKafkaIntegrationTest {
                 assertTrue(entered.await(5, TimeUnit.SECONDS));
                 workers.submit(() -> store.lagra(delivery("annan", "o2", 0, 1))).get(3, TimeUnit.SECONDS);
                 assertNotNull(store.lasProcess("annan"));
-            } finally { release.countDown(); }
+            } finally {
+                release.countDown();
+            }
             slow.get(5, TimeUnit.SECONDS);
         }
     }
@@ -210,7 +249,9 @@ class PostgresKafkaIntegrationTest {
 
     @Test
     void kafkaFelGerIngenLokalKopiaIStriktLage() throws Exception {
-        var store = store(Leveranslage.STRIKT, (t, d, commit) -> { throw new IllegalStateException("Kafka nere före lokal commit"); });
+        var store = store(Leveranslage.STRIKT, (t, d, commit) -> {
+            throw new IllegalStateException("Kafka nere före lokal commit");
+        });
         var delivery = delivery("process", "objekt", 0, 1);
         var error = assertThrows(Leveransfel.class, () -> store.lagra(delivery));
         assertFalse(error.kafkaKvitterat());
@@ -301,14 +342,34 @@ class PostgresKafkaIntegrationTest {
 
     @Test
     void tvaSkribenterKanInteSkrivaSammaGamlaVersion() throws Exception {
-        var firstStore = store(Leveranslage.STRIKT, (t, d) -> {});
-        var secondStore = store(Leveranslage.STRIKT, (t, d) -> {});
+        var firstStore = store(Leveranslage.STRIKT, (t, d) -> {
+        });
+        var secondStore = store(Leveranslage.STRIKT, (t, d) -> {
+        });
         firstStore.lagra(delivery("process", "objekt", 0, 1));
         try (var workers = Executors.newFixedThreadPool(2)) {
             var start = new CountDownLatch(1);
-            Callable<Boolean> first = () -> { start.await(); try { firstStore.lagra(delivery("process", "objekt", 1, 2)); return true; } catch (Leveransfel e) { return false; } };
-            Callable<Boolean> second = () -> { start.await(); try { secondStore.lagra(delivery("process", "objekt", 1, 2)); return true; } catch (Leveransfel e) { return false; } };
-            var a = workers.submit(first); var b = workers.submit(second); start.countDown();
+            Callable<Boolean> first = () -> {
+                start.await();
+                try {
+                    firstStore.lagra(delivery("process", "objekt", 1, 2));
+                    return true;
+                } catch (Leveransfel e) {
+                    return false;
+                }
+            };
+            Callable<Boolean> second = () -> {
+                start.await();
+                try {
+                    secondStore.lagra(delivery("process", "objekt", 1, 2));
+                    return true;
+                } catch (Leveransfel e) {
+                    return false;
+                }
+            };
+            var a = workers.submit(first);
+            var b = workers.submit(second);
+            start.countDown();
             assertNotEquals(a.get(10, TimeUnit.SECONDS), b.get(10, TimeUnit.SECONDS));
         }
         assertEquals(2, count());
@@ -350,13 +411,17 @@ class PostgresKafkaIntegrationTest {
                     assertArrayEquals(delivery.dokument().signatur(), message.headers().lastHeader("signatur").value());
                     assertEquals(delivery.id().toString(), new String(message.headers().lastHeader("dataleverans-id").value(), StandardCharsets.UTF_8));
                 }
-            } finally { admin.deleteTopics(List.of(topic)).all().get(15, TimeUnit.SECONDS); }
+            } finally {
+                admin.deleteTopics(List.of(topic)).all().get(15, TimeUnit.SECONDS);
+            }
         }
     }
 
     @Test
     void senaBekraftelserArMonotonaOchMasteAvseSammaData() throws Exception {
-        var store = store(Leveranslage.LOKAL_RESILIENS, (t, d) -> { throw new IllegalStateException("Kafka nere"); });
+        var store = store(Leveranslage.LOKAL_RESILIENS, (t, d) -> {
+            throw new IllegalStateException("Kafka nere");
+        });
         var delivery = delivery("process", "objekt", 0, 1);
         store.lagra(delivery);
         assertEquals(Leveranssteg.LOKALT_LAGRAD, store.lasStatus(delivery.id()).steg());

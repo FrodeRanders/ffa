@@ -22,7 +22,9 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Verklig N−2 → Kafka → PostgreSQL/RustFS → Kafka → Neo4j, med isolerade topics och bucket. */
+/**
+ * Verklig N−2 → Kafka → PostgreSQL/RustFS → Kafka → Neo4j, med isolerade topics och bucket.
+ */
 @EnabledIfSystemProperty(named = "ffa.pipeline", matches = "true")
 class PipelineIntegrationTest {
     private static KeyPair keys;
@@ -46,7 +48,9 @@ class PipelineIntegrationTest {
     private KafkaPublicerare publisher;
     private ForvaltadeYrkanden<Yrkande> repository;
 
-    private static String env(String key, String fallback) { return System.getenv().getOrDefault(key, fallback); }
+    private static String env(String key, String fallback) {
+        return System.getenv().getOrDefault(key, fallback);
+    }
 
     @BeforeAll
     static void keys() throws Exception {
@@ -86,12 +90,16 @@ class PipelineIntegrationTest {
             try {
                 for (var id : deliveries) objects.radera(id);
                 objects.raderaTomBucket();
-            } finally { objects.close(); }
+            } finally {
+                objects.close();
+            }
         }
         if (driver != null) {
             try (var session = driver.session()) {
                 session.run("MATCH (n:FfaObjekt) WHERE n.id IN $ids DETACH DELETE n", Map.of("ids", objectIds)).consume();
-            } finally { driver.close(); }
+            } finally {
+                driver.close();
+            }
         }
         try (var connection = connect()) {
             for (var table : List.of("ffa_backend.dataleverans", "ffa_dataleverans", "ffa_kvittens")) {
@@ -102,12 +110,17 @@ class PipelineIntegrationTest {
             }
         }
         if (admin != null) {
-            try { admin.deleteTopics(List.of(topic, graphTopic, topic + ".kvitton")).all().get(20, TimeUnit.SECONDS); }
-            finally { admin.close(); }
+            try {
+                admin.deleteTopics(List.of(topic, graphTopic, topic + ".kvitton")).all().get(20, TimeUnit.SECONDS);
+            } finally {
+                admin.close();
+            }
         }
     }
 
-    private Connection connect() throws SQLException { return DriverManager.getConnection(jdbc, user, password); }
+    private Connection connect() throws SQLException {
+        return DriverManager.getConnection(jdbc, user, password);
+    }
 
     private Yrkande initial() {
         var claim = new Yrkande("Version 1");
@@ -144,7 +157,10 @@ class PipelineIntegrationTest {
         try (var connection = connect(); var query = connection.prepareStatement(
                 "SELECT count(*) FROM ffa_backend.dataleverans WHERE topic = ?")) {
             query.setString(1, topic);
-            try (var rows = query.executeQuery()) { rows.next(); return rows.getLong(1); }
+            try (var rows = query.executeQuery()) {
+                rows.next();
+                return rows.getLong(1);
+            }
         }
     }
 
@@ -231,8 +247,8 @@ class PipelineIntegrationTest {
         var delivery = delivery();
         var failure = new AtomicBoolean(true);
         try (var raw = new Radatasteg(broker, topic, graphTopic, group, backend, keys.getPublic(), () -> {
-                 if (failure.getAndSet(false)) throw new IllegalStateException("Avbrott efter rådatacommit");
-             });
+            if (failure.getAndSet(false)) throw new IllegalStateException("Avbrott efter rådatacommit");
+        });
              var graph = new Grafsteg(broker, graphTopic, topic + ".graph-reader", driver, keys.getPublic())) {
             assertThrows(IllegalStateException.class, () -> await(() -> raw.behandla(Duration.ofMillis(500))));
             assertTrue(Leveransformat.samma(delivery, backend.lasLeverans(delivery.id())));
@@ -272,7 +288,7 @@ class PipelineIntegrationTest {
             assertEquals(200, http.send(java.net.http.HttpRequest.newBuilder(uri).GET().build(),
                     java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode());
             assertEquals(405, http.send(java.net.http.HttpRequest.newBuilder(uri)
-                    .POST(java.net.http.HttpRequest.BodyPublishers.noBody()).build(),
+                            .POST(java.net.http.HttpRequest.BodyPublishers.noBody()).build(),
                     java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode());
         }
     }

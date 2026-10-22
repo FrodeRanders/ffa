@@ -10,10 +10,11 @@ import java.security.PublicKey;
 import java.time.Duration;
 import java.util.*;
 
-/** N−1: rådatacommit före Kafka-transaktionens atomiska vidareleverans och offsetcommit. */
+/**
+ * N−1: rådatacommit före Kafka-transaktionens atomiska vidareleverans och offsetcommit.
+ */
 public final class Radatasteg implements AutoCloseable {
     private final KafkaConsumer<String, byte[]> consumer;
-    private KafkaProducer<String, byte[]> producer;
     private final String broker;
     private final String producerId = "ffa-backend-" + UUID.randomUUID();
     private final String graphTopic;
@@ -22,10 +23,12 @@ public final class Radatasteg implements AutoCloseable {
     private final Radatalager backend;
     private final PublicKey key;
     private final Runnable efterLagring;
+    private KafkaProducer<String, byte[]> producer;
 
     public Radatasteg(String broker, String inputTopic, String graphTopic, String group,
-                     Radatalager backend, PublicKey key) {
-        this(broker, inputTopic, graphTopic, group, backend, key, () -> {});
+                      Radatalager backend, PublicKey key) {
+        this(broker, inputTopic, graphTopic, group, backend, key, () -> {
+        });
     }
 
     // Felinjektion efter externa commits, före Kafka-commit.
@@ -41,7 +44,9 @@ public final class Radatasteg implements AutoCloseable {
         consumer = KafkaFlode.konsument(broker, inputTopic, group);
     }
 
-    /** Returnerar den slutförda leveransen eller null om inget meddelande kommit. */
+    /**
+     * Returnerar den slutförda leveransen eller null om inget meddelande kommit.
+     */
     public Dataleverans behandla(Duration timeout) {
         var records = consumer.poll(timeout);
         if (records.isEmpty()) return null;
@@ -69,13 +74,19 @@ public final class Radatasteg implements AutoCloseable {
         } catch (Exception e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (started && !committing) {
-                try { producer.abortTransaction(); }
-                catch (RuntimeException abort) { e.addSuppressed(abort); }
+                try {
+                    producer.abortTransaction();
+                } catch (RuntimeException abort) {
+                    e.addSuppressed(abort);
+                }
             }
             // Ny init med samma producent-id löser även osäkra commits före återleverans.
             if (producer != null) {
-                try { producer.close(Duration.ZERO); }
-                catch (RuntimeException close) { e.addSuppressed(close); }
+                try {
+                    producer.close(Duration.ZERO);
+                } catch (RuntimeException close) {
+                    e.addSuppressed(close);
+                }
                 producer = null;
             }
             consumer.seek(partition, record.offset());
@@ -83,8 +94,12 @@ public final class Radatasteg implements AutoCloseable {
         }
     }
 
-    @Override public void close() {
-        try { consumer.close(Duration.ofSeconds(5)); }
-        finally { if (producer != null) producer.close(Duration.ofSeconds(5)); }
+    @Override
+    public void close() {
+        try {
+            consumer.close(Duration.ofSeconds(5));
+        } finally {
+            if (producer != null) producer.close(Duration.ofSeconds(5));
+        }
     }
 }

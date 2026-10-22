@@ -1,11 +1,17 @@
 package se.fk.mimer.persistence;
 
-import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import java.time.Duration;
-import java.util.*;
 
-/** SQL-commit före offsetcommit: avbrott ger återleverans, aldrig tappad bekräftelse. */
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * SQL-commit före offsetcommit: avbrott ger återleverans, aldrig tappad bekräftelse.
+ */
 public final class Kvittenskonsument implements AutoCloseable {
     private final KafkaConsumer<String, byte[]> consumer;
     private final PostgresKafkaLager cache;
@@ -20,7 +26,9 @@ public final class Kvittenskonsument implements AutoCloseable {
         consumer.subscribe(List.of(kvittensTopic));
     }
 
-    /** null betyder tom poll. Kvitton för andra förmånstopics konsumeras utan cacheändring. */
+    /**
+     * null betyder tom poll. Kvitton för andra förmånstopics konsumeras utan cacheändring.
+     */
     public Kvittens behandla(Duration timeout) {
         var records = consumer.poll(timeout);
         if (records.isEmpty()) return null;
@@ -39,5 +47,8 @@ public final class Kvittenskonsument implements AutoCloseable {
         }
     }
 
-    @Override public void close() { consumer.close(Duration.ofSeconds(5)); }
+    @Override
+    public void close() {
+        consumer.close(Duration.ofSeconds(5));
+    }
 }

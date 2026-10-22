@@ -28,7 +28,8 @@ public final class JsonLdTypeMapper {
     private static final Pattern URI_PATTERN =
             Pattern.compile("uri\\s*:\\s*\\\"([^\\\"]+)\\\"");
 
-    private JsonLdTypeMapper() {}
+    private JsonLdTypeMapper() {
+    }
 
     public static JsonArray replaceTypes(JsonArray expanded, Path sdlPath) throws IOException {
         Map<String, String> typeToUri = loadTypeUriMap(sdlPath);

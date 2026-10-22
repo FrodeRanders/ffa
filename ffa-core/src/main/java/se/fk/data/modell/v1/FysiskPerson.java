@@ -4,14 +4,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import se.fk.data.modell.annotations.Context;
 import se.fk.data.modell.annotations.PII;
 
-/** En personreferens med ett personnummer som klassificeras av modellen. */
+/**
+ * En personreferens med ett personnummer som klassificeras av modellen.
+ */
 @Context("https://data.fk.se/kontext/std/fysiskperson/1.0")
 public class FysiskPerson extends Person {
-    @PII(typ="pii:personnummer")
+    @PII(typ = "pii:personnummer")
     @JsonProperty("personnummer")
     public String personnummer;
 
-    public FysiskPerson() {} // Behövs vid återläsning med Jackson.
+    public FysiskPerson() {
+    } // Behövs vid återläsning med Jackson.
 
     public FysiskPerson(String personnummer) {
         this.personnummer = personnummer;

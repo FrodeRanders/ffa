@@ -1,20 +1,30 @@
 package se.fk.demo;
 
+import se.fk.data.modell.utils.SignatureUtils;
 import se.fk.hundbidrag.Applikation;
 import se.fk.hundbidrag.modell.YrkandeOmHundbidrag;
-import se.fk.mimer.runtime.*;
-import se.fk.mimer.persistence.*;
-import se.fk.data.modell.utils.SignatureUtils;
+import se.fk.mimer.persistence.Aterforsoksarbetare;
+import se.fk.mimer.persistence.KafkaPublicerare;
+import se.fk.mimer.persistence.Leveranslage;
+import se.fk.mimer.persistence.PostgresKafkaLager;
+import se.fk.mimer.runtime.Dataleverans;
+import se.fk.mimer.runtime.Dokumentlager;
+import se.fk.mimer.runtime.ForvaltadeYrkanden;
+import se.fk.mimer.runtime.LagratDokument;
 
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 
-/** Startar den förvaltade modellen med Kafka och PostgreSQL. */
+/**
+ * Startar den förvaltade modellen med Kafka och PostgreSQL.
+ */
 public final class Demo {
-    private Demo() {}
+    private Demo() {
+    }
 
     public static void main(String[] args) throws Exception {
         Path output = Path.of(args.length == 0 || args[0].startsWith("--") ? "target/demo-yrkande.json" : args[0]);
@@ -36,7 +46,9 @@ public final class Demo {
         }
     }
 
-    private static String env(String name, String fallback) { return System.getenv().getOrDefault(name, fallback); }
+    private static String env(String name, String fallback) {
+        return System.getenv().getOrDefault(name, fallback);
+    }
 
     static void kor(Path output, Dokumentlager lager, KeyPair keys) throws Exception {
         var yrkanden = new ForvaltadeYrkanden<>(YrkandeOmHundbidrag.class, lager, keys.getPrivate(), keys.getPublic());
@@ -45,7 +57,9 @@ public final class Demo {
         boolean nyttHistoriskt = lager.lasProcess("demo-historiskt") == null;
         if (nyttHistoriskt) {
             byte[] historic;
-            try (var input = Demo.class.getResourceAsStream("/yrkande-v0.json")) { historic = input.readAllBytes(); }
+            try (var input = Demo.class.getResourceAsStream("/yrkande-v0.json")) {
+                historic = input.readAllBytes();
+            }
             lager.lagra(new Dataleverans(Dataleverans.nyttId(), "demo-historiskt", "yrkande-historiskt", 0, 3,
                     Instant.now(), new LagratDokument(historic, SignatureUtils.sign(historic, keys.getPrivate()))));
         }

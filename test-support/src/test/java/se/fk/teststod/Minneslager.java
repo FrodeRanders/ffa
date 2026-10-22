@@ -6,10 +6,13 @@ import se.fk.mimer.runtime.LagratDokument;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Testhjälp för enhetstester; kompileras endast som testkod och ingår inte i demots JAR-filer. */
+/**
+ * Testhjälp för enhetstester; kompileras endast som testkod och ingår inte i demots JAR-filer.
+ */
 public class Minneslager implements Dokumentlager {
     private final ConcurrentHashMap<String, LagratDokument> dokument = new ConcurrentHashMap<>();
     private final java.util.LinkedHashMap<java.util.UUID, Dataleverans> leveranser = new java.util.LinkedHashMap<>();
+
     public LagratDokument las(String id) {
         return dokument.get(id);
     }

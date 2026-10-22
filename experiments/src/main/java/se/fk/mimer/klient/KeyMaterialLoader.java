@@ -19,14 +19,8 @@ public final class KeyMaterialLoader {
     private static final Pattern PEM_BLOCK =
             Pattern.compile("-----BEGIN ([^-]+)-----([\\s\\S]*?)-----END \\1-----");
 
-    private KeyMaterialLoader() {}
-
-    public record KeyMaterial(
-            PrivateKey privateKey,
-            X509Certificate signerCertificate,
-            List<X509Certificate> certificateChain,
-            List<X509Certificate> trustAnchors
-    ) {}
+    private KeyMaterialLoader() {
+    }
 
     public static KeyMaterial loadFromEnv(
             String keyEnv,
@@ -151,6 +145,14 @@ public final class KeyMaterialLoader {
             }
         }
         return blocks;
+    }
+
+    public record KeyMaterial(
+            PrivateKey privateKey,
+            X509Certificate signerCertificate,
+            List<X509Certificate> certificateChain,
+            List<X509Certificate> trustAnchors
+    ) {
     }
 
     private record PemBlock(String type, String body) {

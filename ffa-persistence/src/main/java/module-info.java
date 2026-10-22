@@ -1,4 +1,6 @@
-/** Leverans till masterdataflödet och lokal cache för förmånsprocesser. */
+/**
+ * Leverans till masterdataflödet och lokal cache för förmånsprocesser.
+ */
 module se.fk.ffa.persistence {
     requires se.fk.ffa.core;
     requires java.sql;

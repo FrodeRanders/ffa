@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ffa -d ffa"]
+      test: [ "CMD-SHELL", "pg_isready -U ffa -d ffa" ]
       interval: 3s
       timeout: 3s
       retries: 30
@@ -37,14 +37,14 @@ services:
     volumes:
       - kafka-data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1"]
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1" ]
       interval: 5s
       timeout: 10s
       retries: 30
       start_period: 15s
   neo4j:
     image: neo4j:5.26-community
-    profiles: [graph-tests]
+    profiles: [ graph-tests ]
     environment:
       NEO4J_AUTH: neo4j/ffa-demo-password
       NEO4J_server_memory_heap_initial__size: 256m
@@ -53,14 +53,14 @@ services:
     ports:
       - "127.0.0.1:17687:7687"
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u neo4j -p ffa-demo-password 'RETURN 1' >/dev/null 2>&1"]
+      test: [ "CMD-SHELL", "cypher-shell -u neo4j -p ffa-demo-password 'RETURN 1' >/dev/null 2>&1" ]
       interval: 5s
       timeout: 10s
       retries: 30
       start_period: 20s
   rustfs:
     image: rustfs/rustfs:1.0.1
-    profiles: [pipeline-tests]
+    profiles: [ pipeline-tests ]
     environment:
       RUSTFS_ACCESS_KEY: ffa-demo
       RUSTFS_SECRET_KEY: ffa-demo-object-store
@@ -74,7 +74,7 @@ services:
     volumes:
       - rustfs-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health/ready"]
+      test: [ "CMD", "curl", "-fsS", "http://localhost:9000/health/ready" ]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -84,8 +84,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-    entrypoint: ["/opt/kafka/bin/kafka-topics.sh"]
-    command: ["--bootstrap-server", "kafka:29092", "--create", "--if-not-exists", "--topic", "ffa.hundbidrag", "--partitions", "1", "--replication-factor", "1"]
+    entrypoint: [ "/opt/kafka/bin/kafka-topics.sh" ]
+    command: [ "--bootstrap-server", "kafka:29092", "--create", "--if-not-exists", "--topic", "ffa.hundbidrag", "--partitions", "1", "--replication-factor", "1" ]
 volumes:
   postgres-data:
   kafka-data:

@@ -1,8 +1,8 @@
 package se.fk.mimer.persistence;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import se.fk.mimer.runtime.Dataleverans;
@@ -14,7 +14,9 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
-/** JSON skickas oförändrat som värde; headers utgör metadatakanalen. */
+/**
+ * JSON skickas oförändrat som värde; headers utgör metadatakanalen.
+ */
 public final class KafkaPublicerare implements Leveranspublicerare, AutoCloseable {
     private final Supplier<Producer<String, byte[]>> producentfabrik;
     private Producer<String, byte[]> producer;
@@ -24,7 +26,9 @@ public final class KafkaPublicerare implements Leveranspublicerare, AutoCloseabl
         this(bootstrapServers, "ffa-" + UUID.randomUUID());
     }
 
-    /** Ett stabilt id måste vara unikt per aktiv producentinstans för att undvika oavsiktlig fencing. */
+    /**
+     * Ett stabilt id måste vara unikt per aktiv producentinstans för att undvika oavsiktlig fencing.
+     */
     public KafkaPublicerare(String bootstrapServers, String transactionalId) {
         this(() -> new KafkaProducer<>(konfiguration(bootstrapServers, transactionalId)));
     }
@@ -47,7 +51,9 @@ public final class KafkaPublicerare implements Leveranspublicerare, AutoCloseabl
         return config;
     }
 
-    /** Idempotensen täcker interna återförsök; outbox-replay kan ge accepterade dubletter hos mottagaren. */
+    /**
+     * Idempotensen täcker interna återförsök; outbox-replay kan ge accepterade dubletter hos mottagaren.
+     */
     public static ProducerRecord<String, byte[]> meddelande(String topic, Dataleverans leverans) {
         var record = new ProducerRecord<String, byte[]>(topic, leverans.korrelationsId(), leverans.dokument().json());
         record.headers().add("dataleverans-id", utf8(leverans.id().toString()));
@@ -61,7 +67,9 @@ public final class KafkaPublicerare implements Leveranspublicerare, AutoCloseabl
         return record;
     }
 
-    private static byte[] utf8(String value) { return value.getBytes(StandardCharsets.UTF_8); }
+    private static byte[] utf8(String value) {
+        return value.getBytes(StandardCharsets.UTF_8);
+    }
 
     @Override
     public synchronized void publicera(String topic, Dataleverans leverans, Runnable lokalCommit) {
@@ -99,12 +107,19 @@ public final class KafkaPublicerare implements Leveranspublicerare, AutoCloseabl
         // Ett osäkert commitutfall får inte följas av abortTransaction. Nästa försök
         // initierar en ny producent med samma id; den beständiga leveransen behålls.
         if (started && !committing) {
-            try { producer.abortTransaction(); return; }
-            catch (RuntimeException abort) { failure.addSuppressed(abort); }
+            try {
+                producer.abortTransaction();
+                return;
+            } catch (RuntimeException abort) {
+                failure.addSuppressed(abort);
+            }
         }
         if (producer != null) {
-            try { producer.close(Duration.ZERO); }
-            catch (RuntimeException close) { failure.addSuppressed(close); }
+            try {
+                producer.close(Duration.ZERO);
+            } catch (RuntimeException close) {
+                failure.addSuppressed(close);
+            }
             producer = null;
         }
     }

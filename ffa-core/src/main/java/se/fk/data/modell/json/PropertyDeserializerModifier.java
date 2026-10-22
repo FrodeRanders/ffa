@@ -14,7 +14,9 @@ import tools.jackson.databind.introspect.AnnotatedMember;
 
 import java.util.Iterator;
 
-/** Återför annoterade JSON-värden till fältens deklarerade Java-typer. */
+/**
+ * Återför annoterade JSON-värden till fältens deklarerade Java-typer.
+ */
 public class PropertyDeserializerModifier extends ValueDeserializerModifier {
     private static final Logger log = LoggerFactory.getLogger(PropertyDeserializerModifier.class);
 

@@ -1,19 +1,24 @@
 package se.fk.data.modell.utils;
 
 import java.security.PrivateKey;
-
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 
-/** Gemensam signeringspolicy för PoC:en: JCS och RSA-PSS med SHA-512. */
+/**
+ * Gemensam signeringspolicy för PoC:en: JCS och RSA-PSS med SHA-512.
+ */
 public final class SignatureUtils {
     private static final PSSParameterSpec PARAMETERS =
             new PSSParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512, 64, 1);
-    private SignatureUtils() {}
 
-    /** Signerar den kanoniska representationen med infrastrukturens privata nyckel. */
+    private SignatureUtils() {
+    }
+
+    /**
+     * Signerar den kanoniska representationen med infrastrukturens privata nyckel.
+     */
     public static byte[] sign(byte[] json, PrivateKey key) {
         try {
             Signature signature = Signature.getInstance("RSASSA-PSS");
@@ -26,7 +31,9 @@ public final class SignatureUtils {
         }
     }
 
-    /** Verifierar mot en redan betrodd publik nyckel; felaktiga underlag ger false. */
+    /**
+     * Verifierar mot en redan betrodd publik nyckel; felaktiga underlag ger false.
+     */
     public static boolean verify(byte[] json, byte[] signed, PublicKey key) {
         try {
             Signature verifier = Signature.getInstance("RSASSA-PSS");

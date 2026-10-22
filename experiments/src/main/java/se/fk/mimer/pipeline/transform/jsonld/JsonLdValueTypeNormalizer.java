@@ -18,7 +18,8 @@ public final class JsonLdValueTypeNormalizer {
     private static final String XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer";
     private static final String XSD_DOUBLE = "http://www.w3.org/2001/XMLSchema#double";
 
-    private JsonLdValueTypeNormalizer() {}
+    private JsonLdValueTypeNormalizer() {
+    }
 
     public static JsonArray ensureStringTypes(JsonArray expanded) {
         JsonArrayBuilder builder = Json.createArrayBuilder();

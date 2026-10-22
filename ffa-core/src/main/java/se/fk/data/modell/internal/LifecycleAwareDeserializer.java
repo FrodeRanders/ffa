@@ -10,7 +10,9 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.ValueDeserializer;
 
-/** Sparar det återlästa objektets kontrollsumma som referens för nästa lagring. */
+/**
+ * Sparar det återlästa objektets kontrollsumma som referens för nästa lagring.
+ */
 public final class LifecycleAwareDeserializer<T extends Livscykelhanterad> extends tools.jackson.databind.deser.std.DelegatingDeserializer {
     private static final Logger log = LoggerFactory.getLogger(LifecycleAwareDeserializer.class);
 

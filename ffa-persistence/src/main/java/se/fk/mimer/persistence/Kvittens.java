@@ -2,13 +2,16 @@ package se.fk.mimer.persistence;
 
 import se.fk.mimer.runtime.Dataleverans;
 import tools.jackson.databind.json.JsonMapper;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
 
-/** Positivt infrastrukturellt kvitto. Fingeravtrycket binder kvittot till hela leveransen. */
+/**
+ * Positivt infrastrukturellt kvitto. Fingeravtrycket binder kvittot till hela leveransen.
+ */
 public record Kvittens(String topic, UUID dataleveransId, String korrelationsId,
                        Leveranssteg steg, Instant skapad, String fingeravtryck) {
     private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -26,12 +29,9 @@ public record Kvittens(String topic, UUID dataleveransId, String korrelationsId,
         return new Kvittens(topic, d.id(), d.korrelationsId(), steg, Instant.now(), fingeravtryck(d));
     }
 
-    public boolean avser(Dataleverans d) {
-        return dataleveransId.equals(d.id()) && korrelationsId.equals(d.korrelationsId())
-                && fingeravtryck.equals(fingeravtryck(d));
-    }
-
-    /** Längdprefix gör sammansättningen entydig även för id med skiljetecken. */
+    /**
+     * Längdprefix gör sammansättningen entydig även för id med skiljetecken.
+     */
     public static String fingeravtryck(Dataleverans d) {
         try {
             var hash = MessageDigest.getInstance("SHA-256");
@@ -41,18 +41,14 @@ public record Kvittens(String topic, UUID dataleveransId, String korrelationsId,
             mata(hash, d.dokument().json());
             mata(hash, d.dokument().signatur());
             return HexFormat.of().formatHex(hash.digest());
-        } catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static void mata(MessageDigest hash, byte[] bytes) {
         hash.update(ByteBuffer.allocate(4).putInt(bytes.length).array());
         hash.update(bytes);
-    }
-
-    public byte[] json() {
-        return JSON.writeValueAsBytes(Map.of("formatVersion", 1, "topic", topic,
-                "dataleveransId", dataleveransId.toString(), "korrelationsId", korrelationsId,
-                "steg", steg.name(), "skapad", skapad.toString(), "fingeravtryck", fingeravtryck));
     }
 
     public static Kvittens las(byte[] bytes) {
@@ -65,5 +61,16 @@ public record Kvittens(String topic, UUID dataleveransId, String korrelationsId,
         return new Kvittens(root.path("topic").asString(), UUID.fromString(root.path("dataleveransId").asString()),
                 root.path("korrelationsId").asString(), Leveranssteg.valueOf(root.path("steg").asString()),
                 Instant.parse(root.path("skapad").asString()), root.path("fingeravtryck").asString());
+    }
+
+    public boolean avser(Dataleverans d) {
+        return dataleveransId.equals(d.id()) && korrelationsId.equals(d.korrelationsId())
+                && fingeravtryck.equals(fingeravtryck(d));
+    }
+
+    public byte[] json() {
+        return JSON.writeValueAsBytes(Map.of("formatVersion", 1, "topic", topic,
+                "dataleveransId", dataleveransId.toString(), "korrelationsId", korrelationsId,
+                "steg", steg.name(), "skapad", skapad.toString(), "fingeravtryck", fingeravtryck));
     }
 }

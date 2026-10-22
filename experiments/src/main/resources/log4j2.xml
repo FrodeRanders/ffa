@@ -21,8 +21,8 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="se.fk" level="TRACE" />
-        <Logger name="com.fasterxml" level="WARN" />
+        <Logger name="se.fk" level="TRACE"/>
+        <Logger name="com.fasterxml" level="WARN"/>
 
         <Root level="INFO">
             <appender-ref ref="INTERNAL"/>

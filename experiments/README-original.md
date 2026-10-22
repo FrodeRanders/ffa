@@ -8,32 +8,36 @@ helt kan fokusera på affärslogik och inte behöva engagera sig i översättnin
 till "organisationsspråk" samt detaljerna kring serialisering av processtillstånd.
 
 ## Livscykelbeteende (versionering och __attention)
+
 FFA-objekt som ärver från `Livscykelhanterad` versionshanteras automatiskt vid (de)serialisering.
 Målet är att kunna avgöra om ett objekt är nytt eller ändrat utan att applikationskoden behöver
 hantera checksummor, och att bara flagga ändrade objekt i JSON.
 
 ### Översikt
+
 Vid ny instans: när objektet serialiseras första gången finns ingen digest sparad. Versionen
-  stegas (0 → 1) och `__attention` sätts till `true` för objektet i JSON.
+stegas (0 → 1) och `__attention` sätts till `true` för objektet i JSON.
 
 Vid ändrat objekt: om innehållet skiljer sig från sparad digest, stegas versionen (t.ex. 1 → 2)
-  och `__attention` sätts till `true` i JSON.
+och `__attention` sätts till `true` i JSON.
 
 Vid oändrat objekt: om innehållet matchar sparad digest stegas versionen inte, och `__attention`
-  skrivs inte ut i JSON (fältet finns alltså inte med).
+skrivs inte ut i JSON (fältet finns alltså inte med).
 
 ### Flöde
+
 1) Efter deserialisering beräknas en digest och sparas i objektet (internt, ej i JSON).
 2) Inför serialisering beräknas en ny digest och jämförs med den sparade:
-   - skillnad betyder att objektet betraktas som ändrat (version +1, `__attention=true`).
-3) Efter serialisering beräknas digest om och lagras, så att serializer‑drivna ändringar
-   (t.ex. interna flaggor) inte ger falska förändringar vid nästa serialisering.
+    - skillnad betyder att objektet betraktas som ändrat (version +1, `__attention=true`).
+3) Efter serialisering beräknas digest om och lagras, så att serializer‑drivna ändringar (t.ex. interna flaggor) inte
+   ger falska förändringar vid nästa serialisering.
 
 ### Kanonisk JSON
-Digest baseras på JCS‑kanonisering av JSON, vilket ger stabila checksummor och är kompatibelt
-med signering/verifiering. 
 
-## Demonstration 
+Digest baseras på JCS‑kanonisering av JSON, vilket ger stabila checksummor och är kompatibelt
+med signering/verifiering.
+
+## Demonstration
 
 Vi tar utgångspunkt i behoven hos ett team som utvecklar affärslogik med FFAs informations- och datamodell som grund
 
@@ -44,6 +48,7 @@ vid behov. För utvidning och modifikation används helt enkelt arvsmekanismen i
 Vi kan förfara på liknande sätt för en eventuell C++ realisering.
 
 ### Basklass för livscykelhanterade objekt enligt FFA
+
 ```java
 package se.fk.data.modell.v1;
 
@@ -102,6 +107,7 @@ public class Yrkan extends Livscykelhanterad {
 ```
 
 ### Fysisk person
+
 ```java
 package se.fk.data.modell.v1;
 
@@ -204,7 +210,7 @@ public class Ersattning extends Livscykelhanterad {
 ```
 
 Detta är en generell basklass för ersättning, så vi vill inte säga något särskilt kring vilken typ
-av `belopp` detta rör sig om. Om man finner det lämpligt så kan man specialisera ersättningsobjektet 
+av `belopp` detta rör sig om. Om man finner det lämpligt så kan man specialisera ersättningsobjektet
 vid användning och direkt i koden ange detta:
 
 ```java
@@ -214,6 +220,7 @@ vid användning och direkt i koden ange detta:
 ```
 
 ### Utvidgning av Yrkan för Hundbidraget (löjligt exempel)
+
 I detta exempel, så har FFA-standard Yrkan utvidgats med uppgift om hundens ras. För
 utvidgning används Javas arvsmekanism.
 
@@ -234,9 +241,11 @@ public class YrkanOmHundbidrag extends se.fk.data.modell.v1.Yrkande {
 ```
 
 ## MimerProxy
+
 Standardkonfigurationen för serialisering/deserialisering finns i `MimerProxy.defaultInstance()`.
 
 Serialisering:
+
 ```java
 MimerProxy proxy = MimerProxy.defaultInstance();
 String json = proxy.serializePretty(yrkande); 
@@ -244,6 +253,7 @@ String json = proxy.serializePretty(yrkande);
 ```
 
 Deserialisering:
+
 ```java
 MimerProxy proxy = MimerProxy.defaultInstance();
 Yrkan value = proxy.deserialize(json, Yrkan.class); 
@@ -251,6 +261,7 @@ Yrkan value = proxy.deserialize(json, Yrkan.class);
 ```
 
 Serialisering och signering:
+
 ```java
 KeyMaterialLoader.KeyMaterial km = KeyMaterialLoader.loadFromFiles(
         Path.of("/etc/keys/tls.key"),
@@ -259,7 +270,9 @@ KeyMaterialLoader.KeyMaterial km = KeyMaterialLoader.loadFromFiles(
         Path.of("/etc/keys/ca.crt")
 );
 ```
+
 alternativt
+
 ```java
 KeyMaterialLoader.KeyMaterial km = KeyMaterialLoader.loadFromEnv(
         "MIMER_PRIVATE_KEY",
@@ -284,6 +297,7 @@ MyType value = proxy.verifyAndDeserialize(
 ```
 
 Standard för signering är `SHA-512`. Om du behöver `SHA-256` kan du välja det explicit:
+
 ```java
 MimerProxy.SignedJson signedSha256 = proxy.serializeAndSign(
         objekt,
@@ -308,6 +322,7 @@ MimerProxy.SignedJson signedWithOptions = proxy.serializeAndSign(objekt, km, sig
 ```
 
 Signaturen kan kodas som text vid transport:
+
 ```java
 String sigBase64 = signed.signatureText(MimerProxy.SignatureEncoding.BASE64);
 String sigBase64Url = signed.signatureText(MimerProxy.SignatureEncoding.BASE64_URL);
@@ -341,6 +356,7 @@ package se.fk.hundbidrag;
 
 import ...
 ```
+
 Instansiera objekt efter behov, huvudsakligen från FFAs standardmodell, men också egna utvidgningar.
 I detta exempel används Hundbidragets Yrkan (istället för FFA-standard Yrkan), som är
 utvidgat med uppgift om hundens ras.
@@ -402,7 +418,7 @@ YrkanOmHundbidrag yrkande = new YrkanOmHundbidrag("Hundutställning (inkl. bad)"
 ```
 
 Vi har nu en uppsättning nya objekt, som inte persisterats. I samband med persistering,
-så görs en serialisering av processens hela nuvarande tillstånd till JSON. 
+så görs en serialisering av processens hela nuvarande tillstånd till JSON.
 
 ```java
 // Initial serialize to JSON
@@ -410,7 +426,9 @@ MimerProxy proxy = MimerProxy.defaultInstance();
 String json = proxy.serializePretty(yrkande);
 log.debug("Object -> JSON:\n{}", json);
 ```
+
 Låt oss titta på loggen som svarar mot serialiseringen:
+
 ```terminaloutput
 se.fk.data.modell.json.PropertySerializerModifier @Som property se.fk.hundbidrag.modell.YrkandeOmHundbidrag#person
 se.fk.data.modell.json.LifecycleAwareSerializer Created for se.fk.hundbidrag.modell.YrkandeOmHundbidrag
@@ -439,7 +457,8 @@ se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.
 se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.data.modell.v1.Intyg@78b4ecd8
 se.fk.data.modell.json.LifecycleAwareSerializer Serialized bean se.fk.hundbidrag.modell.YrkandeOmHundbidrag@57f1e6fd
 ```
-Låt oss titta på vad som händer med `se.fk.data.modell.v1.FysiskPerson#personnummer` och 
+
+Låt oss titta på vad som händer med `se.fk.data.modell.v1.FysiskPerson#personnummer` och
 `se.fk.data.modell.v1.Ersattning#belopp` vid serialisering efter att vi tittat på producerad JSON.
 
 ```json
@@ -545,7 +564,8 @@ expanderats till:
     "period" : null
 }
 ```
-Samma sak gäller `personnummer` i `FysiskPerson`, som annoterats med `@PII(typ="pii:personnummer")` 
+
+Samma sak gäller `personnummer` i `FysiskPerson`, som annoterats med `@PII(typ="pii:personnummer")`
 och som därför expanderats till:
 
 ```json
@@ -564,14 +584,16 @@ och som därför expanderats till:
 ```
 
 Detta möjliggör att vi (senare) kan tillföra kontext vid överföring från Hundbidragets
-förmånskontext (förmånsspråk) till FFAs utbyteskontext (organisationsspråk). 
+förmånskontext (förmånsspråk) till FFAs utbyteskontext (organisationsspråk).
 
 Det finns i allmänhet två varianter av dessa annoteringar:
- * en som expanderas i producerad JSON men med 'null'-värden och som möjliggör att dessa värden tillförs i ett eftersteg, samt
- * en som expanderas men med hårdkodade värden från källkoden, där man tillför kontext direkt i realiseringen.
 
-I fallet med `@Belopp`-annoteringen så vore det inte lämpligt att göra detta i en basklass
-(där annoteringen sitter på standard-realiseringen av `Ersättning`) eftersom vi har både
+* en som expanderas i producerad JSON men med 'null'-värden och som möjliggör att dessa värden tillförs i ett eftersteg,
+  samt
+* en som expanderas men med hårdkodade värden från källkoden, där man tillför kontext direkt i realiseringen.
+
+I fallet med `@Belopp`-annoteringen så vore det inte lämpligt att göra detta i en basklass (där annoteringen sitter på
+standard-realiseringen av `Ersättning`) eftersom vi har både
 dagförmåner och periodbaserade förmåner, samt både skattade och oskattade ersättningar.
 
 Här bör kontext kring överföring av 'belopp' tillföras i ett eftersteg via context-hanteringen,
@@ -667,6 +689,7 @@ YrkanOmHundbidrag{
    }
 }
 ```
+
 Notera hur det expanderade beloppet i JSON-serialiseringen nu återuppstår som `belopp` i `Ersattning`.
 
 Nästa steg är att simulera en ändring i processens tillstånd -- i detta fall så har beskrivningen av
@@ -708,6 +731,7 @@ se.fk.data.modell.json.LifecycleAwareSerializer ** New bean: se.fk.data.modell.v
 se.fk.data.modell.json.LifecycleAwareSerializer Stepping version of bean: se.fk.data.modell.v1.Ersattning@28cb5281
 ...
 ```
+
 Vid serialisering, så höjs versionen av objektet (i Livscykelhanterad) automatiskt och detta syns såväl i
 serialiserad JSON som i objektet. Notera hur version har ändrats, men också hur förändrade objekt har
 flaggats med `__attention`-flaggan.
@@ -945,37 +969,45 @@ Och så tittar vi på producerad JSON:
 ```
 
 ## JSON-LD context for objektmodellen
+
 Det följer med ett JSON-LD context som mappar attributen i objektmodellen till deras URI:er.
 
 Path:
+
 - `src/main/resources/context/ffa-1.0.jsonld`
 - `src/main/resources/schema/ffa.graphqls` (source of truth)
 
 Conventions:
-- `id` mappas till `@id` (UUID  per instans).
+
+- `id` mappas till `@id` (UUID per instans).
 - `@type` anger kvalificerad Java class namn (används bl.a. för polymorphism).
 - `typ` är del av domänvokabuläret och har inget med `@type` at göra.
 - `varde` mappas mot `rdf:value` (som används med PII och Belopp).
 - `__attention` är metadata för pipeline och är avsiktligt inte beskriven i JSON-LD context.
 
 Observera:
+
 - Konsumenter av JSON-LD bör ignorera `__attention`. Det finns till för att underlätta post-processning i data pipeline.
 
 Regenerering av context:
+
 - `python3 tools/generate_context.py src/main/resources/schema/ffa.graphqls src/main/resources/context/ffa-1.0.jsonld`
 
 ## Rådata → JSON-LD → selektiv graf
+
 Den serialiserade JSON-strukturen är skräddarsydd för serialisering av processtillstånd
 med efterföljande deserialisering vid återläsning till processen. Detta betyder att vi
-månar om mappning mellan objektmodell och JSON. JSON-LD används endast som annotering
-(metadata) för ett efterföljande steg som extraherar centrala delar till graf.
+månar om mappning mellan objektmodell och JSON. JSON-LD används endast som annotering (metadata) för ett efterföljande
+steg som extraherar centrala delar till graf.
 
 ### Flöde (översikt)
+
 1) Rådata: process-tillståndet serialiseras till JSON.
 2) Annotering: JSON kompletteras med `@context` (eller kopplas ihop med context vid bearbetning).
 3) Extraktion: en pipeline tolkar JSON-LD och plockar ut de entiteter/attribut som ska in i graf.
 
 ### Exempel (pseudo-flöde)
+
 ```text
 raw_json = read("yrkande.json")
 context  = read("ffa-1.0.jsonld")
@@ -990,11 +1022,12 @@ nodes = select(expanded, types=["se.fk.data.modell.v1.Yrkande",
 graph_store.upsert(nodes)
 ```
 
-Nyckelpoängen är att grafen inte behöver innehålla all rådata. Underlag
-(t.ex. bedömningar, inkomstdetaljer) kan ligga kvar i rådatafilen, medan
+Nyckelpoängen är att grafen inte behöver innehålla all rådata. Underlag (t.ex. bedömningar, inkomstdetaljer) kan ligga
+kvar i rådatafilen, medan
 endast resultat/centrala fält extraheras och blir sökbara.
 
-## JSON-LD expansion 
+## JSON-LD expansion
+
 Detta exempel visar JSON-LD expansion av rådata i en separat pipeline, som opererar på
 serialiserat processtillstånd (ovan):
 
@@ -1003,11 +1036,13 @@ java -cp target/classes se.fk.mimer.receiver.JsonLdExpansionExample yrkande.json
 ```
 
 Koden ligger här:
+
 - `src/main/java/se/fk/mimer/receiver/JsonLdExpansionExample.java`
 
 `@context`-referenser till `https://data.fk.se/kontext/...` fångas upp och mappas till lokal context-fil.
 
 ### JSON-LD graph packaging (i efterföljande separat steg)
+
 Efter expansion kan vi paketera en graf med bara de RECORD-typer som finns
 definierade i SDL:en. Detta ger en grafvänlig snapshot utan att ändra original-JSON.
 
@@ -1017,6 +1052,7 @@ eftersom denna inte ingår i organisationsspråket (FFA-modellen).
 ```terminaloutput
 ➜ tools/run-jsonld-graph.sh src/test/resources/fixtures/yrkande-full.json
 ```
+
 ```json
 {
   "@context": "file:///Users/froran/Projects/fk/ffa/src/main/resources/context/ffa-1.0.jsonld",

@@ -2,9 +2,12 @@ package se.fk.data.modell.internal;
 
 import se.fk.data.modell.v1.Yrkande;
 
-/** Flyttar enbart intern metadata till en fristående arbetskopia inför lagring. */
+/**
+ * Flyttar enbart intern metadata till en fristående arbetskopia inför lagring.
+ */
 public final class LifecycleCopies {
-    private LifecycleCopies() {}
+    private LifecycleCopies() {
+    }
 
     /**
      * Förutsätter en redan validerad och strukturellt identisk verksamhetskopia.

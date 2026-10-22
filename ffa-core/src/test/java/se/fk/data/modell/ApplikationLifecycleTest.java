@@ -3,30 +3,101 @@ package se.fk.data.modell;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.fk.data.modell.v1.Beslut;
-import se.fk.data.modell.v1.Ersattning;
-import se.fk.data.modell.v1.FysiskPerson;
-import se.fk.data.modell.v1.Intyg;
-import se.fk.data.modell.v1.Period;
-import se.fk.data.modell.v1.RattenTillPeriod;
-import se.fk.data.modell.v1.Yrkande;
+import se.fk.data.modell.v1.*;
 import se.fk.mimer.runtime.ModellCodec;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import static java.time.temporal.ChronoUnit.DAYS;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ApplikationLifecycleTest {
     private static final Logger log = LoggerFactory.getLogger(ApplikationLifecycleTest.class);
     private static final ObjectMapper JSON = JsonMapper.builder().build();
+
+    private static Yrkande buildDemoYrkande() {
+        Yrkande yrkande = new Yrkande("Hundutställning (inkl. bad)");
+        yrkande.setPerson(new FysiskPerson("19121212-1212"));
+
+        RattenTillPeriod rattenTillPeriod = new RattenTillPeriod();
+        rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
+        rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
+        yrkande.addProduceratResultat(rattenTillPeriod);
+
+        Ersattning ersattning = new Ersattning();
+        ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
+        ersattning.belopp = 1000.0;
+        ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+        yrkande.addProduceratResultat(ersattning);
+
+        Ersattning ersattning2 = new Ersattning();
+        ersattning2.typ = Ersattning.Typ.HUNDBIDRAG;
+        ersattning2.belopp = 500.0;
+        ersattning2.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+        yrkande.addProduceratResultat(ersattning2);
+
+        Intyg intyg = new Intyg();
+        intyg.beskrivning = "Hittepå";
+        intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
+        yrkande.addProduceratResultat(intyg);
+
+        Beslut beslut = new Beslut();
+        beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
+        yrkande.setBeslut(beslut);
+
+        return yrkande;
+    }
+
+    private static Map<String, Object> readJson(String json) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> root = JSON.readValue(json, Map.class);
+        return root;
+    }
+
+    private static Map<String, Object> findProduceratResultatByBelopp(
+            Map<String, Object> root,
+            double belopp
+    ) {
+        for (Map<String, Object> result : producedResults(root)) {
+            Object value = result.get("belopp");
+            Double varde = extractBeloppVarde(value);
+            if (varde != null && Double.compare(varde, belopp) == 0) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    private static List<Map<String, Object>> producedResults(Map<String, Object> root) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> results = (List<Map<String, Object>>) root.get("producerat_resultat");
+        return results == null ? List.of() : results;
+    }
+
+    private static Double extractBeloppVarde(Object value) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (value instanceof Map<?, ?> map) {
+            Object varde = map.get("varde");
+            if (varde instanceof Number number) {
+                return number.doubleValue();
+            }
+        }
+        return null;
+    }
+
+    private static int asInt(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return 0;
+    }
 
     @Test
     void serialize_incrementsVersionAndSetsAttentionOnFirstSerialize() {
@@ -109,84 +180,5 @@ public class ApplikationLifecycleTest {
             assertFalse(result.containsKey("__attention"));
             assertEquals(1, asInt(result.get("version")));
         }
-    }
-
-    private static Yrkande buildDemoYrkande() {
-        Yrkande yrkande = new Yrkande("Hundutställning (inkl. bad)");
-        yrkande.setPerson(new FysiskPerson("19121212-1212"));
-
-        RattenTillPeriod rattenTillPeriod = new RattenTillPeriod();
-        rattenTillPeriod.omfattning = RattenTillPeriod.Omfattning.HEL;
-        rattenTillPeriod.ersattningstyp = Ersattning.Typ.HUNDBIDRAG;
-        yrkande.addProduceratResultat(rattenTillPeriod);
-
-        Ersattning ersattning = new Ersattning();
-        ersattning.typ = Ersattning.Typ.HUNDBIDRAG;
-        ersattning.belopp = 1000.0;
-        ersattning.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkande.addProduceratResultat(ersattning);
-
-        Ersattning ersattning2 = new Ersattning();
-        ersattning2.typ = Ersattning.Typ.HUNDBIDRAG;
-        ersattning2.belopp = 500.0;
-        ersattning2.period = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkande.addProduceratResultat(ersattning2);
-
-        Intyg intyg = new Intyg();
-        intyg.beskrivning = "Hittepå";
-        intyg.giltighetsperiod = new Period(Date.from(Instant.now().truncatedTo(DAYS)));
-        yrkande.addProduceratResultat(intyg);
-
-        Beslut beslut = new Beslut();
-        beslut.datum = Date.from(Instant.now().truncatedTo(DAYS));
-        yrkande.setBeslut(beslut);
-
-        return yrkande;
-    }
-
-    private static Map<String, Object> readJson(String json) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> root = JSON.readValue(json, Map.class);
-        return root;
-    }
-
-    private static Map<String, Object> findProduceratResultatByBelopp(
-            Map<String, Object> root,
-            double belopp
-    ) {
-        for (Map<String, Object> result : producedResults(root)) {
-            Object value = result.get("belopp");
-            Double varde = extractBeloppVarde(value);
-            if (varde != null && Double.compare(varde, belopp) == 0) {
-                return result;
-            }
-        }
-        return null;
-    }
-
-    private static List<Map<String, Object>> producedResults(Map<String, Object> root) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> results = (List<Map<String, Object>>) root.get("producerat_resultat");
-        return results == null ? List.of() : results;
-    }
-
-    private static Double extractBeloppVarde(Object value) {
-        if (value instanceof Number number) {
-            return number.doubleValue();
-        }
-        if (value instanceof Map<?, ?> map) {
-            Object varde = map.get("varde");
-            if (varde instanceof Number number) {
-                return number.doubleValue();
-            }
-        }
-        return null;
-    }
-
-    private static int asInt(Object value) {
-        if (value instanceof Number number) {
-            return number.intValue();
-        }
-        return 0;
     }
 }

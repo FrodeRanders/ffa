@@ -6,7 +6,9 @@ import com.fasterxml.uuid.Generators;
 
 import java.security.MessageDigest;
 
-/** Intern livscykelmetadata. Förmånskoden får bara läsa identitet och version. */
+/**
+ * Intern livscykelmetadata. Förmånskoden får bara läsa identitet och version.
+ */
 public abstract class LifecycleState {
     // Beständig metadata: identiteten behålls och versionen beskriver objektets innehåll.
     @JsonProperty("id")

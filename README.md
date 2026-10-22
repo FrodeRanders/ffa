@@ -40,14 +40,14 @@ Läs sedan [förmånsexemplet](hundbidrag/src/main/java/se/fk/hundbidrag/Applika
 
 ## Vem ansvarar för vad?
 
-| Del | Ansvar |
-| --- | --- |
-| `hundbidrag` | Förmånslogik ovanpå FFA:s modell och en liten förmånsutvidgning |
-| `ffa-core` | Organisationsmodell, gemensamma strukturkrav och förvaltad datahantering |
-| `ffa-persistence` | Kafka-leverans, PostgreSQL-cache, leveranshistorik och återförsök |
-| `ffa-pipeline` (valfri) | RustFS, metadataindex med REST, Neo4j och Kafka-kvitton till cachen |
-| `ffa-demo` | Koppla ihop förmånen med lagringsadapter och betrodda nycklar |
-| `ffa-graph` | Härleda en sökbar graf från den förvaltade representationen |
+| Del                     | Ansvar                                                                   |
+|-------------------------|--------------------------------------------------------------------------|
+| `hundbidrag`            | Förmånslogik ovanpå FFA:s modell och en liten förmånsutvidgning          |
+| `ffa-core`              | Organisationsmodell, gemensamma strukturkrav och förvaltad datahantering |
+| `ffa-persistence`       | Kafka-leverans, PostgreSQL-cache, leveranshistorik och återförsök        |
+| `ffa-pipeline` (valfri) | RustFS, metadataindex med REST, Neo4j och Kafka-kvitton till cachen      |
+| `ffa-demo`              | Koppla ihop förmånen med lagringsadapter och betrodda nycklar            |
+| `ffa-graph`             | Härleda en sökbar graf från den förvaltade representationen              |
 
 ```mermaid
 flowchart LR

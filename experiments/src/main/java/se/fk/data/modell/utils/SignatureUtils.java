@@ -7,73 +7,17 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 
 public final class SignatureUtils {
-    public static final byte[] SHA256_DIGEST_INFO_PREFIX = new byte[] {
+    public static final byte[] SHA256_DIGEST_INFO_PREFIX = new byte[]{
             0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, (byte) 0x86,
             0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20
     };
-    public static final byte[] SHA512_DIGEST_INFO_PREFIX = new byte[] {
+    public static final byte[] SHA512_DIGEST_INFO_PREFIX = new byte[]{
             0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, (byte) 0x86,
             0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40
     };
 
-    // SHA_512 is preferred!
-    public enum DigestAlgorithm {
-        SHA_256("SHA-256", "SHA-256", SHA256_DIGEST_INFO_PREFIX, 32),
-        SHA_512("SHA-512", "SHA-512", SHA512_DIGEST_INFO_PREFIX, 64);
-
-        private final String jcaName;
-        private final String jsonName;
-        private final byte[] digestInfoPrefix;
-        private final int digestLengthBytes;
-
-        DigestAlgorithm(
-                String jcaName,
-                String jsonName,
-                byte[] digestInfoPrefix,
-                int digestLengthBytes
-        ) {
-            this.jcaName = jcaName;
-            this.jsonName = jsonName;
-            this.digestInfoPrefix = digestInfoPrefix;
-            this.digestLengthBytes = digestLengthBytes;
-        }
-
-        public String jcaName() {
-            return jcaName;
-        }
-
-        public String jsonName() {
-            return jsonName;
-        }
-
-        public byte[] digestInfoPrefix() {
-            return digestInfoPrefix;
-        }
-
-        public int digestLengthBytes() {
-            return digestLengthBytes;
-        }
+    private SignatureUtils() {
     }
-
-    /*
-     * RFC 8017 (from 2016) states that RSASSA PKCS #1 v1.5 is deprecated
-     * and states that RSASSA-PSS is REQUIRED in new applications.
-     */
-    public enum SignatureScheme {
-        RSASSA_PSS("RSASSA-PSS");
-
-        private final String jsonName;
-
-        SignatureScheme(String jsonName) {
-            this.jsonName = jsonName;
-        }
-
-        public String jsonName() {
-            return jsonName;
-        }
-    }
-
-    private SignatureUtils() {}
 
     public static byte[] signJcsRsaFromJsonBytes(
             byte[] jsonBytes,
@@ -175,5 +119,62 @@ public final class SignatureUtils {
                 digestAlgorithm.digestLengthBytes(),
                 1
         );
+    }
+
+    // SHA_512 is preferred!
+    public enum DigestAlgorithm {
+        SHA_256("SHA-256", "SHA-256", SHA256_DIGEST_INFO_PREFIX, 32),
+        SHA_512("SHA-512", "SHA-512", SHA512_DIGEST_INFO_PREFIX, 64);
+
+        private final String jcaName;
+        private final String jsonName;
+        private final byte[] digestInfoPrefix;
+        private final int digestLengthBytes;
+
+        DigestAlgorithm(
+                String jcaName,
+                String jsonName,
+                byte[] digestInfoPrefix,
+                int digestLengthBytes
+        ) {
+            this.jcaName = jcaName;
+            this.jsonName = jsonName;
+            this.digestInfoPrefix = digestInfoPrefix;
+            this.digestLengthBytes = digestLengthBytes;
+        }
+
+        public String jcaName() {
+            return jcaName;
+        }
+
+        public String jsonName() {
+            return jsonName;
+        }
+
+        public byte[] digestInfoPrefix() {
+            return digestInfoPrefix;
+        }
+
+        public int digestLengthBytes() {
+            return digestLengthBytes;
+        }
+    }
+
+    /*
+     * RFC 8017 (from 2016) states that RSASSA PKCS #1 v1.5 is deprecated
+     * and states that RSASSA-PSS is REQUIRED in new applications.
+     */
+    public enum SignatureScheme {
+        RSASSA_PSS("RSASSA-PSS");
+
+        private final String jsonName;
+
+        SignatureScheme(String jsonName) {
+            this.jsonName = jsonName;
+        }
+
+        public String jsonName() {
+            return jsonName;
+        }
     }
 }

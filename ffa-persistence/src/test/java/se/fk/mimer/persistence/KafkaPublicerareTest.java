@@ -1,10 +1,11 @@
 package se.fk.mimer.persistence;
 
-import org.junit.jupiter.api.Test;
 import org.apache.kafka.clients.producer.MockProducer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import se.fk.mimer.runtime.*;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.Test;
+import se.fk.mimer.runtime.Dataleverans;
+import se.fk.mimer.runtime.LagratDokument;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -41,7 +42,8 @@ class KafkaPublicerareTest {
     @Test
     void osakerKafkaCommitAborterasInteOchNyProducentInitierasVidAterforsok() {
         var first = new MockProducer<String, byte[]>(true, null, new StringSerializer(), new ByteArraySerializer()) {
-            @Override public void commitTransaction() {
+            @Override
+            public void commitTransaction() {
                 throw new org.apache.kafka.common.errors.TimeoutException("Commitutfallet är osäkert");
             }
         };

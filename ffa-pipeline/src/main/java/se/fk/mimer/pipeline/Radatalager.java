@@ -10,13 +10,15 @@ import java.security.*;
 import java.sql.*;
 import java.util.*;
 
-/** N−1: objekt först, sedan indexcommit. Positiv läsning kräver rätt data i båda lagren. */
+/**
+ * N−1: objekt först, sedan indexcommit. Positiv läsning kräver rätt data i båda lagren.
+ */
 public final class Radatalager implements Dokumentkalla {
+    private static final JsonMapper JSON = JsonMapper.builder().build();
     private final PGSimpleDataSource dataSource = new PGSimpleDataSource();
     private final Objektlager objects;
     private final String topic;
     private final PublicKey key;
-    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     public Radatalager(String url, String user, String password, String topic, Objektlager objects, PublicKey key) {
         dataSource.setURL(url);
@@ -28,12 +30,22 @@ public final class Radatalager implements Dokumentkalla {
         this.key = Objects.requireNonNull(key);
     }
 
+    private static byte[] hash(Dataleverans d) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(d.dokument().json());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public void initiera() {
         objects.initiera();
         try (var input = getClass().getResourceAsStream("/backend.sql");
              var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
             statement.execute(new String(input.readAllBytes(), StandardCharsets.UTF_8));
-        } catch (Exception e) { throw new IllegalStateException("Rådatalagret kunde inte initieras", e); }
+        } catch (Exception e) {
+            throw new IllegalStateException("Rådatalagret kunde inte initieras", e);
+        }
     }
 
     public void lagra(Dataleverans d) {
@@ -71,14 +83,29 @@ public final class Radatalager implements Dokumentkalla {
                 connection.rollback();
                 throw e;
             }
-        } catch (SQLException e) { throw new IllegalStateException("Backendindex kunde inte skrivas", e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Backendindex kunde inte skrivas", e);
+        }
     }
 
-    @Override public Dataleverans lasLeverans(UUID id) { return hamta("dataleverans_id = ?", id); }
-    @Override public Dataleverans lasProcess(String id) { return hamta("korrelations_id = ?", id); }
-    @Override public Dataleverans lasObjekt(String id) { return hamta("objekt_id = ?", id); }
+    @Override
+    public Dataleverans lasLeverans(UUID id) {
+        return hamta("dataleverans_id = ?", id);
+    }
 
-    /** Indexuppslag är sökmetadata, inte ensamt bevis för att objektet finns i S3. */
+    @Override
+    public Dataleverans lasProcess(String id) {
+        return hamta("korrelations_id = ?", id);
+    }
+
+    @Override
+    public Dataleverans lasObjekt(String id) {
+        return hamta("objekt_id = ?", id);
+    }
+
+    /**
+     * Indexuppslag är sökmetadata, inte ensamt bevis för att objektet finns i S3.
+     */
     public Map<String, Object> metadata(String typ, String id) {
         String predicate = switch (typ) {
             case "leveranser" -> "dataleverans_id = ?";
@@ -99,7 +126,9 @@ public final class Radatalager implements Dokumentkalla {
                         "lagrad", rows.getTimestamp("lagrad").toInstant().toString(),
                         "dokumentSha256", HexFormat.of().formatHex(rows.getBytes("dokument_sha256")));
             }
-        } catch (SQLException e) { throw new IllegalStateException("Metadataindex kunde inte läsas", e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Metadataindex kunde inte läsas", e);
+        }
     }
 
     private Dataleverans hamta(String predicate, Object value) {
@@ -111,12 +140,15 @@ public final class Radatalager implements Dokumentkalla {
             try (var rows = query.executeQuery()) {
                 if (!rows.next()) return null;
                 var delivery = objects.las(rows.getObject("dataleverans_id", UUID.class));
-                if (delivery == null) throw new IllegalStateException("Index finns men objektet saknas; rådata kan inte bekräftas");
+                if (delivery == null)
+                    throw new IllegalStateException("Index finns men objektet saknas; rådata kan inte bekräftas");
                 kontrolleraIndex(rows, delivery);
                 Leveransformat.verifiera(delivery, key);
                 return delivery;
             }
-        } catch (SQLException e) { throw new IllegalStateException("Rådata kunde inte läsas", e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Rådata kunde inte läsas", e);
+        }
     }
 
     private void kontrolleraIndex(ResultSet rows, Dataleverans d) throws SQLException {
@@ -127,10 +159,5 @@ public final class Radatalager implements Dokumentkalla {
                 || !JSON.readTree(rows.getString("metadata")).equals(JSON.valueToTree(Leveransformat.metadata(d)))
                 || !Arrays.equals(hash(d), rows.getBytes("dokument_sha256")))
             throw new IllegalStateException("Backendindex och objektnyckel är inte knutna till samma leveransdata");
-    }
-
-    private static byte[] hash(Dataleverans d) {
-        try { return MessageDigest.getInstance("SHA-256").digest(d.dokument().json()); }
-        catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
 }

@@ -9,7 +9,9 @@ import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.jsontype.TypeSerializer;
 import tools.jackson.databind.ser.std.StdSerializer;
 
-/** Identifierar ändrade objekt och skriver livscykelmetadata i arbetskopian. */
+/**
+ * Identifierar ändrade objekt och skriver livscykelmetadata i arbetskopian.
+ */
 public final class LifecycleAwareSerializer<T extends Livscykelhanterad> extends StdSerializer<T> {
     private final ValueSerializer<Object> delegate;
     private final ObjectMapper canonicalMapper;

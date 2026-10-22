@@ -11,9 +11,12 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.util.*;
 
-/** Metadata binds till verifierad JSON; dokumentet omserialiseras aldrig på transportvägen. */
+/**
+ * Metadata binds till verifierad JSON; dokumentet omserialiseras aldrig på transportvägen.
+ */
 final class Leveransformat {
-    private Leveransformat() {}
+    private Leveransformat() {
+    }
 
     static Dataleverans las(ConsumerRecord<String, byte[]> record, PublicKey key) {
         var delivery = new Dataleverans(UUID.fromString(text(record, "dataleverans-id")),
@@ -41,7 +44,8 @@ final class Leveransformat {
         var values = record.headers().headers(name).iterator();
         if (!values.hasNext()) throw new IllegalArgumentException("Kafka-header saknas: " + name);
         byte[] value = values.next().value();
-        if (value == null || values.hasNext()) throw new IllegalArgumentException("Ogiltig eller dubblerad header: " + name);
+        if (value == null || values.hasNext())
+            throw new IllegalArgumentException("Ogiltig eller dubblerad header: " + name);
         return value;
     }
 

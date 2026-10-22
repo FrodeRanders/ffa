@@ -12,10 +12,11 @@ import tools.jackson.databind.ser.BeanPropertyWriter;
 import tools.jackson.databind.ser.ValueSerializerModifier;
 
 import java.util.ArrayList;
-
 import java.util.List;
 
-/** Väljer specialiserad JSON-representation utifrån modellens fältannoteringar. */
+/**
+ * Väljer specialiserad JSON-representation utifrån modellens fältannoteringar.
+ */
 public class PropertySerializerModifier extends ValueSerializerModifier {
     private static final Logger log = LoggerFactory.getLogger(PropertySerializerModifier.class);
 

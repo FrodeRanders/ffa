@@ -10,12 +10,12 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.jsontype.TypeSerializer;
 
-/** Skriver ett värde och dess roll enligt @Som, exempelvis en person som yrkande part. */
+/**
+ * Skriver ett värde och dess roll enligt @Som, exempelvis en person som yrkande part.
+ */
 public class SomPropertySerializer extends ValueSerializer<Object> {
-    private static final Logger log = LoggerFactory.getLogger(SomPropertySerializer.class);
-
     public static final String MAGIC_WRAPPED_PROPERTY_NAME = "varde";
-
+    private static final Logger log = LoggerFactory.getLogger(SomPropertySerializer.class);
     private final String roll;
 
     // Jackson behöver en konstruktor utan annoteringsparametrar.

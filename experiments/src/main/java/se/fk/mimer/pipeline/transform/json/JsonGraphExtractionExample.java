@@ -15,7 +15,8 @@ import java.util.List;
 public final class JsonGraphExtractionExample {
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
-    private JsonGraphExtractionExample() {}
+    private JsonGraphExtractionExample() {
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {

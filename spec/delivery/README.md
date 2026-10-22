@@ -1,7 +1,7 @@
 # Leverans, återhämtning och milstolpar som TLA+-modell
 
-Modellen följer N−2 (lokal processcache), Kafka, N−1 (beständiga rådata) och N
-(grafbehandling), samt hur positiva bekräftelser når tillbaka till cachen.
+Modellen följer N−2 (lokal processcache), Kafka, N−1 (beständiga rådata) och N (grafbehandling), samt hur positiva
+bekräftelser når tillbaka till cachen.
 Den är separat från Maven och den körbara demon. TLC utforskar samtliga nåbara
 förlopp inom de angivna gränserna, inte bara en lyckad körning.
 
@@ -29,20 +29,20 @@ Officiella verktyg: [TLA+ Tools](https://github.com/tlaplus/tlaplus/blob/master/
 
 ## Tillstånd och koppling till implementationen
 
-| Modell | Betydelse |
-| --- | --- |
-| `created`, `version` | Tilldelade leverans-id:n och deras oföränderliga innehållsversion |
-| `cached`, `latest` | Beständiga lokala leveranser och högsta lokala objektversion |
-| `sent` | Kafka-transaktioner som faktiskt committats och kan läsas med `read_committed` |
-| `acknowledged` | Historik över commitkvitton som klienten faktiskt fått |
-| `published` | Lokal positiv bekräftelse på publicering, från Kafka eller ett senare steg |
-| `backend` | Både objektlager och sökbart index är beständiga för leveransen |
-| `forwarded`, `offsetsCommitted` | Vidareleverans till grafens topic och källoffset som committats i samma Kafka-transaktion |
-| `graph`, `graphLatest` | Slutförd grafhantering och grafens högsta version per process |
-| `rawConfirmed`, `graphConfirmed` | Milstolpar som den lokala cachen observerat |
-| `readVersion` | Senaste version som lämnats ut vid vanlig processläsning |
-| `active`, `stage` | Pågående arbete under processens samordning |
-| `stable` | Felperioden har upphört; används endast i framstegskontrollerna |
+| Modell                           | Betydelse                                                                                 |
+|----------------------------------|-------------------------------------------------------------------------------------------|
+| `created`, `version`             | Tilldelade leverans-id:n och deras oföränderliga innehållsversion                         |
+| `cached`, `latest`               | Beständiga lokala leveranser och högsta lokala objektversion                              |
+| `sent`                           | Kafka-transaktioner som faktiskt committats och kan läsas med `read_committed`            |
+| `acknowledged`                   | Historik över commitkvitton som klienten faktiskt fått                                    |
+| `published`                      | Lokal positiv bekräftelse på publicering, från Kafka eller ett senare steg                |
+| `backend`                        | Både objektlager och sökbart index är beständiga för leveransen                           |
+| `forwarded`, `offsetsCommitted`  | Vidareleverans till grafens topic och källoffset som committats i samma Kafka-transaktion |
+| `graph`, `graphLatest`           | Slutförd grafhantering och grafens högsta version per process                             |
+| `rawConfirmed`, `graphConfirmed` | Milstolpar som den lokala cachen observerat                                               |
+| `readVersion`                    | Senaste version som lämnats ut vid vanlig processläsning                                  |
+| `active`, `stage`                | Pågående arbete under processens samordning                                               |
+| `stable`                         | Felperioden har upphört; används endast i framstegskontrollerna                           |
 
 `Begin` motsvarar versionskontroll och processlås. `Prepare` gör leveransen
 beständig lokalt i båda lägena. Ocommittade Kafka-records abstraheras bort:
@@ -78,21 +78,21 @@ flagga kan därför leda till att samma leverans skickas igen.
 
 ## Egenskaper
 
-| Kontroll | Krav |
-| --- | --- |
-| `DeliveryIdentity` | Observerat innehåll för ett id motsvarar dess ursprungliga token |
-| `KafkaHasLocalCopy` | Varje committad Kafka-leverans har redan en beständig lokal kopia |
-| `PublishedMeansAccepted` | Positiv lokal publiceringsstatus har faktiskt Kafka-underlag |
-| `OffsetHasForwarded` | Källoffset och grafens vidareleverans committas tillsammans |
-| `RawEvidenceSound`, `GraphEvidenceSound` | Bekräftelser avser faktiskt slutförda steg |
-| `StrictReadHasEvidence` | Utlämnad version i strikt läge har positiv publiceringsbekräftelse |
-| `NoConcurrentProcessWorkers` | Processens kritiska arbete är samordnat |
-| `FirstAcceptanceOrdered` | Första publiceringen av nya leveranser går inte bakåt i version |
-| `NoCacheRegression` | Äldre backenddata skymmer inte nyare lokalt tillstånd |
-| `GraphNeverRegresses` | Fördröjda äldre leveranser sänker inte grafens version |
-| `EventuallyDelivered` | Beständiga lokala leveranser får till slut positiv publiceringsstatus |
-| `EventuallyInBackend`, `EventuallyInGraph` | Publicerat data behandlas till slut av de efterföljande stegen |
-| `EventuallyObserved` | Slutförd grafhantering av lokalt lagrade leveranser blir till slut observerad |
+| Kontroll                                   | Krav                                                                          |
+|--------------------------------------------|-------------------------------------------------------------------------------|
+| `DeliveryIdentity`                         | Observerat innehåll för ett id motsvarar dess ursprungliga token              |
+| `KafkaHasLocalCopy`                        | Varje committad Kafka-leverans har redan en beständig lokal kopia             |
+| `PublishedMeansAccepted`                   | Positiv lokal publiceringsstatus har faktiskt Kafka-underlag                  |
+| `OffsetHasForwarded`                       | Källoffset och grafens vidareleverans committas tillsammans                   |
+| `RawEvidenceSound`, `GraphEvidenceSound`   | Bekräftelser avser faktiskt slutförda steg                                    |
+| `StrictReadHasEvidence`                    | Utlämnad version i strikt läge har positiv publiceringsbekräftelse            |
+| `NoConcurrentProcessWorkers`               | Processens kritiska arbete är samordnat                                       |
+| `FirstAcceptanceOrdered`                   | Första publiceringen av nya leveranser går inte bakåt i version               |
+| `NoCacheRegression`                        | Äldre backenddata skymmer inte nyare lokalt tillstånd                         |
+| `GraphNeverRegresses`                      | Fördröjda äldre leveranser sänker inte grafens version                        |
+| `EventuallyDelivered`                      | Beständiga lokala leveranser får till slut positiv publiceringsstatus         |
+| `EventuallyInBackend`, `EventuallyInGraph` | Publicerat data behandlas till slut av de efterföljande stegen                |
+| `EventuallyObserved`                       | Slutförd grafhantering av lokalt lagrade leveranser blir till slut observerad |
 
 Framstegskontrollerna kräver uttryckligen att felperioden tar slut och att
 arbetare, återförsök, backend, graf och observationer får fortsätta arbeta
@@ -101,14 +101,14 @@ eller en permanent otillgänglig infrastruktur uppfyller inte dem.
 
 ## Begränsade körningar och motexempel
 
-| Konfiguration | Processer | Arbetare | Leveranser/process | Resultat: distinkta tillstånd |
-| --- | ---: | ---: | ---: | ---: |
-| `strict` | 2 | 2 | 1 | 61 554 |
-| `resilient` | 2 | 2 | 1 | 105 892 |
-| `strict-recovery` | 1 | 2 | 3 | 705 974 |
-| `strict-live` | 1 | 2 | 2 | 22 266 |
-| `resilient-live` | 1 | 2 | 2 | 28 092 |
-| `strict-ordering` | 1 | 2 | 3 | 705 974 |
+| Konfiguration     | Processer | Arbetare | Leveranser/process | Resultat: distinkta tillstånd |
+|-------------------|----------:|---------:|-------------------:|------------------------------:|
+| `strict`          |         2 |        2 |                  1 |                        61 554 |
+| `resilient`       |         2 |        2 |                  1 |                       105 892 |
+| `strict-recovery` |         1 |        2 |                  3 |                       705 974 |
+| `strict-live`     |         1 |        2 |                  2 |                        22 266 |
+| `resilient-live`  |         1 |        2 |                  2 |                        28 092 |
+| `strict-ordering` |         1 |        2 |                  3 |                       705 974 |
 
 De tidigare 26 kontrollerna slutfördes den 3 oktober 2026,
 inklusive backendmodellen och de namngivna negativa kontrollerna. De två `live`-
@@ -180,18 +180,18 @@ Standardkörningen omfattar nu 34 konfigurationer: de tidigare 26 plus dessa
 åtta. De fyra korrekta kvittenskonfigurationerna och de fyra namngivna
 motexemplen kontrollerades den 3 oktober 2026.
 
-| Modellsteg | Koppling till implementationen |
-| --- | --- |
-| `Publish` | N−2:s Kafka-commit för ett lokalt beständigt original |
-| `PutObject`, `PutIndex` | Separata externa commits i `Radatalager.lagra` |
-| `RawCommit` | `Radatasteg`: vidareleverans, rådatakvitto och källoffset i samma Kafka-commit |
-| `WriteGraph`, `GraphCommit` | `Grafsteg`: Neo4j-commit före Kafka-commit av grafkvitto och grafens offset |
-| `Poll` | Flyktig postposition hos `Kvittenskonsument` |
-| `SqlCommit` | `PostgresKafkaLager.bekrafta(Kvittens)`: inkorg och cachemilstolpar i samma SQL-commit |
-| `OffsetCommit` | Kvittenskonsumentens beständiga Kafka-offset efter SQL-commit |
-| `Crash` | Tappar pollposition och lokal commitkunskap, behåller SQL-data och Kafka-offset |
-| `Duplicate` | Ny Kafka-transaktion återlevererar ett redan publicerat kvitto |
-| `Evict`, `Restore` | En publicerad cachepost saknas; verifierad rådataåterställning stämmer av inkorgen |
+| Modellsteg                  | Koppling till implementationen                                                         |
+|-----------------------------|----------------------------------------------------------------------------------------|
+| `Publish`                   | N−2:s Kafka-commit för ett lokalt beständigt original                                  |
+| `PutObject`, `PutIndex`     | Separata externa commits i `Radatalager.lagra`                                         |
+| `RawCommit`                 | `Radatasteg`: vidareleverans, rådatakvitto och källoffset i samma Kafka-commit         |
+| `WriteGraph`, `GraphCommit` | `Grafsteg`: Neo4j-commit före Kafka-commit av grafkvitto och grafens offset            |
+| `Poll`                      | Flyktig postposition hos `Kvittenskonsument`                                           |
+| `SqlCommit`                 | `PostgresKafkaLager.bekrafta(Kvittens)`: inkorg och cachemilstolpar i samma SQL-commit |
+| `OffsetCommit`              | Kvittenskonsumentens beständiga Kafka-offset efter SQL-commit                          |
+| `Crash`                     | Tappar pollposition och lokal commitkunskap, behåller SQL-data och Kafka-offset        |
+| `Duplicate`                 | Ny Kafka-transaktion återlevererar ett redan publicerat kvitto                         |
+| `Evict`, `Restore`          | En publicerad cachepost saknas; verifierad rådataåterställning stämmer av inkorgen     |
 
 Kvitton finns som en begränsad sekvens, vilket skiljer två likadana Kafka-
 records med olika offsets från en deduplicerad inkorgspost. Modellen binder
@@ -208,12 +208,12 @@ kräver att **varje** post före konsumentens beständiga offset finns i inkorge
 återställning. SQL-transaktionerna är atomiska modellsteg; deras inbördes
 samordning motsvarar implementationens leveranslås.
 
-| Konfiguration | Leveranser | Extra dublett | Kontrollerade distinkta tillstånd |
-| --- | ---: | ---: | ---: |
-| `receipts` | 1 | 1 | 514 |
-| `receipts-live` | 1 | 1 | 514, inklusive framstegsegenskaper |
-| `receipts-two-deliveries` | 2 | 0 | 9 644 |
-| `receipts-corrupt` | 1 | 1 | 2 234, inklusive ett kvitto med fel innehåll |
+| Konfiguration             | Leveranser | Extra dublett |            Kontrollerade distinkta tillstånd |
+|---------------------------|-----------:|--------------:|---------------------------------------------:|
+| `receipts`                |          1 |             1 |                                          514 |
+| `receipts-live`           |          1 |             1 |           514, inklusive framstegsegenskaper |
+| `receipts-two-deliveries` |          2 |             0 |                                        9 644 |
+| `receipts-corrupt`        |          1 |             1 | 2 234, inklusive ett kvitto med fel innehåll |
 
 Fyra mutationer måste ge följande specifika motexempel:
 

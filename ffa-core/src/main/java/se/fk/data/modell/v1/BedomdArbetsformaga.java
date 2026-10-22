@@ -3,26 +3,17 @@ package se.fk.data.modell.v1;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import se.fk.data.modell.annotations.Context;
 
-/** Handläggningens bedömning av arbetsförmågans omfattning. */
+/**
+ * Handläggningens bedömning av arbetsförmågans omfattning.
+ */
 @Context("https://data.fk.se/kontext/std/bedomd-arbetsformaga/1.0")
 public class BedomdArbetsformaga extends ProduceratResultat {
-
-    public enum Omfattning {
-        HEL("Hel"),
-        EN_ATTONDEL("En åttondel"),
-        OCHSAAVIDARE("Annat");
-
-        Omfattning(String omfattning) {
-            this.omfattning = omfattning;
-        }
-
-        String omfattning;
-    }
 
     @JsonProperty("omfattning")
     public Omfattning omfattning;
 
-    public BedomdArbetsformaga() {} // Behövs vid återläsning med Jackson.
+    public BedomdArbetsformaga() {
+    } // Behövs vid återläsning med Jackson.
 
     @Override
     public String toString() {
@@ -31,5 +22,17 @@ public class BedomdArbetsformaga extends ProduceratResultat {
         sb.append(", omfattning='").append(omfattning).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public enum Omfattning {
+        HEL("Hel"),
+        EN_ATTONDEL("En åttondel"),
+        OCHSAAVIDARE("Annat");
+
+        String omfattning;
+
+        Omfattning(String omfattning) {
+            this.omfattning = omfattning;
+        }
     }
 }

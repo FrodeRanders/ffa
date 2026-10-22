@@ -58,13 +58,13 @@ verifieringsnyckeln och söknycklarna finns i `target/pipeline-demo/<körnings-i
 den privata nyckeln sparas inte. Detta ersätter inte den vanliga demons
 beständiga nyckelhantering eller företagets produktionsnycklar.
 
-| Tjänst | Lokal åtkomst |
-| --- | --- |
-| PostgreSQL | `localhost:15432`, databas/användare `ffa` |
-| Kafka | `localhost:19092` |
-| RustFS S3 | `http://localhost:19000` |
-| RustFS konsol | `http://localhost:19001/rustfs/console/` |
-| Neo4j Bolt | `bolt://localhost:17687` |
+| Tjänst        | Lokal åtkomst                              |
+|---------------|--------------------------------------------|
+| PostgreSQL    | `localhost:15432`, databas/användare `ffa` |
+| Kafka         | `localhost:19092`                          |
+| RustFS S3     | `http://localhost:19000`                   |
+| RustFS konsol | `http://localhost:19001/rustfs/console/`   |
+| Neo4j Bolt    | `bolt://localhost:17687`                   |
 
 RustFS-konsolens utvecklingsinloggning är `ffa-demo` / `ffa-demo-object-store`.
 Objekten ligger i bucket `ffa-pipeline-demo`, med dataleverans-id som exakt
@@ -119,12 +119,12 @@ utan regression.
 `BackendRestServer` exponerar följande GET-resurser. Serverinstansen är knuten
 till en förmånstopic; den kan inte söka andra förmåners index.
 
-| Resurs | Svar |
-| --- | --- |
-| `/v1/leveranser/{dataleverans-id}` | Ursprunglig signerad JSON för leveransen |
+| Resurs                                    | Svar                                               |
+|-------------------------------------------|----------------------------------------------------|
+| `/v1/leveranser/{dataleverans-id}`        | Ursprunglig signerad JSON för leveransen           |
 | `/v1/processer/{korrelations-id}/senaste` | Senaste version, därefter indexets lagringsordning |
-| `/v1/objekt/{objekt-id}/senaste` | Samma urval per objekt |
-| Ovanstående resurs med `/metadata` | Metadata från PostgreSQL-indexet utan S3-läsning |
+| `/v1/objekt/{objekt-id}/senaste`          | Samma urval per objekt                             |
+| Ovanstående resurs med `/metadata`        | Metadata från PostgreSQL-indexet utan S3-läsning   |
 
 Dokumentsvar har oförändrade JSON-bytes och headers `X-FFA-dataleverans-id`,
 `X-FFA-korrelations-id`, `X-FFA-objekt-id`, `X-FFA-objekt-version`,
@@ -154,7 +154,8 @@ curl -i 'http://localhost:18080/v1/leveranser/<dataleverans-id>'
 `FFA_REST_PORT` ändrar porten (standard 18080). Manifestet under
 `target/pipeline-demo/` innehåller URL och id:n. Servern binds till loopback.
 Detta är ett lokalt PoC-kontrakt; företagets befintliga REST-tjänst kräver en
-adapter till sitt eget kontrakt. JDK:s [HTTP-server](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpServer.html)
+adapter till sitt eget kontrakt. JDK:
+s [HTTP-server](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpServer.html)
 används utan ytterligare ramverk.
 
 ## Beständig kvittokanal tillbaka till N−2
@@ -249,7 +250,8 @@ inte en innehållshash.
 
 [TLA+-leveransmodellen](../spec/delivery/README.md) följer samma milstolpar och
 kraschgränser på abstrakt nivå. [Backendmodellen](../spec/backend/README.md)
-prövar bland annat index/objekt-gränsen och konflikter. Den kompletterande [kvittensmodellen](../spec/delivery/Receipts.tla) följer
+prövar bland annat index/objekt-gränsen och konflikter. Den
+kompletterande [kvittensmodellen](../spec/delivery/Receipts.tla) följer
 kvittotopicens offsets, SQL-inkorgen och återställning som separata tillstånd.
 Den kontrollerar SQL-commit före kvittensoffset, innehållsbindning och avstämning
 ur inkorgen; avsiktligt trasiga varianter måste ge specifika motexempel.

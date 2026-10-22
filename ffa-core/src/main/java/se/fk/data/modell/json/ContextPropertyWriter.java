@@ -12,7 +12,9 @@ import tools.jackson.databind.introspect.BeanPropertyDefinition;
 import tools.jackson.databind.ser.VirtualBeanPropertyWriter;
 import tools.jackson.databind.util.Annotations;
 
-/** Skriver @context från modellklassens @Context-annotering. */
+/**
+ * Skriver @context från modellklassens @Context-annotering.
+ */
 public class ContextPropertyWriter extends VirtualBeanPropertyWriter {
     private static final Logger log = LoggerFactory.getLogger(ContextPropertyWriter.class);
 

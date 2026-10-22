@@ -1,6 +1,8 @@
 package se.fk.mimer.runtime;
 
-/** Infrastrukturens signerade representation. Byte-arrayer kopieras vid in- och utläsning. */
+/**
+ * Infrastrukturens signerade representation. Byte-arrayer kopieras vid in- och utläsning.
+ */
 public record LagratDokument(byte[] json, byte[] signatur) {
     // Inkommande arrayer får inte kunna ändra ett redan lagrat dokument via delade referenser.
     public LagratDokument {

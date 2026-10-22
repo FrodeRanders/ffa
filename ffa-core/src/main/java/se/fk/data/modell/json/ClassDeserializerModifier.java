@@ -5,7 +5,9 @@ import tools.jackson.databind.DeserializationConfig;
 import tools.jackson.databind.deser.BeanDeserializerBuilder;
 import tools.jackson.databind.deser.ValueDeserializerModifier;
 
-/** Låter Jackson läsa verksamhetsfälten utan att binda transportens metadata till modellen. */
+/**
+ * Låter Jackson läsa verksamhetsfälten utan att binda transportens metadata till modellen.
+ */
 public class ClassDeserializerModifier extends ValueDeserializerModifier {
 
     private final String CONTEXT_NAME = "@context";

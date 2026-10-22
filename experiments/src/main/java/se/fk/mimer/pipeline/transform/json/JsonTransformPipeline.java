@@ -23,6 +23,7 @@ import jakarta.json.stream.JsonGenerator;
 import se.fk.mimer.pipeline.transform.jsonld.JsonLdTypeMapper;
 import se.fk.mimer.pipeline.transform.jsonld.JsonLdValueTypeNormalizer;
 import tools.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +46,8 @@ public final class JsonTransformPipeline {
     private static final Path DEFAULT_FRAME = Path.of("src/main/resources/frame/ffa-frame.jsonld");
     private static final Path DEFAULT_SDL = Path.of("src/main/resources/schema/ffa.graphqls");
 
-    private JsonTransformPipeline() {}
+    private JsonTransformPipeline() {
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1) {
@@ -102,7 +104,8 @@ public final class JsonTransformPipeline {
         switch (parsed.importMode()) {
             case NEO4J -> writeNeo4jImportHelper(output, parsed.neo4jOpts());
             case CYPHER -> writeCypher(ensureGraphWrapped(expanded), cypherOut, prefixMap, mapping);
-            case NONE -> {}
+            case NONE -> {
+            }
         }
     }
 
@@ -264,7 +267,8 @@ public final class JsonTransformPipeline {
                 }
             }
             case STRING -> validateStringPrefix(((JsonString) value).getString(), prefixes);
-            default -> {}
+            default -> {
+            }
         }
     }
 
@@ -925,16 +929,6 @@ public final class JsonTransformPipeline {
                 .collect(java.util.stream.Collectors.joining(":"));
     }
 
-    private record MappingConfig(Set<String> flatten, Set<String> promote) {
-        boolean shouldFlatten(String predicateIri) {
-            return flatten.contains(predicateIri);
-        }
-
-        boolean shouldPromote(String predicateIri) {
-            return promote.contains(predicateIri);
-        }
-    }
-
     private static MappingConfig loadMapping(Path mappingPath, Map<String, String> prefixMap) {
         Set<String> defaultFlatten = Set.of(
                 normalizePredicate("ffa:belopp", prefixMap),
@@ -990,9 +984,41 @@ public final class JsonTransformPipeline {
         return value;
     }
 
-    private record Relationship(String type, String targetId) {}
+    private static Map<String, String> parseOptions(String input) {
+        Map<String, String> result = new LinkedHashMap<>();
+        if (input == null || input.isBlank()) {
+            return result;
+        }
+        String[] parts = input.split(",");
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            int eq = trimmed.indexOf('=');
+            if (eq <= 0) {
+                result.put(trimmed, "true");
+                continue;
+            }
+            result.put(trimmed.substring(0, eq).trim(), trimmed.substring(eq + 1).trim());
+        }
+        return result;
+    }
 
     private enum ImportMode {NEO4J, CYPHER, NONE}
+
+    private record MappingConfig(Set<String> flatten, Set<String> promote) {
+        boolean shouldFlatten(String predicateIri) {
+            return flatten.contains(predicateIri);
+        }
+
+        boolean shouldPromote(String predicateIri) {
+            return promote.contains(predicateIri);
+        }
+    }
+
+    private record Relationship(String type, String targetId) {
+    }
 
     private record Args(
             Path rawJson,
@@ -1038,26 +1064,5 @@ public final class JsonTransformPipeline {
             }
             return new Args(rawJson, context, frame, mapping, output, cypherOut, importMode, neo4jOpts, migrate, writeRdf);
         }
-    }
-
-    private static Map<String, String> parseOptions(String input) {
-        Map<String, String> result = new LinkedHashMap<>();
-        if (input == null || input.isBlank()) {
-            return result;
-        }
-        String[] parts = input.split(",");
-        for (String part : parts) {
-            String trimmed = part.trim();
-            if (trimmed.isEmpty()) {
-                continue;
-            }
-            int eq = trimmed.indexOf('=');
-            if (eq <= 0) {
-                result.put(trimmed, "true");
-                continue;
-            }
-            result.put(trimmed.substring(0, eq).trim(), trimmed.substring(eq + 1).trim());
-        }
-        return result;
     }
 }

@@ -15,11 +15,16 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-/** Kör ett isolerat förmånsflöde och lämnar de verkliga lagringarna kvar för inspektion. */
+/**
+ * Kör ett isolerat förmånsflöde och lämnar de verkliga lagringarna kvar för inspektion.
+ */
 public final class Pipelinedemo {
-    private Pipelinedemo() {}
+    private Pipelinedemo() {
+    }
 
-    private static String env(String name, String fallback) { return System.getenv().getOrDefault(name, fallback); }
+    private static String env(String name, String fallback) {
+        return System.getenv().getOrDefault(name, fallback);
+    }
 
     public static void main(String[] args) throws Exception {
         String run = UUID.randomUUID().toString();
@@ -37,7 +42,7 @@ public final class Pipelinedemo {
                     .all().get(20, TimeUnit.SECONDS);
         }
         try (var objects = new Objektlager(env("FFA_S3", "http://localhost:19000"),
-                     env("FFA_S3_ACCESS_KEY", "ffa-demo"), env("FFA_S3_SECRET_KEY", "ffa-demo-object-store"), bucket);
+                env("FFA_S3_ACCESS_KEY", "ffa-demo"), env("FFA_S3_SECRET_KEY", "ffa-demo-object-store"), bucket);
              var publisher = new KafkaPublicerare(broker);
              var driver = GraphDatabase.driver(env("FFA_NEO4J", "bolt://localhost:17687"),
                      AuthTokens.basic(env("FFA_NEO4J_USER", "neo4j"), env("FFA_NEO4J_PASSWORD", "ffa-demo-password")))) {
@@ -49,7 +54,7 @@ public final class Pipelinedemo {
             var backend = new Radatalager(url, user, password, topic, objects, keys.getPublic());
             backend.initiera();
             try (var rest = new BackendRestServer(new java.net.InetSocketAddress("127.0.0.1",
-                         Integer.parseInt(env("FFA_REST_PORT", "18080"))), backend);
+                    Integer.parseInt(env("FFA_REST_PORT", "18080"))), backend);
                  var remote = new RestDokumentkalla(rest.uri());
                  var receipts = new Kvittenskonsument(broker, topic + ".kvitton", topic + ".cache", cache)) {
                 var claims = new ForvaltadeYrkanden<>(YrkandeOmHundbidrag.class, cache, remote,
@@ -73,7 +78,8 @@ public final class Pipelinedemo {
                     } while (!target.id().equals(d.id()));
                 }
                 var stored = backend.lasProcess(process);
-                if (!Leveransformat.samma(target, stored)) throw new IllegalStateException("Fel tillstånd i rådatasteget");
+                if (!Leveransformat.samma(target, stored))
+                    throw new IllegalStateException("Fel tillstånd i rådatasteget");
                 try (var session = driver.session()) {
                     var row = session.run("MATCH (n:FfaObjekt {id:$id}) RETURN n.version AS version", Map.of("id", claim.getId())).single();
                     if (row.get("version").asLong() != target.objektVersion())

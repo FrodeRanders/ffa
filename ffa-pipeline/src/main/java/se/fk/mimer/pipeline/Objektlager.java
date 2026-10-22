@@ -12,7 +12,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.UUID;
 
-/** S3-kompatibel lagring, testad mot RustFS. Ett befintligt id får aldrig skrivas över. */
+/**
+ * S3-kompatibel lagring, testad mot RustFS. Ett befintligt id får aldrig skrivas över.
+ */
 public final class Objektlager implements AutoCloseable {
     private final S3Client s3;
     private final String bucket;
@@ -29,8 +31,9 @@ public final class Objektlager implements AutoCloseable {
     }
 
     public void initiera() {
-        try { s3.createBucket(b -> b.bucket(bucket)); }
-        catch (S3Exception e) {
+        try {
+            s3.createBucket(b -> b.bucket(bucket));
+        } catch (S3Exception e) {
             if (!"BucketAlreadyOwnedByYou".equals(e.awsErrorDetails().errorCode())) throw e;
         }
     }
@@ -38,7 +41,7 @@ public final class Objektlager implements AutoCloseable {
     public void lagra(Dataleverans d) {
         try {
             s3.putObject(PutObjectRequest.builder().bucket(bucket).key(d.id().toString())
-                    .ifNoneMatch("*").contentType("application/json").metadata(Leveransformat.metadata(d)).build(),
+                            .ifNoneMatch("*").contentType("application/json").metadata(Leveransformat.metadata(d)).build(),
                     RequestBody.fromBytes(d.dokument().json()));
         } catch (S3Exception e) {
             if (e.statusCode() != 412 && e.statusCode() != 409) throw e;
@@ -55,13 +58,24 @@ public final class Objektlager implements AutoCloseable {
             var delivery = Leveransformat.franObjekt(object.asByteArray(), object.response().metadata());
             if (!id.equals(delivery.id())) throw new IllegalStateException("Objektets nyckel och metadata skiljer sig");
             return delivery;
-        } catch (NoSuchKeyException e) { return null; }
+        } catch (NoSuchKeyException e) {
+            return null;
+        }
     }
 
-    /** Endast teststädning: anropas inte av leveransflödet. */
-    public void radera(UUID id) { s3.deleteObject(b -> b.bucket(bucket).key(id.toString())); }
+    /**
+     * Endast teststädning: anropas inte av leveransflödet.
+     */
+    public void radera(UUID id) {
+        s3.deleteObject(b -> b.bucket(bucket).key(id.toString()));
+    }
 
-    void raderaTomBucket() { s3.deleteBucket(b -> b.bucket(bucket)); }
+    void raderaTomBucket() {
+        s3.deleteBucket(b -> b.bucket(bucket));
+    }
 
-    @Override public void close() { s3.close(); }
+    @Override
+    public void close() {
+        s3.close();
+    }
 }

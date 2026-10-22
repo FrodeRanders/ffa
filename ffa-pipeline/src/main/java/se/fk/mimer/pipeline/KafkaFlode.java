@@ -7,7 +7,8 @@ import org.apache.kafka.common.serialization.*;
 import java.util.*;
 
 final class KafkaFlode {
-    private KafkaFlode() {}
+    private KafkaFlode() {
+    }
 
     static KafkaConsumer<String, byte[]> konsument(String broker, String topic, String group) {
         var config = new Properties();
@@ -33,8 +34,9 @@ final class KafkaFlode {
         config.put("delivery.timeout.ms", "10000");
         config.put("request.timeout.ms", "3000");
         var producer = new KafkaProducer<>(config, new StringSerializer(), new ByteArraySerializer());
-        try { producer.initTransactions(); }
-        catch (RuntimeException e) {
+        try {
+            producer.initTransactions();
+        } catch (RuntimeException e) {
             producer.close(java.time.Duration.ZERO);
             throw e;
         }

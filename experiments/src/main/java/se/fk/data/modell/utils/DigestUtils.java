@@ -9,6 +9,9 @@ import java.util.Locale;
 
 public class DigestUtils {
     private static final Logger log = LoggerFactory.getLogger(DigestUtils.class);
+    private static final char[] HEX = "0123456789abcdef".toCharArray();
+    // Light-to-dark ramp for ASCII bar
+    private static final char[] RAMP = " .:-=+*#%@".toCharArray();
 
     public static byte[] computeDigest(
             Object bean,
@@ -30,6 +33,8 @@ public class DigestUtils {
     public static byte[] computeJcsDigestFromJsonBytes(byte[] jsonBytes) {
         return computeJcsDigestFromJsonBytes(jsonBytes, SignatureUtils.DigestAlgorithm.SHA_256);
     }
+
+    /* ----------- The rest of this class handles various visualisation of digests ----------- */
 
     public static byte[] computeJcsDigestFromJsonBytes(
             byte[] jsonBytes,
@@ -54,13 +59,9 @@ public class DigestUtils {
         }
     }
 
-    /* ----------- The rest of this class handles various visualisation of digests ----------- */
-
-    private static final char[] HEX = "0123456789abcdef".toCharArray();
-    // Light-to-dark ramp for ASCII bar
-    private static final char[] RAMP = " .:-=+*#%@".toCharArray();
-
-    /** Hex string, grouped every {@code group} bytes (2*group hex chars) with {@code sep} between groups. */
+    /**
+     * Hex string, grouped every {@code group} bytes (2*group hex chars) with {@code sep} between groups.
+     */
     public static String hexGrouped(byte[] digest, int group, String sep, boolean upperCase) {
         if (digest == null) {
             return "";
@@ -84,7 +85,9 @@ public class DigestUtils {
         return sb.toString();
     }
 
-    /** ASCII bar using a density ramp (one char per byte). */
+    /**
+     * ASCII bar using a density ramp (one char per byte).
+     */
     public static String asciiBar(byte[] digest) {
         if (digest == null) {
             return "";
@@ -99,7 +102,9 @@ public class DigestUtils {
         return sb.toString();
     }
 
-    /** 5×5 mirrored identicon; uses ANSI color if enabled. Each “pixel” is two block chars wide. */
+    /**
+     * 5×5 mirrored identicon; uses ANSI color if enabled. Each “pixel” is two block chars wide.
+     */
     public static String identicon5x5(byte[] digest, boolean ansiColor) {
         if (digest == null) {
             return "";
@@ -116,7 +121,7 @@ public class DigestUtils {
         for (int row = 0; row < 5; row++) {
             for (int col = 0; col < 3; col++) {
                 int byteIdx = 3 + (bitCursor >> 3);
-                int bitIdx  = bitCursor & 7;
+                int bitIdx = bitCursor & 7;
                 boolean on = ((digest[byteIdx] >> bitIdx) & 1) == 1;
                 grid[row][col] = on;
                 grid[row][4 - col] = on; // mirror
@@ -125,7 +130,7 @@ public class DigestUtils {
         }
 
         StringBuilder out = new StringBuilder();
-        String onCell  = fg + "██" + reset;
+        String onCell = fg + "██" + reset;
         String offCell = ansiColor ? "\u001B[48;2;255;255;255m  \u001B[0m" : "  ";
         for (int rIdx = 0; rIdx < 5; rIdx++) {
             for (int cIdx = 0; cIdx < 5; cIdx++) {
@@ -136,7 +141,9 @@ public class DigestUtils {
         return out.toString();
     }
 
-    /** Color “swatch” grid (4×8) from the 32 digest bytes. Nice quick-look fingerprint. */
+    /**
+     * Color “swatch” grid (4×8) from the 32 digest bytes. Nice quick-look fingerprint.
+     */
     public static String colorGrid(byte[] digest) {
         if (digest == null) {
             return "";
@@ -147,9 +154,12 @@ public class DigestUtils {
         int i = 0;
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 8; col++) {
-                int r = digest[i % digest.length] & 0xFF; i++;
-                int g = digest[i % digest.length] & 0xFF; i++;
-                int b = digest[i % digest.length] & 0xFF; i++;
+                int r = digest[i % digest.length] & 0xFF;
+                i++;
+                int g = digest[i % digest.length] & 0xFF;
+                i++;
+                int b = digest[i % digest.length] & 0xFF;
+                i++;
                 sb.append(bgTruecolor(r, g, b)).append("  ").append("\u001B[0m");
             }
             sb.append('\n');
@@ -157,12 +167,16 @@ public class DigestUtils {
         return sb.toString();
     }
 
-    /** Truecolor ANSI background escape */
+    /**
+     * Truecolor ANSI background escape
+     */
     private static String bgTruecolor(int r, int g, int b) {
         return String.format(Locale.ROOT, "\u001B[48;2;%d;%d;%dm", r, g, b);
     }
 
-    /** Is ANSI enabled (very simple heuristic). */
+    /**
+     * Is ANSI enabled (very simple heuristic).
+     */
     public static boolean ansiEnabled() {
         String term = System.getenv("TERM");
         return System.console() != null && term != null && !term.equalsIgnoreCase("dumb");

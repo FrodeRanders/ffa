@@ -1,13 +1,19 @@
 package se.fk.mimer.runtime;
 
-import se.fk.data.modell.v1.*;
+import se.fk.data.modell.v1.Ersattning;
+import se.fk.data.modell.v1.Livscykelhanterad;
+import se.fk.data.modell.v1.ProduceratResultat;
+import se.fk.data.modell.v1.Yrkande;
 
 import java.util.HashSet;
 import java.util.Set;
 
-/** Gemensamma strukturkrav. Förmånsregler, exempelvis beloppets storlek, hör till förmånen. */
+/**
+ * Gemensamma strukturkrav. Förmånsregler, exempelvis beloppets storlek, hör till förmånen.
+ */
 final class Modellvalidering {
-    private Modellvalidering() {}
+    private Modellvalidering() {
+    }
 
     static void kontrollera(Yrkande yrkande) {
         if (yrkande == null)

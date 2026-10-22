@@ -10,7 +10,6 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.security.PrivateKey;
-
 import java.security.PublicKey;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -33,15 +32,19 @@ public final class ForvaltadeYrkanden<T extends Yrkande> implements Yrkanden<T> 
             .addModule(Modifiers.ANNOTATED_PROPERTIES_MODULE)
             .addHandler(new DeserializationSnooper()).build();
 
-    /** Kopplar en modelltyp till lagring och nycklar som infrastrukturen redan litar på. */
+    /**
+     * Kopplar en modelltyp till lagring och nycklar som infrastrukturen redan litar på.
+     */
     public ForvaltadeYrkanden(Class<T> typ, Dokumentlager lager,
-                            PrivateKey signeringsnyckel, PublicKey verifieringsnyckel) {
+                              PrivateKey signeringsnyckel, PublicKey verifieringsnyckel) {
         this(typ, lager, null, signeringsnyckel, verifieringsnyckel);
     }
 
-    /** Backend läses bara vid cachemiss. Verifiering sker före återställning av cachen. */
+    /**
+     * Backend läses bara vid cachemiss. Verifiering sker före återställning av cachen.
+     */
     public ForvaltadeYrkanden(Class<T> typ, Dokumentlager lager, Dokumentkalla backend,
-                            PrivateKey signeringsnyckel, PublicKey verifieringsnyckel) {
+                              PrivateKey signeringsnyckel, PublicKey verifieringsnyckel) {
         this.backend = backend;
         this.typ = Objects.requireNonNull(typ);
         this.lager = Objects.requireNonNull(lager);
@@ -49,7 +52,9 @@ public final class ForvaltadeYrkanden<T extends Yrkande> implements Yrkanden<T> 
         this.verifieringsnyckel = Objects.requireNonNull(verifieringsnyckel);
     }
 
-    /** Återläsning lämnar bara ut ett verifierat och modellvaliderat objekt. */
+    /**
+     * Återläsning lämnar bara ut ett verifierat och modellvaliderat objekt.
+     */
     @Override
     public synchronized T las(String id) {
         LagratDokument dokument = hamtaObjekt(id);

@@ -2,7 +2,9 @@ package se.fk.mimer.persistence;
 
 import java.util.UUID;
 
-/** Leverans-id gör att ett delvis genomfört försök kan spåras och repareras. */
+/**
+ * Leverans-id gör att ett delvis genomfört försök kan spåras och repareras.
+ */
 public final class Leveransfel extends IllegalStateException {
     private final UUID dataleveransId;
     private final boolean lokaltLagrat;
@@ -16,9 +18,21 @@ public final class Leveransfel extends IllegalStateException {
         this.kafkaKvitterat = kafkaKvitterat;
     }
 
-    public UUID dataleveransId() { return dataleveransId; }
-    /** Positiv lokal commitbekräftelse. false utesluter inte ett osäkert databasutfall. */
-    public boolean lokaltLagrat() { return lokaltLagrat; }
-    /** Positiv Kafka-commitbekräftelse. false betyder inte säkert att Kafka saknar leveransen. */
-    public boolean kafkaKvitterat() { return kafkaKvitterat; }
+    public UUID dataleveransId() {
+        return dataleveransId;
+    }
+
+    /**
+     * Positiv lokal commitbekräftelse. false utesluter inte ett osäkert databasutfall.
+     */
+    public boolean lokaltLagrat() {
+        return lokaltLagrat;
+    }
+
+    /**
+     * Positiv Kafka-commitbekräftelse. false betyder inte säkert att Kafka saknar leveransen.
+     */
+    public boolean kafkaKvitterat() {
+        return kafkaKvitterat;
+    }
 }

@@ -3,23 +3,33 @@ package se.fk.mimer.graph;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.neo4j.driver.*;
+
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Utför projektionen i Neo4j; strängjämförelser kan inte bevisa dess transaktionsbeteende. */
+/**
+ * Utför projektionen i Neo4j; strängjämförelser kan inte bevisa dess transaktionsbeteende.
+ */
 @EnabledIfSystemProperty(named = "ffa.integration", matches = "true")
 class GrafprojektionIntegrationTest {
     private final String id = "ffa-test-" + UUID.randomUUID();
     private Driver driver;
+
+    private static String env(String name, String fallback) {
+        return System.getenv().getOrDefault(name, fallback);
+    }
 
     @BeforeEach
     void connect() {
         driver = GraphDatabase.driver(env("FFA_NEO4J", "bolt://localhost:17687"),
                 AuthTokens.basic(env("FFA_NEO4J_USER", "neo4j"), env("FFA_NEO4J_PASSWORD", "ffa-demo-password")));
         driver.verifyConnectivity();
-        try (var session = driver.session()) { session.run(Grafprojektion.schema()).consume(); }
+        try (var session = driver.session()) {
+            session.run(Grafprojektion.schema()).consume();
+        }
     }
 
     @AfterEach
@@ -28,11 +38,11 @@ class GrafprojektionIntegrationTest {
             try (var session = driver.session()) {
                 session.run("MATCH (n:FfaObjekt) WHERE n.id IN $ids DETACH DELETE n",
                         Map.of("ids", List.of(id, id + "-beslut"))).consume();
-            } finally { driver.close(); }
+            } finally {
+                driver.close();
+            }
         }
     }
-
-    private static String env(String name, String fallback) { return System.getenv().getOrDefault(name, fallback); }
 
     private String projection(int version, boolean beslut) {
         String child = beslut ? ", \"beslut\":{\"@type\":\"se.fk.data.modell.v1.Beslut\",\"id\":\""
@@ -48,8 +58,6 @@ class GrafprojektionIntegrationTest {
             return new ResultSummaryMarker(summary.counters().relationshipsCreated(), summary.counters().relationshipsDeleted());
         }
     }
-
-    private record ResultSummaryMarker(int created, int deleted) {}
 
     private void assertState(int version, int relations) {
         try (var session = driver.session()) {
@@ -82,11 +90,18 @@ class GrafprojektionIntegrationTest {
             var futures = new ArrayList<Future<?>>();
             for (int version : List.of(2, 4, 1, 3)) {
                 String query = projection(version, version < 4);
-                futures.add(workers.submit(() -> { start.await(); apply(query); return null; }));
+                futures.add(workers.submit(() -> {
+                    start.await();
+                    apply(query);
+                    return null;
+                }));
             }
             start.countDown();
             for (var future : futures) future.get(20, TimeUnit.SECONDS);
         }
         assertState(4, 0);
+    }
+
+    private record ResultSummaryMarker(int created, int deleted) {
     }
 }

@@ -11,7 +11,6 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.jsontype.impl.TypeIdResolverBase;
 
 import java.util.Map;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -25,6 +24,20 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
     private static final Map<Class<?>, String> CLASS_TO_ID = new ConcurrentHashMap<>();
 
     private JavaType baseType;
+
+    private static void register(Class<?> subtype) {
+        String id = subtype.getName();
+
+        Class<?> old = ID_TO_CLASS.putIfAbsent(id, subtype);
+        if (old != null && !old.equals(subtype)) {
+            throw new IllegalStateException(
+                    "Duplicate @type value '" + id +
+                            "' for " + subtype.getName() + " and " + old.getName()
+            );
+        }
+
+        CLASS_TO_ID.putIfAbsent(subtype, id);
+    }
 
     @Override
     public void init(JavaType baseType) {
@@ -50,20 +63,6 @@ public class PersonTypeIdResolver extends TypeIdResolverBase {
             );
         }
         return id;
-    }
-
-    private static void register(Class<?> subtype) {
-        String id = subtype.getName();
-
-        Class<?> old = ID_TO_CLASS.putIfAbsent(id, subtype);
-        if (old != null && !old.equals(subtype)) {
-            throw new IllegalStateException(
-                    "Duplicate @type value '" + id +
-                            "' for " + subtype.getName() + " and " + old.getName()
-            );
-        }
-
-        CLASS_TO_ID.putIfAbsent(subtype, id);
     }
 
     @Override

@@ -5,7 +5,9 @@ import se.fk.data.modell.annotations.Context;
 
 import java.util.Date;
 
-/** Ett tidsintervall som bäddas in i sitt ägarobjekt och saknar egen livscykelversion. */
+/**
+ * Ett tidsintervall som bäddas in i sitt ägarobjekt och saknar egen livscykelversion.
+ */
 @Context("https://data.fk.se/kontext/std/period/1.0")
 public class Period {
     @JsonProperty("from")
@@ -14,7 +16,8 @@ public class Period {
     @JsonProperty("tom")
     public Date tom;
 
-    public Period() {} // Behövs vid återläsning med Jackson.
+    public Period() {
+    } // Behövs vid återläsning med Jackson.
 
     public Period(Date from, Date tom) {
         this.from = from;
@@ -31,4 +34,5 @@ public class Period {
         sb.append(", tom='").append(tom).append('\'');
         sb.append('}');
         return sb.toString();
-    }}
+    }
+}

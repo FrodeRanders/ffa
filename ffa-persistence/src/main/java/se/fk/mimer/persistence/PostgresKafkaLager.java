@@ -6,10 +6,15 @@ import se.fk.mimer.runtime.Dokumentlager;
 import se.fk.mimer.runtime.LagratDokument;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.UUID;
 
-/** Historikcache och outbox. Masterdata finns hos systemen efter Kafka, inte i denna databas. */
+/**
+ * Historikcache och outbox. Masterdata finns hos systemen efter Kafka, inte i denna databas.
+ */
 public final class PostgresKafkaLager implements Dokumentlager {
     private static final System.Logger LOG = System.getLogger(PostgresKafkaLager.class.getName());
     private final PGSimpleDataSource dataSource = new PGSimpleDataSource();
@@ -18,7 +23,7 @@ public final class PostgresKafkaLager implements Dokumentlager {
     private final Leveranspublicerare publicerare;
 
     public PostgresKafkaLager(String url, String user, String password, String topic,
-                             Leveranslage lage, Leveranspublicerare publicerare) {
+                              Leveranslage lage, Leveranspublicerare publicerare) {
         if (topic == null || topic.isBlank())
             throw new IllegalArgumentException("Förmånstopic måste anges");
 
@@ -31,7 +36,29 @@ public final class PostgresKafkaLager implements Dokumentlager {
         this.publicerare = java.util.Objects.requireNonNull(publicerare);
     }
 
-    /** Idempotent schemainitiering för den lokala utvecklingsdatabasen. */
+    private static Dataleverans lasRad(ResultSet row) throws SQLException {
+        return new Dataleverans(row.getObject("dataleverans_id", UUID.class), row.getString("korrelations_id"),
+                row.getString("objekt_id"), row.getLong("forvantad_version"), row.getLong("objekt_version"),
+                row.getTimestamp("skapad").toInstant(), new LagratDokument(
+                row.getString("dokument").getBytes(StandardCharsets.UTF_8), row.getBytes("signatur")));
+    }
+
+    private static boolean sammaLeverans(Dataleverans a, Dataleverans b) {
+        return a.id().equals(b.id()) && a.korrelationsId().equals(b.korrelationsId())
+                && a.objektId().equals(b.objektId()) && a.objektVersion() == b.objektVersion()
+                && a.forvantadVersion() == b.forvantadVersion() && a.skapad().equals(b.skapad())
+                && java.util.Arrays.equals(a.dokument().json(), b.dokument().json())
+                && java.util.Arrays.equals(a.dokument().signatur(), b.dokument().signatur());
+    }
+
+    private static java.time.Instant tid(ResultSet row, String column) throws SQLException {
+        var value = row.getTimestamp(column);
+        return value == null ? null : value.toInstant();
+    }
+
+    /**
+     * Idempotent schemainitiering för den lokala utvecklingsdatabasen.
+     */
     public void initiera() {
         try (var input = getClass().getResourceAsStream("/cache.sql");
              var connection = dataSource.getConnection();
@@ -43,13 +70,19 @@ public final class PostgresKafkaLager implements Dokumentlager {
     }
 
     @Override
-    public Dataleverans lasObjekt(String id) { return hamta("objekt_id = ?", id, true); }
+    public Dataleverans lasObjekt(String id) {
+        return hamta("objekt_id = ?", id, true);
+    }
 
     @Override
-    public Dataleverans lasProcess(String id) { return hamta("korrelations_id = ?", id, true); }
+    public Dataleverans lasProcess(String id) {
+        return hamta("korrelations_id = ?", id, true);
+    }
 
     @Override
-    public Dataleverans lasLeverans(UUID id) { return hamta("dataleverans_id = ?", id, false); }
+    public Dataleverans lasLeverans(UUID id) {
+        return hamta("dataleverans_id = ?", id, false);
+    }
 
     private Dataleverans hamta(String predicate, Object value, boolean processlasning) {
         try (var connection = dataSource.getConnection(); var query = connection.prepareStatement(
@@ -64,14 +97,9 @@ public final class PostgresKafkaLager implements Dokumentlager {
                             new IllegalStateException("Processen har obekräftade leveranser; återhämta före fortsättning"));
                 return delivery;
             }
-        } catch (SQLException e) { throw new IllegalStateException("Cachen kunde inte läsas", e); }
-    }
-
-    private static Dataleverans lasRad(ResultSet row) throws SQLException {
-        return new Dataleverans(row.getObject("dataleverans_id", UUID.class), row.getString("korrelations_id"),
-                row.getString("objekt_id"), row.getLong("forvantad_version"), row.getLong("objekt_version"),
-                row.getTimestamp("skapad").toInstant(), new LagratDokument(
-                row.getString("dokument").getBytes(StandardCharsets.UTF_8), row.getBytes("signatur")));
+        } catch (SQLException e) {
+            throw new IllegalStateException("Cachen kunde inte läsas", e);
+        }
     }
 
     // Processlås bevarar publiceringsordningen; objektlås skyddar versionskontrollen även
@@ -80,7 +108,10 @@ public final class PostgresKafkaLager implements Dokumentlager {
         String function = vanta ? "pg_advisory_xact_lock" : "pg_try_advisory_xact_lock";
         try (var lock = connection.prepareStatement("SELECT " + function + "(hashtextextended(?, 0))")) {
             lock.setString(1, "ffa:" + topic.length() + ":" + topic + ":" + key);
-            try (var rows = lock.executeQuery()) { rows.next(); return vanta || rows.getBoolean(1); }
+            try (var rows = lock.executeQuery()) {
+                rows.next();
+                return vanta || rows.getBoolean(1);
+            }
         }
     }
 
@@ -127,15 +158,9 @@ public final class PostgresKafkaLager implements Dokumentlager {
                 connection.rollback();
                 throw e;
             }
-        } catch (SQLException e) { throw new IllegalStateException("Backenddata kunde inte återställas", e); }
-    }
-
-    private static boolean sammaLeverans(Dataleverans a, Dataleverans b) {
-        return a.id().equals(b.id()) && a.korrelationsId().equals(b.korrelationsId())
-                && a.objektId().equals(b.objektId()) && a.objektVersion() == b.objektVersion()
-                && a.forvantadVersion() == b.forvantadVersion() && a.skapad().equals(b.skapad())
-                && java.util.Arrays.equals(a.dokument().json(), b.dokument().json())
-                && java.util.Arrays.equals(a.dokument().signatur(), b.dokument().signatur());
+        } catch (SQLException e) {
+            throw new IllegalStateException("Backenddata kunde inte återställas", e);
+        }
     }
 
     private void kontrolleraVersion(Connection connection, Dataleverans delivery) throws SQLException {
@@ -194,18 +219,24 @@ public final class PostgresKafkaLager implements Dokumentlager {
                     local[0] = true;
                 }
             } catch (Exception e) {
-                try { connection.rollback(); }
-                catch (SQLException rollback) { e.addSuppressed(rollback); }
+                try {
+                    connection.rollback();
+                } catch (SQLException rollback) {
+                    e.addSuppressed(rollback);
+                }
 
                 if (local[0]) registreraForsok(delivery.id(), false, e.toString());
                 throw new Leveransfel(delivery.id(), local[0], acknowledged, e);
             }
-        } catch (SQLException e) { throw new Leveransfel(delivery.id(), local[0], acknowledged, e); }
+        } catch (SQLException e) {
+            throw new Leveransfel(delivery.id(), local[0], acknowledged, e);
+        }
 
         // Här är den lokala kopian redan hållbart committad. Ett leveransfel får inte låtsas rulla tillbaka den.
         if (lage == Leveranslage.LOKAL_RESILIENS) {
-            try { skickaProcess(delivery.korrelationsId(), 100); }
-            catch (RuntimeException e) {
+            try {
+                skickaProcess(delivery.korrelationsId(), 100);
+            } catch (RuntimeException e) {
                 LOG.log(System.Logger.Level.WARNING, "Lokalt lagrat; Kafka väntar på återförsök: " + e.getMessage());
             }
         }
@@ -214,8 +245,9 @@ public final class PostgresKafkaLager implements Dokumentlager {
     // Fel i bokföringen får inte förvandla en bekräftad Kafka-commit till en påstådd rollback.
     // Raden förblir väntande och kan avstämmas eller skickas igen med samma id.
     private void registreraForsok(UUID id, boolean sent, String error) {
-        try (var connection = dataSource.getConnection()) { uppdatera(connection, id, sent, error); }
-        catch (SQLException e) {
+        try (var connection = dataSource.getConnection()) {
+            uppdatera(connection, id, sent, error);
+        } catch (SQLException e) {
             LOG.log(System.Logger.Level.WARNING, "Leveransstatus kunde inte registreras för " + id, e);
         }
     }
@@ -231,16 +263,15 @@ public final class PostgresKafkaLager implements Dokumentlager {
                         tid(rows, "radata_lagrade_tid"), tid(rows, "grafbehandlad_tid"),
                         rows.getInt("leveransforsok"), rows.getString("senaste_fel"));
             }
-        } catch (SQLException e) { throw new IllegalStateException("Leveransstatus kunde inte läsas", e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Leveransstatus kunde inte läsas", e);
+        }
     }
 
-    private static java.time.Instant tid(ResultSet row, String column) throws SQLException {
-        var value = row.getTimestamp(column);
-        return value == null ? null : value.toInstant();
-    }
-
-    /** Anropas av betrodd infrastruktur efter positivt kvitto, aldrig enbart efter ett misslyckat uppslag.
-     * Rådatakvittot måste avse båda backendlagren. Grafkvittot måste avse slutförd grafhantering. */
+    /**
+     * Anropas av betrodd infrastruktur efter positivt kvitto, aldrig enbart efter ett misslyckat uppslag.
+     * Rådatakvittot måste avse båda backendlagren. Grafkvittot måste avse slutförd grafhantering.
+     */
     public void bekrafta(Dataleverans delivery, Leveranssteg steg) {
         java.util.Objects.requireNonNull(steg);
         try (var connection = dataSource.getConnection()) {
@@ -261,12 +292,18 @@ public final class PostgresKafkaLager implements Dokumentlager {
                 connection.rollback();
                 throw e;
             }
-        } catch (SQLException e) { throw new IllegalStateException("Leveransbekräftelse kunde inte lagras", e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Leveransbekräftelse kunde inte lagras", e);
+        }
     }
 
-    public String topic() { return topic; }
+    public String topic() {
+        return topic;
+    }
 
-    /** Beständig inkorg även när leveransen ännu saknas i cachen. */
+    /**
+     * Beständig inkorg även när leveransen ännu saknas i cachen.
+     */
     public void bekrafta(Kvittens kvittens) {
         if (!topic.equals(kvittens.topic())) throw new IllegalArgumentException("Fel förmånstopic");
         try (var connection = dataSource.getConnection()) {
@@ -305,8 +342,13 @@ public final class PostgresKafkaLager implements Dokumentlager {
                     }
                 }
                 connection.commit();
-            } catch (Exception e) { connection.rollback(); throw e; }
-        } catch (SQLException e) { throw new IllegalStateException("Kvittens kunde inte lagras", e); }
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Kvittens kunde inte lagras", e);
+        }
     }
 
     private void avstamKvitton(Connection connection, Dataleverans d) throws SQLException {
@@ -371,7 +413,9 @@ public final class PostgresKafkaLager implements Dokumentlager {
         avstamKvitton(connection, delivery);
     }
 
-    /** Fördelar batchen mellan processer. Ett fel hindrar inte andra processers återförsök. */
+    /**
+     * Fördelar batchen mellan processer. Ett fel hindrar inte andra processers återförsök.
+     */
     public int skickaVantande(int maxAntal) {
         if (maxAntal <= 0) throw new IllegalArgumentException("Batchstorleken måste vara positiv");
         var processer = new java.util.LinkedHashMap<String, Integer>();
@@ -387,7 +431,9 @@ public final class PostgresKafkaLager implements Dokumentlager {
             try (var rows = query.executeQuery()) {
                 while (rows.next()) processer.merge(rows.getString(1), 1, Integer::sum);
             }
-        } catch (SQLException e) { throw new IllegalStateException("Outbox kunde inte läsas", e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Outbox kunde inte läsas", e);
+        }
         if (processer.isEmpty()) return 0;
 
         try (var executor = java.util.concurrent.Executors.newFixedThreadPool(Math.min(8, processer.size()))) {
@@ -396,14 +442,16 @@ public final class PostgresKafkaLager implements Dokumentlager {
             int skickade = 0;
             RuntimeException fel = null;
             for (var future : resultat) {
-                try { skickade += future.get(); }
-                catch (InterruptedException e) {
+                try {
+                    skickade += future.get();
+                } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new IllegalStateException("Återförsök avbröts", e);
                 } catch (java.util.concurrent.ExecutionException e) {
                     var failure = e.getCause() instanceof RuntimeException runtime ? runtime
                             : new IllegalStateException("Återförsök misslyckades", e.getCause());
-                    if (fel == null) fel = failure; else fel.addSuppressed(failure);
+                    if (fel == null) fel = failure;
+                    else fel.addSuppressed(failure);
                 }
             }
             if (fel != null) throw fel;
@@ -411,8 +459,10 @@ public final class PostgresKafkaLager implements Dokumentlager {
         }
     }
 
-    /** Återförsök i processens lagringsordning, med samma id, JSON och signatur.
-     * En process som redan bearbetas av en annan arbetare hoppas över denna gång. */
+    /**
+     * Återförsök i processens lagringsordning, med samma id, JSON och signatur.
+     * En process som redan bearbetas av en annan arbetare hoppas över denna gång.
+     */
     public int skickaProcess(String korrelationsId, int maxAntal) {
         if (maxAntal <= 0) throw new IllegalArgumentException("Batchstorleken måste vara positiv");
         try (var connection = dataSource.getConnection()) {
@@ -445,11 +495,17 @@ public final class PostgresKafkaLager implements Dokumentlager {
                 connection.commit();
                 return sent;
             } catch (Exception e) {
-                try { connection.rollback(); } catch (SQLException rollback) { e.addSuppressed(rollback); }
+                try {
+                    connection.rollback();
+                } catch (SQLException rollback) {
+                    e.addSuppressed(rollback);
+                }
                 if (e instanceof RuntimeException runtime) throw runtime;
                 throw new IllegalStateException("Återförsök misslyckades", e);
             }
-        } catch (SQLException e) { throw new IllegalStateException("Outbox kunde inte läsas", e); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Outbox kunde inte läsas", e);
+        }
     }
 
     private void uppdatera(Connection connection, UUID id, boolean sent, String error) throws SQLException {
@@ -473,12 +529,18 @@ public final class PostgresKafkaLager implements Dokumentlager {
             query.setString(1, topic);
             query.setString(2, correlation);
             query.setString(3, correlation);
-            try (var rows = query.executeQuery()) { rows.next(); return rows.getLong(1); }
+            try (var rows = query.executeQuery()) {
+                rows.next();
+                return rows.getLong(1);
+            }
         }
     }
 
     public long antalVantande() {
-        try (var connection = dataSource.getConnection()) { return vantande(connection, null); }
-        catch (SQLException e) { throw new IllegalStateException("Outbox kunde inte räknas", e); }
+        try (var connection = dataSource.getConnection()) {
+            return vantande(connection, null);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Outbox kunde inte räknas", e);
+        }
     }
 }

@@ -7,7 +7,9 @@ import tools.jackson.core.JsonParser;
 import tools.jackson.databind.*;
 import tools.jackson.databind.jsontype.TypeDeserializer;
 
-/** Läser värdet ur rollomslaget. Värdets egen @type avgör eventuell undertyp. */
+/**
+ * Läser värdet ur rollomslaget. Värdets egen @type avgör eventuell undertyp.
+ */
 public class SomPropertyDeserializer extends ValueDeserializer<Object> {
     private static final Logger log = LoggerFactory.getLogger(SomPropertyDeserializer.class);
 

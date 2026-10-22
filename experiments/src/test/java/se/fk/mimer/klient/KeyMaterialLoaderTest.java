@@ -33,6 +33,36 @@ public class KeyMaterialLoaderTest {
         }
     }
 
+    private static KeyPair rsaKeyPair() throws Exception {
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+        gen.initialize(2048);
+        return gen.generateKeyPair();
+    }
+
+    private static X509Certificate selfSigned(KeyPair keyPair, String dn) throws Exception {
+        Instant now = Instant.now();
+        X500Name subject = new X500Name(dn);
+        BigInteger serial = new BigInteger(64, java.security.SecureRandom.getInstanceStrong());
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                subject,
+                serial,
+                java.util.Date.from(now.minusSeconds(60)),
+                java.util.Date.from(now.plusSeconds(86400)),
+                subject,
+                keyPair.getPublic()
+        );
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+                .build(keyPair.getPrivate());
+        return new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(builder.build(signer));
+    }
+
+    private static String pem(String type, byte[] der) {
+        String base64 = Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(der);
+        return "-----BEGIN " + type + "-----\n" + base64 + "\n-----END " + type + "-----\n";
+    }
+
     @Test
     public void loadFromPemStrings_parsesKeyAndCert() throws Exception {
         log.info("*** Testcase *** Parse PEM key + certificate from strings and keep key/cert details intact");
@@ -78,35 +108,5 @@ public class KeyMaterialLoaderTest {
         assertEquals(2, material.certificateChain().size());
         assertNotNull(material.trustAnchors());
         assertEquals(1, material.trustAnchors().size());
-    }
-
-    private static KeyPair rsaKeyPair() throws Exception {
-        KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-        gen.initialize(2048);
-        return gen.generateKeyPair();
-    }
-
-    private static X509Certificate selfSigned(KeyPair keyPair, String dn) throws Exception {
-        Instant now = Instant.now();
-        X500Name subject = new X500Name(dn);
-        BigInteger serial = new BigInteger(64, java.security.SecureRandom.getInstanceStrong());
-        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
-                subject,
-                serial,
-                java.util.Date.from(now.minusSeconds(60)),
-                java.util.Date.from(now.plusSeconds(86400)),
-                subject,
-                keyPair.getPublic()
-        );
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
-                .build(keyPair.getPrivate());
-        return new JcaX509CertificateConverter()
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
-                .getCertificate(builder.build(signer));
-    }
-
-    private static String pem(String type, byte[] der) {
-        String base64 = Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(der);
-        return "-----BEGIN " + type + "-----\n" + base64 + "\n-----END " + type + "-----\n";
     }
 }

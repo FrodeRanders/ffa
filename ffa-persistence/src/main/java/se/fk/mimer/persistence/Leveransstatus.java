@@ -3,7 +3,9 @@ package se.fk.mimer.persistence;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Lokala observationstider, inte fjärrsystemens klockor. Saknad bekräftelse bevisar inte ett fel. */
+/**
+ * Lokala observationstider, inte fjärrsystemens klockor. Saknad bekräftelse bevisar inte ett fel.
+ */
 public record Leveransstatus(UUID dataleveransId, Instant lokaltLagrad,
                              Instant kafkaPublicerad, Instant radataLagrade, Instant grafbehandlad,
                              int leveransforsok, String senasteFel) {

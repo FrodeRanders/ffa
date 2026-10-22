@@ -39,5 +39,6 @@ public final class JsonMigrator {
         return new Result(out, before, after, migrated.audit);
     }
 
-    public record Result(Path path, int beforeVersion, int afterVersion, List<MigrationEngine.AuditEntry> audit) {}
+    public record Result(Path path, int beforeVersion, int afterVersion, List<MigrationEngine.AuditEntry> audit) {
+    }
 }

@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>se.fk.data</groupId>
@@ -58,9 +59,13 @@
                     <execution>
                         <id>teststod</id>
                         <phase>generate-test-sources</phase>
-                        <goals><goal>add-test-source</goal></goals>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
                         <configuration>
-                            <sources><source>${project.basedir}/../test-support/src/test/java</source></sources>
+                            <sources>
+                                <source>${project.basedir}/../test-support/src/test/java</source>
+                            </sources>
                         </configuration>
                     </execution>
                 </executions>

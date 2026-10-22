@@ -5,9 +5,12 @@ import com.apicatalog.tree.io.NativeAdapter;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Kanoniserar JSON så att formatering och nyckelordning inte påverkar kontrollsumma eller signatur. */
+/**
+ * Kanoniserar JSON så att formatering och nyckelordning inte påverkar kontrollsumma eller signatur.
+ */
 public final class JcsUtils {
-    private JcsUtils() {}
+    private JcsUtils() {
+    }
 
     public static byte[] canonicalize(byte[] json) {
         if (json == null) {

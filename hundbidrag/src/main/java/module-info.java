@@ -1,4 +1,6 @@
-/** Förmånslogik: endast FFA:s offentliga modell och objekt-API används. */
+/**
+ * Förmånslogik: endast FFA:s offentliga modell och objekt-API används.
+ */
 module se.fk.hundbidrag {
     requires se.fk.ffa.core;
     exports se.fk.hundbidrag;

@@ -12,17 +12,19 @@ import java.security.PublicKey;
 import java.time.Duration;
 import java.util.Map;
 
-/** N: beständig versionsskyddad grafprojektion före offsetcommit. */
+/**
+ * N: beständig versionsskyddad grafprojektion före offsetcommit.
+ */
 public final class Grafsteg implements AutoCloseable {
     private final KafkaConsumer<String, byte[]> consumer;
     private final Driver driver;
     private final String broker;
     private final String sourceTopic;
     private final String producerId = "ffa-graph-" + java.util.UUID.randomUUID();
-    private KafkaProducer<String, byte[]> producer;
     private final PublicKey key;
     private final Runnable efterLagring;
     private final Grafprojektion projection = new Grafprojektion();
+    private KafkaProducer<String, byte[]> producer;
 
     public Grafsteg(String broker, String topic, String group, Driver driver, PublicKey key) {
         this(broker, topic, topic.endsWith(".graph") ? topic.substring(0, topic.length() - 6) : topic,
@@ -30,7 +32,8 @@ public final class Grafsteg implements AutoCloseable {
     }
 
     public Grafsteg(String broker, String topic, String sourceTopic, String group, Driver driver, PublicKey key) {
-        this(broker, topic, sourceTopic, group, driver, key, () -> {});
+        this(broker, topic, sourceTopic, group, driver, key, () -> {
+        });
     }
 
     // Felinjektion mellan Neo4j-commit och kvittenspublicering.
@@ -42,8 +45,9 @@ public final class Grafsteg implements AutoCloseable {
         consumer = KafkaFlode.konsument(broker, topic, group);
         this.driver = driver;
         this.key = key;
-        try (var session = driver.session()) { session.run(Grafprojektion.schema()).consume(); }
-        catch (RuntimeException e) {
+        try (var session = driver.session()) {
+            session.run(Grafprojektion.schema()).consume();
+        } catch (RuntimeException e) {
             consumer.close(Duration.ofSeconds(5));
             throw e;
         }
@@ -84,10 +88,18 @@ public final class Grafsteg implements AutoCloseable {
         } catch (Exception e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (started && !committing) {
-                try { producer.abortTransaction(); } catch (RuntimeException abort) { e.addSuppressed(abort); }
+                try {
+                    producer.abortTransaction();
+                } catch (RuntimeException abort) {
+                    e.addSuppressed(abort);
+                }
             }
             if (producer != null) {
-                try { producer.close(Duration.ZERO); } catch (RuntimeException close) { e.addSuppressed(close); }
+                try {
+                    producer.close(Duration.ZERO);
+                } catch (RuntimeException close) {
+                    e.addSuppressed(close);
+                }
                 producer = null;
             }
             consumer.seek(partition, record.offset());
@@ -95,8 +107,12 @@ public final class Grafsteg implements AutoCloseable {
         }
     }
 
-    @Override public void close() {
-        try { consumer.close(Duration.ofSeconds(5)); }
-        finally { if (producer != null) producer.close(Duration.ofSeconds(5)); }
+    @Override
+    public void close() {
+        try {
+            consumer.close(Duration.ofSeconds(5));
+        } finally {
+            if (producer != null) producer.close(Duration.ofSeconds(5));
+        }
     }
 }

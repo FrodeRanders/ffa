@@ -15,6 +15,7 @@ public final class MimerMigrations {
     /**
      * Notera att de migreringar som finns här är fejkade och inte
      * relevanta på riktigt i det skick de har här.
+     *
      * @return
      */
     public static List<Migration> all() {
@@ -40,7 +41,7 @@ public final class MimerMigrations {
 
                 normalizeInstantZToDate("normalize beslut.datum", "$.beslut.datum"),
                 normalizeInstantZToDate("normalize period.from", "$.producerade_resultat[*].period.from"),
-                normalizeInstantZToDate("normalize period.tom",  "$.producerade_resultat[*].period.tom")
+                normalizeInstantZToDate("normalize period.tom", "$.producerade_resultat[*].period.tom")
         )));
 
         // Illustrative future step 1 -> 2

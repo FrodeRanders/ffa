@@ -25,6 +25,37 @@ import static org.junit.Assert.*;
 public class MimerProxySignTest {
     private static final Logger log = LoggerFactory.getLogger(MimerProxySignTest.class);
 
+    private static KeyPair rsaKeyPair() throws Exception {
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+        gen.initialize(2048);
+        return gen.generateKeyPair();
+    }
+
+    private static X509Certificate selfSigned(KeyPair keyPair, String dn) throws Exception {
+        Instant now = Instant.now();
+        X500Name subject = new X500Name(dn);
+        BigInteger serial = new BigInteger(64, java.security.SecureRandom.getInstanceStrong());
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                subject,
+                serial,
+                java.util.Date.from(now.minusSeconds(60)),
+                java.util.Date.from(now.plusSeconds(86400)),
+                subject,
+                keyPair.getPublic()
+        );
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+                .build(keyPair.getPrivate());
+        return new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(builder.build(signer));
+    }
+
+    private static void ensureBcProvider() {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+
     @Test
     public void serializeAndSign_producesVerifiableSignature() throws Exception {
         log.info("*** Testcase *** Serialize payload and sign it, then verify signature and chain");
@@ -499,36 +530,5 @@ public class MimerProxySignTest {
                 verifyOptions
         );
         assertTrue(result.signatureValid());
-    }
-
-    private static KeyPair rsaKeyPair() throws Exception {
-        KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-        gen.initialize(2048);
-        return gen.generateKeyPair();
-    }
-
-    private static X509Certificate selfSigned(KeyPair keyPair, String dn) throws Exception {
-        Instant now = Instant.now();
-        X500Name subject = new X500Name(dn);
-        BigInteger serial = new BigInteger(64, java.security.SecureRandom.getInstanceStrong());
-        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
-                subject,
-                serial,
-                java.util.Date.from(now.minusSeconds(60)),
-                java.util.Date.from(now.plusSeconds(86400)),
-                subject,
-                keyPair.getPublic()
-        );
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
-                .build(keyPair.getPrivate());
-        return new JcaX509CertificateConverter()
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
-                .getCertificate(builder.build(signer));
-    }
-
-    private static void ensureBcProvider() {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.addProvider(new BouncyCastleProvider());
-        }
     }
 }

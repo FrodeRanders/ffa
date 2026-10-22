@@ -1,14 +1,17 @@
 package se.fk.mimer.runtime;
 
 import org.junit.jupiter.api.Test;
-import se.fk.teststod.Minneslager;
-import se.fk.data.modell.v1.*;
 import se.fk.data.modell.utils.SignatureUtils;
+import se.fk.data.modell.v1.Beslut;
+import se.fk.data.modell.v1.Ersattning;
+import se.fk.data.modell.v1.FysiskPerson;
+import se.fk.data.modell.v1.Yrkande;
+import se.fk.teststod.Minneslager;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,10 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class ForvaltadeYrkandenTest {
     private static final KeyPair KEYS = nycklar();
     private static final JsonMapper JSON = JsonMapper.builder().build();
-
-    private ForvaltadeYrkanden<Yrkande> repository(Dokumentlager store) {
-        return new ForvaltadeYrkanden<>(Yrkande.class, store, KEYS.getPrivate(), KEYS.getPublic());
-    }
 
     private static KeyPair nycklar() {
         try {
@@ -56,6 +55,10 @@ class ForvaltadeYrkandenTest {
         return new LagratDokument(json, SignatureUtils.sign(json, KEYS.getPrivate()));
     }
 
+    private ForvaltadeYrkanden<Yrkande> repository(Dokumentlager store) {
+        return new ForvaltadeYrkanden<>(Yrkande.class, store, KEYS.getPrivate(), KEYS.getPublic());
+    }
+
     @Test
     void cachemissForSpecifikLeveransBevararHistorisktTillstand() {
         var backend = new Minneslager();
@@ -76,7 +79,8 @@ class ForvaltadeYrkandenTest {
         var original = repository(backend).lagra("process", yrkande());
         var delivery = backend.lasProcess("process");
         var cache = new Minneslager() {
-            @Override public synchronized void lagra(Dataleverans d) {
+            @Override
+            public synchronized void lagra(Dataleverans d) {
                 throw new AssertionError("Återställning får inte publicera en ny leverans");
             }
         };
@@ -112,7 +116,10 @@ class ForvaltadeYrkandenTest {
                 new Dataleverans(original.id(), "fel-process", original.objektId(), 0, original.objektVersion(), original.skapad(), original.dokument()),
                 new Dataleverans(original.id(), "process", original.objektId(), 0, original.objektVersion() + 1, original.skapad(), original.dokument()))) {
             var source = new Minneslager() {
-                @Override public Dataleverans lasProcess(String id) { return invalid; }
+                @Override
+                public Dataleverans lasProcess(String id) {
+                    return invalid;
+                }
             };
             var cache = new Minneslager();
             var repo = new ForvaltadeYrkanden<>(Yrkande.class, cache, source, KEYS.getPrivate(), KEYS.getPublic());
@@ -205,7 +212,8 @@ class ForvaltadeYrkandenTest {
     @Test
     void historisktSigneratFormatMigrerasUtanAttOriginaletAndras() throws Exception {
         byte[] historic;
-        try (var input = getClass().getResourceAsStream("/fixtures/yrkande-v0.json")) { historic = input.readAllBytes();
+        try (var input = getClass().getResourceAsStream("/fixtures/yrkande-v0.json")) {
+            historic = input.readAllBytes();
         }
         var store = new Minneslager();
         store.lagra("yrkande-historiskt", signera(historic));
@@ -312,6 +320,7 @@ class ForvaltadeYrkandenTest {
             public LagratDokument las(String id) {
                 return null;
             }
+
             public void lagra(String id, LagratDokument doc) {
                 throw new IllegalStateException("Lagringen misslyckades");
             }
